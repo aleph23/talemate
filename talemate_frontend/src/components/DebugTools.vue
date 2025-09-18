@@ -28,6 +28,9 @@
         <v-window-item value="memory_requests">
             <DebugToolMemoryRequestLog ref="memoryRequestLog"/>
         </v-window-item>
+        <v-window-item value="card">
+            <DebugToolCardImport ref="cardImport"/>
+        </v-window-item>
     </v-window>
     <DebugToolSceneState ref="gameState"/>
 </template>
@@ -36,6 +39,7 @@
 import DebugToolPromptLog from './DebugToolPromptLog.vue';
 import DebugToolSceneState from './DebugToolSceneState.vue';
 import DebugToolMemoryRequestLog from './DebugToolMemoryRequestLog.vue';
+import DebugToolCardImport from './DebugToolCardImport.vue';
 
 export default {
     name: 'DebugTools',
@@ -43,6 +47,7 @@ export default {
         DebugToolPromptLog,
         DebugToolMemoryRequestLog,
         DebugToolSceneState,
+        DebugToolCardImport,
     },
     data() {
         return {
@@ -53,6 +58,7 @@ export default {
             tabs: [ 
                 { value: "prompts", text: "Prompts", icon: "mdi-post-outline" },
                 { value: "memory_requests", text: "Memory", icon: "mdi-memory" },
+                { value: "card", text: "Card", icon: "mdi-book-information-variant" },
             ]
         }
     },

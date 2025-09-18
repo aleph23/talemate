@@ -7,6 +7,7 @@ import uuid
 import zipfile
 from pathlib import Path
 from typing import TYPE_CHECKING
+import re
 
 import structlog
 
@@ -36,6 +37,7 @@ from talemate.scene.intent import SceneIntent
 from talemate.history import validate_history
 import talemate.agents.tts.voice_library as voice_library
 from talemate.path import SCENES_DIR
+from talemate.emit import emit
 
 if TYPE_CHECKING:
     from talemate.agents.director import DirectorAgent
@@ -215,6 +217,57 @@ async def load_scene_from_character_card(scene, file_path):
         log.debug("base_attributes parsed", base_attributes=character.base_attributes)
     except Exception as e:
         log.warning("determine_character_attributes", error=e)
+
+    # Import attached lorebook entries from the character card (v2/v3)
+    # fmt: off
+    try:
+        loading_status("Importing lorebook...")
+        # Load raw card payload again to access extensions/lorebook
+        raw_card = None
+        try:
+            if file_ext == ".json":
+                with open(file_path, "r", encoding="utf-8") as f:
+                    raw_card = json.load(f)
+            else:
+                raw_card = extract_metadata(file_path, image_format)
+        except Exception as e:
+            log.warning("card_metadata.load_failed", error=e)
+            raw_card = None
+
+        if raw_card:
+            spec = identify_import_spec(raw_card)
+            # Normalize to v2/v3 data shape
+            card_root = raw_card.get("data", raw_card)
+            lore_entries = parse_lorebook_entries(card_root)
+            # Save debug info to scene agent_state for DevTools visibility
+            scene.agent_state.setdefault("card_import", {})
+            scene.agent_state["card_import"].update(
+                {
+                    "spec": str(spec.value if hasattr(spec, "value") else spec),
+                    "card_name": character.name,
+                    "lorebook_detected": bool(lore_entries),
+                    "lorebook_entries_count": len(lore_entries),
+                    "entries_preview": [
+                        {
+                            "name": e.get("name"),
+                            "keys": e.get("keys", []),
+                            "constant": e.get("constant", False),
+                            "enabled": e.get("enabled", True),
+                            "priority": e.get("priority"),
+                        }
+                        for e in lore_entries
+                    ],
+                    # Keep raw extensions only to avoid storing heavy/irrelevant data
+                    "raw_extensions": card_root.get("extensions", {}),
+                }
+            )
+
+            if lore_entries:
+                imported = await import_lorebook_entries(scene, character, lore_entries)
+                scene.agent_state["card_import"]["imports"] = imported
+    except Exception as e:
+        log.warning("lorebook.import_failed", error=e)
+    # fmt: on
 
     scene.description = character.description
 
@@ -816,3 +869,271 @@ def new_scene():
         "archived_history": [],
         "characters": [],
     }
+
+
+# --- Lorebook (Chara Card v2/v3) import helpers ---
+# fmt: off
+
+def _slugify(value: str) -> str:
+    value = (value or "").lower()
+    value = re.sub(r"[^a-z0-9]+", "-", value).strip("-")
+    return value or "entry"
+
+
+def _split_keys(keys) -> list[str]:
+    if not keys:
+        return []
+    if isinstance(keys, list):
+        result = []
+        for k in keys:
+            if isinstance(k, str):
+                result.extend(_split_keys(k))
+        return sorted({k for k in (s.strip() for s in result) if k})
+    # assume string
+    parts = re.split(r"[\n,;|]", keys)
+    return sorted({p.strip() for p in parts if p and p.strip()})
+
+
+def parse_lorebook_entries(card_root: dict) -> list[dict]:
+    """
+    Attempts to find and normalize lorebook entries in a Chara Card v2/v3 payload.
+
+    Returns a list of normalized entries with keys:
+    - name: str
+    - content: str
+    - keys: list[str]
+    - enabled: bool
+    - constant: bool
+    - selective: bool | None
+    - priority: int | None
+    """
+
+    def find_entries(node) -> list[dict] | None:
+        if not isinstance(node, dict):
+            return None
+        # direct entries list
+        if "entries" in node and isinstance(node["entries"], list):
+            return node["entries"]
+        # common containers
+        for key in ("lorebook", "book", "worldbook", "world_info", "worldinfo"):
+            if key in node:
+                sub = node[key]
+                if isinstance(sub, dict) and isinstance(sub.get("entries"), list):
+                    return sub["entries"]
+                if isinstance(sub, list):
+                    return sub
+        # search nested
+        for v in node.values():
+            if isinstance(v, dict):
+                found = find_entries(v)
+                if found:
+                    return found
+        return None
+
+    extensions = card_root.get("extensions", {})
+    raw_entries = find_entries(extensions) or []
+
+    normalized: list[dict] = []
+
+    for entry in raw_entries:
+        if not isinstance(entry, dict):
+            continue
+        content = entry.get("content") or entry.get("text") or ""
+        if not content:
+            continue
+        name = entry.get("name") or entry.get("id") or content[:24]
+        norm = {
+            "name": name,
+            "content": content,
+            "keys": _split_keys(entry.get("keys") or entry.get("trigger") or entry.get("key") or []),
+            "enabled": entry.get("enabled", True),
+            "constant": bool(entry.get("constant") or entry.get("always") or entry.get("persistent", False)),
+            "selective": entry.get("selective"),
+            "priority": entry.get("priority"),
+        }
+        normalized.append(norm)
+
+    return normalized
+
+
+async def import_lorebook_entries(
+    scene: Scene, character: Character, entries: list[dict]
+) -> list[dict]:
+    """
+    Imports normalized lorebook entries into the scene by evaluating them and placing
+    them as character details, world entries (manual context) or history entries.
+
+    Returns a list of import results with classification metadata.
+    """
+
+    from talemate.util.data import extract_data
+    from talemate.history import add_history_entry
+
+    wsm = scene.world_state_manager
+    world_agent = get_agent("world_state")
+
+    imported_debug: list[dict] = []
+
+    # Helper for unique world entry ids
+    used_ids = set(scene.world_state.manual_context.keys())
+
+    def make_world_id(base_name: str) -> str:
+        base = f"lorebook.{_slugify(character.name)}.{_slugify(base_name)}"
+        candidate = base
+        idx = 2
+        while candidate in used_ids:
+            candidate = f"{base}.{idx}"
+            idx += 1
+        used_ids.add(candidate)
+        return candidate
+
+    # Tally
+    tally = {"world": 0, "character": 0, "history": 0}
+
+    for idx, e in enumerate(entries):
+        try:
+            if e.get("enabled") is False:
+                continue
+            content = e.get("content", "").strip()
+            if not content:
+                continue
+
+            # Attempt LLM classification first
+            category = None
+            target_character = None
+            detail_name = None
+
+            try:
+                instruction = (
+                    "Classify the following lore entry strictly as JSON with keys: "
+                    "category (one of: world, character, history), "
+                    "character (if category=character, pick the single most relevant character name from this list: "
+                    f"{scene.all_character_names}; otherwise null), "
+                    "detail (if category=character, suggest a short snake_case key to store this under; otherwise null). "
+                    "Respond with only a JSON object."
+                )
+                response = await world_agent.analyze_and_follow_instruction(
+                    text=content, instruction=instruction, short=True
+                )
+                data_candidates = extract_data(response, "json")
+                if data_candidates:
+                    data = data_candidates[0]
+                    category = (data.get("category") or "").strip().lower() or None
+                    target_character = data.get("character") or None
+                    detail_name = data.get("detail") or None
+            except Exception as ex:
+                log.debug("lorebook.classify_llm_failed", error=ex)
+
+            # Fallback heuristics
+            if not category:
+                lowered = content.lower()
+                # character mention heuristic
+                for nm in scene.all_character_names:
+                    if not nm:
+                        continue
+                    if nm.lower() in lowered:
+                        category = "character"
+                        target_character = nm
+                        break
+                # history heuristic
+                if not category:
+                    if any(k in lowered for k in [
+                        "years ago",
+                        "long ago",
+                        "ancient",
+                        "centur",
+                        "era",
+                        "historic",
+                        "history",
+                        "legend",
+                        "past",
+                    ]):
+                        category = "history"
+                # default world
+                if not category:
+                    category = "world"
+
+            # Normalize target character if character category
+            if category == "character":
+                if not target_character or target_character not in scene.all_character_names:
+                    target_character = character.name
+                if not detail_name:
+                    detail_name = f"lore_{_slugify(e.get('name') or f'entry_{idx+1}')}"
+
+                await wsm.update_character_detail(target_character, detail_name, content)
+                imported_debug.append(
+                    {
+                        "entry": e.get("name"),
+                        "category": category,
+                        "character": target_character,
+                        "detail": detail_name,
+                    }
+                )
+                tally["character"] += 1
+                continue
+
+            # History entries
+            if category == "history":
+                try:
+                    await add_history_entry(scene, content, "PT0S")
+                    imported_debug.append(
+                        {"entry": e.get("name"), "category": category, "ts": "PT0S"}
+                    )
+                    tally["history"] += 1
+                    continue
+                except Exception as ex:
+                    log.debug("lorebook.add_history_failed", error=ex)
+                    # Fall back to world entry if adding to history fails
+
+            # World/manual context entries
+            entry_id = make_world_id(e.get("name") or f"entry_{idx+1}")
+            meta = {
+                "typ": "world_state",
+                "source": "lorebook",
+                "keys": e.get("keys", []),
+                "constant": e.get("constant", False),
+                "selective": e.get("selective"),
+                "priority": e.get("priority"),
+                "card_name": character.name,
+                "entry_name": e.get("name"),
+            }
+            await wsm.update_context_db_entry(entry_id, content, meta)
+            # Auto-pin constant entries
+            if e.get("constant"):
+                await wsm.set_pin(entry_id, active=True)
+            imported_debug.append(
+                {
+                    "entry": e.get("name"),
+                    "category": "world",
+                    "entry_id": entry_id,
+                    "pinned": bool(e.get("constant")),
+                }
+            )
+            tally["world"] += 1
+        except Exception as ex:
+            log.warning("lorebook.import_entry_failed", error=ex, entry=e)
+            continue
+
+    log.info(
+        "lorebook.imported",
+        character=character.name,
+        tally=tally,
+        count=sum(tally.values()),
+    )
+
+    # Notify frontend (debug) and refresh
+    try:
+        emit(
+            "lore_imported",
+            message=f"Imported {sum(tally.values())} lore entries",
+            data={"tally": tally, "character": character.name},
+            websocket_passthrough=True,
+        )
+    except Exception:
+        pass
+
+    # Emit after bulk import so UI can refresh
+    scene.world_state.emit()
+
+    return imported_debug
+# fmt: on
