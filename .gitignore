@@ -32,3 +32,10 @@ scenes/
 tts_voice_samples/*.wav
 third-party-docs/
 legacy-state-reinforcements.yaml
+embedded_python/**/*
+embedded_node/**/*
+*.zip
+.vs/**/*
+.vscode/**/*
+package-lock.json
+tempCodeRunnerFile.bat
