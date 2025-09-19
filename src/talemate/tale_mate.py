@@ -111,10 +111,7 @@ class Scene(Emitter):
 
     @classmethod
     def scenes_dir(cls):
-        """
-        Returns the absolute path to the directory where scenes are stored.
-        This method calculates the path relative to the current file location.
-        """
+        """Returns the absolute path to the scenes directory."""
         relative_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "..",
@@ -208,18 +205,12 @@ class Scene(Emitter):
 
     @property
     def config(self) -> Config:
-        """
-        Returns the current configuration for the scene.
-        This property provides access to the global configuration object used by the scene.
-        """
+        """Returns the current configuration for the scene."""
         return get_config()
 
     @property
     def main_character(self) -> Actor | None:
-        """
-        Returns the main character's actor for the scene if available.
-        This property provides access to the actor associated with the player character, or None if not present.
-        """
+        """Returns the main character's actor for the scene if available."""
         try:
             return self.get_player_character().actor
         except AttributeError:
