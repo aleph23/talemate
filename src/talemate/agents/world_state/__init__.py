@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import time
+import re
 from typing import TYPE_CHECKING
 
 import isodate
@@ -155,6 +156,10 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         talemate.emit.async_signals.get("scene_loop_init_after").connect(
             self.on_scene_loop_init_after
         )
+        # Listen for new messages to trigger lorebook keyword pins
+        talemate.emit.async_signals.get("game_loop_new_message").connect(
+            self.on_game_loop_new_message
+        )
 
     async def advance_time(self, duration: str, narrative: str = None):
         """
@@ -207,6 +212,81 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         await self.update_world_state()
         await self.auto_update_reinforcments()
         await self.auto_check_pin_conditions()
+
+    # fmt: off
+    async def on_game_loop_new_message(self, emission):
+        """
+        Trigger lorebook pins based on keyword matches in new messages.
+        """
+        try:
+            message_obj = getattr(emission, "message", None)
+            if not message_obj:
+                return
+            text = getattr(message_obj, "message", None) or str(message_obj)
+            text_lower = text.lower()
+            if not text_lower:
+                return
+
+            wsm = self.scene.world_state_manager
+            pins_changed = False
+            triggered = []
+
+            for entry_id, manual in self.scene.world_state.manual_context.items():
+                meta = manual.meta or {}
+                if meta.get("source") != "lorebook":
+                    continue
+                keys = meta.get("keys", []) or []
+                is_constant = bool(meta.get("constant", False))
+
+                if is_constant:
+                    # Ensure constant entries are always pinned
+                    pin = self.scene.world_state.pins.get(entry_id)
+                    if not pin or not pin.active:
+                        await wsm.set_pin(entry_id, active=True)
+                        pins_changed = True
+                        triggered.append(
+                            {
+                                "entry_id": entry_id,
+                                "keys": keys,
+                                "reason": "constant",
+                            }
+                        )
+                    continue
+
+                # Keyword-triggered entries
+                for key in keys:
+                    if not key:
+                        continue
+                    try:
+                        # word-boundary search, fallback to substring for multi-word keys
+                        key_lower = key.lower()
+                        pattern = re.compile(r"\\b" + re.escape(key_lower) + r"\\b")
+                        if pattern.search(text_lower) or key_lower in text_lower:
+                            await wsm.set_pin(entry_id, active=True)
+                            pins_changed = True
+                            triggered.append(
+                                {
+                                    "entry_id": entry_id,
+                                    "keys": keys,
+                                    "match": key,
+                                }
+                            )
+                            break
+                    except Exception:
+                        continue
+
+            if pins_changed:
+                self.scene.world_state.emit()
+                # Also emit a debug/transparent event for the frontend
+                emit(
+                    "lore_triggered",
+                    message=f"Triggered {len(triggered)} lore entries",
+                    data={"entries": triggered},
+                    websocket_passthrough=True,
+                )
+        except Exception as e:
+            log.debug("world_state.on_game_loop_new_message", error=e)
+    # fmt: on
 
     async def auto_update_reinforcments(self):
         if not self.enabled:

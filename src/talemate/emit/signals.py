@@ -12,6 +12,10 @@ ReinforcementMessage = signal("reinforcement")
 PlayerChoiceMessage = signal("player_choice")
 ContextInvestigationMessage = signal("context_investigation")
 
+# Lore import/triggering (debug/visibility)
+LoreImported = signal("lore_imported")
+LoreTriggered = signal("lore_triggered")
+
 ClearScreen = signal("clear_screen")
 
 RequestInput = signal("request_input")
@@ -86,4 +90,6 @@ handlers = {
     "player_choice": PlayerChoiceMessage,
     "world_state_manager": WorldSateManager,
     "talemate_started": TalemateStarted,
+    "lore_imported": LoreImported,
+    "lore_triggered": LoreTriggered,
 }
