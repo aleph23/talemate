@@ -43,10 +43,7 @@ v{VERSION}
 
 
 async def install_punkt():
-    """
-    Downloads the NLTK punkt tokenizer data required for text processing.
-    This asynchronous function ensures the necessary NLTK resources are available for the application.
-    """
+    """Downloads the NLTK punkt tokenizer data for text processing."""
     import nltk
 
     log.info("Downloading NLTK punkt tokenizer")
