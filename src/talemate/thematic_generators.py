@@ -852,6 +852,17 @@ actor_name_colors = COLORS.copy()
 
 
 class ThematicGenerator:
+    """
+    ThematicGenerator generates random names and attributes based on various thematic lists.
+    It provides methods to create names, colors, and other attributes for use in creative applications.
+
+    The generator supports custom lists and can be seeded for reproducible results.
+    """
+
+    def __init__(self, seed: int = None):
+        self.seed = seed
+        self.custom_lists = {}
+
     def __init__(self, seed: int = None):
         self.seed = seed
         self.custom_lists = {}
