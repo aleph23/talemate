@@ -77,6 +77,10 @@ class WebsocketHandler(Receiver):
         return get_config()
 
     def set_agent_routers(self):
+        """
+        Sets up websocket handler routes for all agents that provide a websocket handler.
+        This method dynamically adds agent-specific websocket handlers to the routes dictionary.
+        """
         for agent_type, agent in instance.AGENTS.items():
             handler_cls = getattr(agent, "websocket_handler", None)
             if not handler_cls or handler_cls.router in self.routes:
@@ -166,6 +170,10 @@ class WebsocketHandler(Receiver):
         loop.call_soon_threadsafe(lambda: self.out_queue.put_nowait(data))
 
     def handle(self, emission: Emission):
+        """
+        Handles an emission by processing it or passing it through to the websocket if needed.
+        This method ensures that emissions are routed appropriately, including passthrough for websocket messages.
+        """
         called = super().handle(emission)
 
         if called is False and emission.websocket_passthrough:
@@ -186,6 +194,10 @@ class WebsocketHandler(Receiver):
                 log.error("emission passthrough", error=traceback.format_exc())
 
     def handle_system(self, emission: Emission):
+        """
+        Handles system-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for system messages.
+        """
         self.queue_put(
             {
                 "type": "system",
@@ -198,6 +210,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_status(self, emission: Emission):
+        """
+        Handles status-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for status messages.
+        """
         self.queue_put(
             {
                 "type": "status",
@@ -209,6 +225,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_narrator(self, emission: Emission):
+        """
+        Handles narrator-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for narrator messages.
+        """
         self.queue_put(
             {
                 "type": "narrator",
@@ -222,6 +242,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_director(self, emission: Emission):
+        """
+        Handles director-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for director messages, including action and direction mode.
+        """
         character = emission.message_object.character_name
         director = instance.get_agent("director")
         direction_mode = director.actor_direction_mode
@@ -243,6 +267,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_character(self, emission: Emission):
+        """
+        Handles character-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for character messages, including character name and color.
+        """
         self.queue_put(
             {
                 "type": "character",
@@ -257,6 +285,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_time(self, emission: Emission):
+        """
+        Handles time-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for time messages, including timestamp and flags.
+        """
         self.queue_put(
             {
                 "type": "time",
