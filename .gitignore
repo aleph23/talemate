@@ -39,3 +39,4 @@ embedded_python/**/*
 embedded_node/**/*
 /.vs/**/*
 /tempCodeRunnerFile.bat
+*.wav
