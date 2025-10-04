@@ -18,6 +18,7 @@ class Plugin:
 
     @property
     def scene(self) -> "Scene | None":
+        """Get the current scene from the websocket handler."""
         return self.websocket_handler.scene
 
     def __init__(self, websocket_handler):
@@ -25,9 +26,11 @@ class Plugin:
         self.connect()
 
     def connect(self):
+        """Establish a connection."""
         pass
 
     def disconnect(self):
+        """Disconnects the current session."""
         pass
 
     async def signal_operation_failed(self, message: str, emit_status: bool = True):
@@ -44,6 +47,7 @@ class Plugin:
     async def signal_operation_done(
         self, signal_only: bool = False, allow_auto_save: bool = True
     ):
+        """Signals that an operation is done and handles auto-saving if applicable."""
         self.websocket_handler.queue_put(
             {"type": self.router, "action": "operation_done", "data": {}}
         )
@@ -58,6 +62,7 @@ class Plugin:
             self.scene.emit_status()
 
     async def handle(self, data: dict):
+        """Handles an action based on the provided data."""
         log.info(f"{self.router} action", action=data.get("action"))
         fn = getattr(self, f"handle_{data.get('action')}", None)
         if fn is None:
