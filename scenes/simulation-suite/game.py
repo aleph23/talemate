@@ -1,4 +1,5 @@
 def game(TM):
+    """Runs the simulation suite."""
     MSG_PROCESSED_INSTRUCTIONS = "Simulation suite processed instructions"
 
     MSG_HELP = 'Instructions to the simulation computer are only processed if the computer is directly addressed at the beginning of the instruction. Please state your commands by addressing the computer by stating "Computer," followed by an instruction. For example ... "Computer, i want to experience being on a derelict spaceship."'
@@ -14,16 +15,8 @@ def game(TM):
     AUTO_NARRATE_INTERVAL = 10
 
     def parse_sim_call_arguments(call: str) -> str:
-        """
-        Returns the value between the parentheses of a simulation call
 
-        Example:
-
-        call = 'change_environment("a house")'
-
-        parse_sim_call_arguments(call) -> "a house"
-        """
-
+        """Extracts the value between the parentheses of a simulation call."""
         try:
             return call.split("(", 1)[1].split(")")[0]
         except Exception:
@@ -60,10 +53,8 @@ def game(TM):
             )
 
         def run(self):
-            """
-            Main entry point for the simulation suite
-            """
 
+            """Main entry point for the simulation suite."""
             if not TM.game_state.has_var("instr.simulation_stopped"):
                 # simulation is still running
                 self.simulation()
@@ -71,10 +62,8 @@ def game(TM):
             self.finalize_round()
 
         def simulation(self):
-            """
-            Simulation suite logic
-            """
 
+            """Runs the simulation suite logic."""
             if not TM.game_state.has_var("instr.simulation_started"):
                 self.startup()
             else:
@@ -84,11 +73,9 @@ def game(TM):
                 self.run_update_world_state(force=True)
 
         def startup(self):
-            """
-            Scene startup logic
-            """
 
             # we are at the beginning of the simulation
+            """Initialize the simulation startup process."""
             TM.signals.status(
                 "busy", "Simulation suite powering up.", as_scene_message=True
             )
@@ -215,10 +202,8 @@ def game(TM):
             self.set_simulation_title(compiled)
 
         def set_simulation_title(self, compiled_calls):
-            """
-            Generates a fitting title for the simulation based on the user's instructions
-            """
 
+            """Generates a fitting title for the simulation based on user instructions."""
             TM.log.debug(
                 "SIMULATION SUITE: set simulation title",
                 name=TM.scene.title,
@@ -274,18 +259,8 @@ def game(TM):
             return calls
 
         def process_call(self, call: str) -> str:
-            """
-            Processes a simulation call
 
-            Simulation alls are pseudo functions that are called by the simulation suite
-
-            We grab the function name by splitting against ( and taking the first element
-            if the SimulationSuite has a method with the name _call_{function_name} then we call it
-
-            if a function name could be found but we do not have a method to call we dont do anything
-            but we still return it as procssed as the AI can still interpret it as something later on
-            """
-
+            """Processes a simulation call."""
             if "(" not in call:
                 return None
 
@@ -303,9 +278,7 @@ def game(TM):
             return call
 
         def call_set_simulation_goal(self, call: str, inject: str) -> str:
-            """
-            Set's the simulation goal as a permanent pin
-            """
+            """Sets the simulation goal as a permanent pin."""
             TM.signals.status(
                 "busy", "Simulation suite setting goal.", as_scene_message=True
             )
@@ -321,11 +294,8 @@ def game(TM):
             return call
 
         def call_change_environment(self, call: str, inject: str) -> str:
-            """
-            Simulation changes the environment, this is entirely interpreted by the AI
-            and we dont need to do any logic on our end, so we just return the call
-            """
 
+            """Logs an action and returns the call string."""
             TM.agents.director.log_action(
                 action=parse_sim_call_arguments(call),
                 action_description="The computer changes the environment of the simulation.",
@@ -334,11 +304,8 @@ def game(TM):
             return call
 
         def call_answer_question(self, call: str, inject: str) -> str:
-            """
-            The player asked the simulation a query, we need to process this and have
-            the AI produce an answer
-            """
 
+            """Processes a player's query and generates an AI response."""
             TM.agents.narrator.action_to_narration(
                 action_name="progress_story",
                 narrative_direction=f"The computer calls the following function:\n\n{call}\n\nand answers the player's question.",
@@ -346,10 +313,8 @@ def game(TM):
             )
 
         def call_set_player_persona(self, call: str, inject: str) -> str:
-            """
-            The simulation suite is altering the player persona
-            """
 
+            """Alters the player persona in the simulation suite."""
             player_character = TM.scene.get_player_character()
 
             TM.signals.status(
@@ -386,9 +351,7 @@ def game(TM):
             return call
 
         def call_set_player_name(self, call: str, inject: str) -> str:
-            """
-            The simulation suite is altering the player name
-            """
+            """Adjusts the player character's name based on provided instructions."""
             player_character = TM.scene.get_player_character()
 
             TM.signals.status(
@@ -413,6 +376,7 @@ def game(TM):
         def call_add_ai_character(self, call: str, inject: str) -> str:
             # sometimes the AI will call this function an pass an inanimate object as the parameter
             # we need to determine if this is the case and just ignore it
+            """Processes the addition of an AI character to the simulation."""
             is_inanimate = TM.agents.world_state.answer_query_true_or_false(
                 f"does the function `{call}` add an inanimate object, concept or abstract idea? (ANYTHING THAT IS NOT A CHARACTER THAT COULD BE PORTRAYED BY AN ACTOR)",
                 call,
@@ -509,6 +473,7 @@ def game(TM):
         ####
 
         def call_remove_ai_character(self, call: str, inject: str) -> str:
+            """Removes a character from the simulation based on the provided name."""
             TM.signals.status(
                 "busy", "Simulation suite removing character.", as_scene_message=True
             )
@@ -591,6 +556,7 @@ def game(TM):
             return call
 
         def call_end_simulation(self, call: str, inject: str) -> str:
+            """Ends the current simulation if the player has explicitly requested it."""
             player_character = TM.scene.get_player_character()
 
             explicit_command = TM.agents.world_state.answer_query_true_or_false(
@@ -624,6 +590,17 @@ def game(TM):
 
         def finalize_round(self):
             # track rounds
+            """Finalize the current round in the game state.
+            
+            This function tracks and updates the number of rounds in the game, processes
+            player messages, and manages the game state accordingly. It checks if the world
+            state needs to be updated and handles various scenarios based on the player's
+            messages, including issuing instructions, guiding the player, or narrating the
+            round based on specific conditions.
+            
+            Args:
+                self: The instance of the class that contains the game state and related methods.
+            """
             rounds = TM.game_state.get_var("instr.rounds", 0)
 
             # increase rounds
@@ -664,6 +641,7 @@ def game(TM):
                 self.narrate_round()
 
         def guide_player(self):
+            """Guides the player by providing help narration."""
             TM.agents.narrator.action_to_narration(
                 action_name="paraphrase", narration=MSG_HELP, emit_message=True
             )
@@ -676,6 +654,7 @@ def game(TM):
             )
 
         def run_update_world_state(self, force=False):
+            """Update the world state in the simulation suite."""
             TM.log.debug("SIMULATION SUITE: update world state", force=force)
             TM.signals.status(
                 "busy", "Simulation suite updating world state.", as_scene_message=True
