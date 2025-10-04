@@ -21,10 +21,8 @@ log = structlog.get_logger("talemate.client.presets")
 
 
 def get_inference_parameters(preset_name: str, group: str | None = None) -> dict:
-    """
-    Returns the inference parameters for the given preset name.
-    """
 
+    """Retrieve inference parameters for a specified preset name."""
     config = get_config()
 
     presets = config.presets.inference.model_dump()
@@ -45,9 +43,7 @@ def get_inference_parameters(preset_name: str, group: str | None = None) -> dict
 
 
 def configure(parameters: dict, kind: str, total_budget: int, client: "ClientBase"):
-    """
-    Sets the config based on the kind of text to generate.
-    """
+    """Sets the configuration parameters based on the kind of text to generate."""
     set_preset(parameters, kind, client)
     set_max_tokens(parameters, kind, total_budget)
 
@@ -63,9 +59,7 @@ def set_max_tokens(parameters: dict, kind: str, total_budget: int):
 
 
 def set_preset(parameters: dict, kind: str, client: "ClientBase"):
-    """
-    Sets the preset in the config based on the kind of text to generate.
-    """
+    """Sets the preset in the parameters based on the kind of text to generate."""
     parameters.update(preset_for_kind(kind, client))
 
 
@@ -106,6 +100,18 @@ PRESET_MAPPING = {
 def preset_for_kind(kind: str, client: "ClientBase") -> dict:
     # Check the substrings first(based on order of the original elifs)
 
+    """def preset_for_kind(kind: str, client: "ClientBase") -> dict:
+    Retrieve the inference preset based on the specified kind.  This function
+    checks for a preset name corresponding to the provided  kind by first looking
+    it up in the PRESET_MAPPING. If no direct match  is found, it iterates through
+    the PRESET_SUBSTRING_MAPPINGS to find  a suitable substring match. If still no
+    preset is identified, it  defaults to 'scene_direction' and logs a warning.
+    Finally, it sets  the client context attribute and retrieves the inference
+    parameters  associated with the determined preset name.
+    
+    Args:
+        kind (str): The kind for which the preset is to be retrieved.
+        client (ClientBase): The client instance used to access preset group."""
     preset_name = None
 
     preset_name = PRESET_MAPPING.get(kind)
@@ -164,6 +170,14 @@ TOKEN_SUBSTRING_MAPPINGS = {
 
 
 def max_tokens_for_kind(kind: str, total_budget: int) -> int:
+    """def max_tokens_for_kind(kind: str, total_budget: int) -> int:
+    Determine the maximum tokens allowed for a given kind.  This function retrieves
+    the token value associated with the specified  kind from the TOKEN_MAPPING. If
+    the value is callable, it invokes the  function with total_budget. If no exact
+    match is found, it checks for  substrings in TOKEN_SUBSTRING_MAPPINGS. If a
+    match is found, it returns  the corresponding value. Additionally, it attempts
+    to extract a number  from the end of the kind string if no matches are found,
+    defaulting to  150 if all checks fail."""
     token_value = TOKEN_MAPPING.get(kind)
     if callable(token_value):
         return token_value(total_budget)
@@ -184,10 +198,8 @@ def max_tokens_for_kind(kind: str, total_budget: int) -> int:
 
 
 def make_kind(action_type: str, length: int, expect_json: bool = False) -> str:
-    """
-    Creates a kind string based on the preset_arch_type and length.
-    """
 
+    """Creates a kind string based on action_type and length."""
     if action_type == "analyze" and not expect_json:
         kind = "investigate"
     else:

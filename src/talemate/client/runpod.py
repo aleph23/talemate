@@ -22,6 +22,7 @@ TEXTGEN_IDENTIFIERS = ["textgen", "thebloke llms", "text-generation-webui"]
 
 
 def is_textgen_pod(pod):
+    """Check if the given pod is a text generation pod."""
     name = pod["name"].lower()
 
     if any(identifier in name for identifier in TEXTGEN_IDENTIFIERS):
@@ -31,9 +32,7 @@ def is_textgen_pod(pod):
 
 
 async def _async_get_pods():
-    """
-    asyncio wrapper around get_pods.
-    """
+    """Asynchronously retrieves pods using runpod API."""
     runpod.api_key = get_config().runpod.api_key
 
     loop = asyncio.get_event_loop()
@@ -41,8 +40,14 @@ async def _async_get_pods():
 
 
 async def get_textgen_pods():
-    """
-    Return a list of text generation pods.
+    """Return a list of text generation pods.
+    
+    This asynchronous function retrieves text generation pods from the  runpod
+    service. It first sets the API key using the configuration  obtained from
+    `get_config()`. If the API key is not available, the  function exits early. It
+    then iterates through the pods obtained  from `_async_get_pods()`, yielding
+    only those pods that are in  the "RUNNING" state and identified as text
+    generation pods by  the `is_textgen_pod()` function.
     """
     runpod.api_key = get_config().runpod.api_key
 
@@ -57,10 +62,15 @@ async def get_textgen_pods():
 
 
 async def get_automatic1111_pods():
-    """
-    Return a list of automatic1111 pods.
-    """
 
+    """Return a list of automatic1111 pods.
+    
+    This asynchronous function retrieves pods from the runpod service.  It first
+    checks for a valid API key from the configuration. If the  API key is not
+    present, the function exits early. The function then  iterates through the
+    retrieved pods, yielding only those that are  in the "RUNNING" state and
+    contain "automatic1111" in their name.
+    """
     runpod.api_key = get_config().runpod.api_key
 
     if not runpod.api_key:
@@ -96,8 +106,14 @@ def _client_bootstrap(client_type: ClientType, pod):
 
 @register_list("runpod")
 async def client_bootstrap_list():
-    """
-    Return a list of client bootstrap options.
+    """Return a list of client bootstrap options.
+    
+    This function asynchronously retrieves client bootstrap options from two
+    different sources: text generation pods and automatic1111 pods. It first
+    collects the pods from each source using the `get_textgen_pods` and
+    `get_automatic1111_pods` functions. Then, it yields the bootstrap options  for
+    each pod by calling the `_client_bootstrap` function with the appropriate
+    `ClientType`.
     """
     textgen_pods = []
     async for pod in get_textgen_pods():
