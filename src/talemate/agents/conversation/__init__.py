@@ -76,6 +76,7 @@ class ConversationAgent(MemoryRAGMixin, Agent):
 
     @classmethod
     def init_actions(cls) -> dict[str, AgentAction]:
+        """Initialize and return a dictionary of agent actions."""
         actions = {
             "generation_override": AgentAction(
                 enabled=True,
@@ -186,12 +187,14 @@ class ConversationAgent(MemoryRAGMixin, Agent):
 
     @property
     def conversation_format(self):
+        """Get the conversation format based on the generation override setting."""
         if self.actions["generation_override"].enabled:
             return self.actions["generation_override"].config["format"].value
         return "movie_script"
 
     @property
     def conversation_format_label(self):
+        """Get the label for the conversation format."""
         value = self.conversation_format
 
         choices = self.actions["generation_override"].config["format"].choices
@@ -225,10 +228,12 @@ class ConversationAgent(MemoryRAGMixin, Agent):
 
     @property
     def generation_settings_actor_instructions(self):
+        """Get the actor instructions from the generation settings."""
         return self.actions["generation_override"].config["actor_instructions"].value
 
     @property
     def generation_settings_actor_instructions_offset(self):
+        """Gets the actor instructions offset from generation settings."""
         return (
             self.actions["generation_override"]
             .config["actor_instructions_offset"]
@@ -237,10 +242,12 @@ class ConversationAgent(MemoryRAGMixin, Agent):
 
     @property
     def generation_settings_response_length(self):
+        """Get the response length from generation settings."""
         return self.actions["generation_override"].config["length"].value
 
     @property
     def generation_settings_override_enabled(self):
+        """Indicates if generation settings override is enabled."""
         return self.actions["generation_override"].enabled
 
     @property
@@ -256,12 +263,17 @@ class ConversationAgent(MemoryRAGMixin, Agent):
         char_message: Optional[str] = "",
         instruction: Optional[str] = None,
     ):
-        """
-        Builds the prompt that drives the AI's conversational response
-        """
         # the amount of tokens we can use
         # we subtract 200 to account for the response
 
+        """Builds the prompt that drives the AI's conversational response.
+        
+        This function constructs a dialogue prompt based on the provided character and
+        their context within a scene.  It calculates the token budget, retrieves the
+        scene and dialogue history, and formats character names for the prompt.
+        Additionally, it handles dynamic instructions and prepares the prompt using
+        various settings and parameters related to the conversation.
+        """
         scene = character.actor.scene
 
         total_token_budget = self.client.max_token_length - 200
@@ -344,11 +356,13 @@ class ConversationAgent(MemoryRAGMixin, Agent):
     async def build_prompt(
         self, character, char_message: str = "", instruction: str = None
     ):
+        """Builds a prompt using the default method."""
         fn = self.build_prompt_default
 
         return await fn(character, char_message=char_message, instruction=instruction)
 
     def clean_result(self, result, character):
+        """Cleans the result string by removing specific patterns and formatting."""
         if "#" in result:
             result = result.split("#")[0]
 
@@ -363,6 +377,7 @@ class ConversationAgent(MemoryRAGMixin, Agent):
         return result
 
     def set_generation_overrides(self):
+        """Sets generation overrides based on the current configuration."""
         if not self.actions["generation_override"].enabled:
             return
 
@@ -514,11 +529,13 @@ class ConversationAgent(MemoryRAGMixin, Agent):
     def allow_repetition_break(
         self, kind: str, agent_function_name: str, auto: bool = False
     ):
+        """Check if repetition is allowed based on the agent function name."""
         return agent_function_name == "converse"
 
     def inject_prompt_paramters(
         self, prompt_param: dict, kind: str, agent_function_name: str
     ):
+        """Injects default values into the prompt parameters."""
         if prompt_param.get("extra_stopping_strings") is None:
             prompt_param["extra_stopping_strings"] = []
         prompt_param["extra_stopping_strings"] += ["#"]

@@ -20,4 +20,5 @@ class register:
 
 
 def get_client_class(name):
+    """Retrieve the client class associated with the given name."""
     return CLIENT_CLASSES.get(name)
