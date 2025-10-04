@@ -74,6 +74,7 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
 
     @classmethod
     def init_actions(cls) -> dict[str, AgentAction]:
+        """Initialize and return a dictionary of agent actions."""
         actions = {
             "update_world_state": AgentAction(
                 enabled=True,
@@ -135,10 +136,12 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
 
     @property
     def enabled(self):
+        """Returns the status of the is_enabled property."""
         return self.is_enabled
 
     @property
     def has_toggle(self):
+        """Indicates if the toggle is available."""
         return True
 
     @property
@@ -150,6 +153,7 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         return self.actions["update_world_state"].config["initial"].value
 
     def connect(self, scene):
+        """Connects the game and scene loops to their respective handlers."""
         super().connect(scene)
         talemate.emit.async_signals.get("game_loop").connect(self.on_game_loop)
         talemate.emit.async_signals.get("scene_loop_init_after").connect(
@@ -157,10 +161,8 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         )
 
     async def advance_time(self, duration: str, narrative: str = None):
-        """
-        Emit a time passage message
-        """
 
+        """Emit a time passage message."""
         isodate.parse_duration(duration)
         human_duration = util.iso8601_duration_to_human(duration, suffix=" later")
         message = TimePassageMessage(ts=duration, message=human_duration)
@@ -181,9 +183,7 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         )
 
     async def on_scene_loop_init_after(self, emission):
-        """
-        Called when a scene is initialized
-        """
+        """Handles actions after a scene is initialized."""
         if not self.enabled:
             return
 
@@ -209,6 +209,7 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         await self.auto_check_pin_conditions()
 
     async def auto_update_reinforcments(self):
+        """Automatically updates reinforcements if enabled."""
         if not self.enabled:
             return
 
@@ -265,6 +266,7 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
 
     @set_processing
     async def request_world_state(self):
+        """Requests the current world state asynchronously."""
         t1 = time.time()
 
         _, world_state = await Prompt.request(
@@ -294,6 +296,7 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         response_length=1024,
         num_queries=1,
     ):
+        """Analyze text and extract context based on the given parameters."""
         response = await Prompt.request(
             "world_state.analyze-text-and-extract-context",
             self.client,
@@ -324,6 +327,18 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         response_length=1024,
         num_queries=1,
     ) -> list[str]:
+        """Analyze text and extract context via queries.
+        
+        Args:
+            text (str): The input text to analyze.
+            goal (str): The goal for the analysis.
+            include_character_context (bool?): Whether to include character context. Defaults to False.
+            response_length: The length of the response. Defaults to 1024.
+            num_queries: The number of queries to generate. Defaults to 1.
+        
+        Returns:
+            list[str]: The extracted context.
+        """
         response = await Prompt.request(
             "world_state.analyze-text-and-generate-rag-queries",
             self.client,
@@ -362,6 +377,13 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         instruction: str,
         short: bool = False,
     ):
+        """Analyze the given text and follow the specified instruction.
+        
+        Args:
+            text (str): The text to analyze.
+            instruction (str): The instruction to follow.
+            short (bool?): Flag to determine the analysis type. Defaults to False.
+        """
         kind = "analyze_freeform_short" if short else "analyze_freeform"
 
         response = await Prompt.request(
@@ -392,6 +414,13 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         query: str,
         response_length: int = 512,
     ):
+        """Analyze the given text and answer the specified question asynchronously.
+        
+        Args:
+            text (str): The text to analyze.
+            query (str): The question to answer based on the text.
+            response_length (int?): The desired length of the response. Defaults to 512.
+        """
         kind = f"investigate_{response_length}"
         response = await Prompt.request(
             "world_state.analyze-text-and-answer-question",
@@ -422,11 +451,9 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         analysis: str = "",
         response_length: int = 512,
     ) -> str:
-        """
-        Takes a list of archived_history or layered_history entries
-        and follows the instructions to generate a response.
-        """
 
+        """Generates a response based on archived or layered history entries and
+        instructions."""
         response = await Prompt.request(
             "world_state.analyze-history-and-follow-instructions",
             self.client,
@@ -449,6 +476,7 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         query: str,
         text: str,
     ) -> bool:
+        """Determines if the answer to a query is true or false."""
         query = f"{query} Answer with a yes or no."
         response = await self.analyze_text_and_answer_question(
             query=query, text=text, response_length=10
@@ -460,10 +488,8 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         self,
         text: str = None,
     ):
-        """
-        Attempts to identify characters in the given text.
-        """
 
+        """Identifies characters in the given text."""
         _, data = await Prompt.request(
             "world_state.identify-characters",
             self.client,
@@ -480,6 +506,7 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         return data
 
     def _parse_character_sheet(self, response) -> dict[str, str]:
+        """Parse a character sheet from the given response string."""
         data = {}
         for line in response.split("\n"):
             if not line.strip():
@@ -499,10 +526,8 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
         alteration_instructions: str = None,
         augmentation_instructions: str = None,
     ) -> dict[str, str]:
-        """
-        Attempts to extract a character sheet from the given text.
-        """
 
+        """Extracts a character sheet from the given text."""
         response = await Prompt.request(
             "world_state.extract-character-sheet",
             self.client,
@@ -642,10 +667,17 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
     async def check_pin_conditions(
         self,
     ):
-        """
-        Checks if any context pin conditions
-        """
 
+        """Check and update the state of pins based on their conditions.
+        
+        This function retrieves the current conditions of pins from the world state and
+        analyzes them using an external prompt. It updates the condition state and
+        active status of each pin based on the analysis results. If any state changes
+        occur, it triggers a reload of active pins and emits the updated status.
+        
+        Args:
+            self: The instance of the class containing the scene and client attributes.
+        """
         pins_with_condition = {
             entry_id: {
                 "condition": pin.condition,
@@ -709,11 +741,8 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
 
     @set_processing
     async def summarize_and_pin(self, message_id: int, num_messages: int = 3) -> str:
-        """
-        Will take a message index and then walk back N messages
-        summarizing the scene and pinning it to the context.
-        """
 
+        """Summarizes a scene and pins it to the context based on a message index."""
         creator = get_agent("creator")
         summarizer = get_agent("summarizer")
 
@@ -764,14 +793,8 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
 
     @set_processing
     async def is_character_present(self, character: str) -> bool:
-        """
-        Check if a character is present in the scene
 
-        Arguments:
-
-        - `character`: The character to check.
-        """
-
+        """Check if a character is present and active in the current scene."""
         if len(self.scene.history) < 10:
             text = self.scene.intro + "\n\n" + self.scene.snapshot(lines=50)
         else:
@@ -787,14 +810,8 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
 
     @set_processing
     async def is_character_leaving(self, character: str) -> bool:
-        """
-        Check if a character is leaving the scene
 
-        Arguments:
-
-        - `character`: The character to check.
-        """
-
+        """Check if a character is leaving the current scene."""
         if len(self.scene.history) < 10:
             text = self.scene.intro + "\n\n" + self.scene.snapshot(lines=50)
         else:
@@ -810,10 +827,8 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
 
     @set_processing
     async def manager(self, action_name: str, *args, **kwargs):
-        """
-        Executes a world state manager action through self.scene.world_state_manager
-        """
 
+        """Executes a specified action on the world state manager."""
         manager = self.scene.world_state_manager
 
         try:

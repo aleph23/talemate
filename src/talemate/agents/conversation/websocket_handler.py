@@ -35,12 +35,19 @@ class ConversationWebsocketHandler(Plugin):
 
     @property
     def agent(self) -> "ConversationAgent":
+        """Returns the conversation agent."""
         return get_agent("conversation")
 
     @set_loading("Generating actor action", cancellable=True, as_async=True)
     async def handle_request_actor_action(self, data: dict):
-        """
-        Generate an actor action
+        """Generate an actor action based on the provided data.
+        
+        This function processes a request to generate an action for an actor  within
+        the scene. It first constructs a RequestActorActionPayload from  the input
+        data. Depending on whether a character is specified, it  retrieves the
+        corresponding actor or selects a random NPC actor. The  function then sends
+        instructions to the director if specified, emits  messages, and pushes the
+        generated messages to the scene's history.
         """
         payload = RequestActorActionPayload(**data)
         character = None
