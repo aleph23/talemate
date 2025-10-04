@@ -39,6 +39,7 @@ interaction = ContextVar("interaction", default=InteractionState())
 def handle_generation_cancelled(exc: GenerationCancelled):
     # set cancel_requested to False on the active_scene
 
+    """Handles the cancellation of a generation by resetting the cancel request."""
     scene = active_scene.get()
 
     if scene:
@@ -101,6 +102,7 @@ class Interaction:
 
 
 def assert_active_scene(scene: object):
+    """Check if the specified scene is active and unchanged."""
     if not active_scene.get():
         raise SceneInactiveError("Scene is not active")
 
