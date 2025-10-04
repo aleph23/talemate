@@ -49,6 +49,7 @@ class CmdSetEnvironmentToCreative(TalemateCommand):
     aliases = [""]
 
     async def run(self):
+        """Sets the environment to 'creative' and raises a RestartSceneLoop exception."""
         await asyncio.sleep(0)
         self.scene.set_environment("creative")
 

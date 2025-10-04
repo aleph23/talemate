@@ -42,22 +42,27 @@ class TalemateCommand(Emitter, ABC):
 
     @classmethod
     def is_command(cls, name):
+        """Check if the given name matches the command or its aliases."""
         return name == cls.name or name in cls.aliases
 
     @abstractmethod
     def run(self):
+        """Abstract method to execute a command."""
         raise NotImplementedError(
             "TalemateCommand.run() must be implemented by subclass"
         )
 
     @property
     def verbose_name(self):
+        """Get the verbose name of the object."""
         if self.label:
             return self.label.title()
         return self.name.replace("_", " ").title()
 
     def command_start(self):
+        """Emit a command status indicating that the command has started."""
         emit("command_status", self.verbose_name, status="started")
 
     def command_end(self):
+        """Emit a command status indicating it has ended."""
         emit("command_status", self.verbose_name, status="ended")
