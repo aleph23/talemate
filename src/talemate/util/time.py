@@ -74,7 +74,7 @@ def timedelta_to_duration(delta):
 
 
 def parse_duration_to_isodate_duration(duration_str):
-    """Parse ISO 8601 duration string and ensure the result is an isodate.Duration."""
+    """Parse an ISO 8601 duration string into an isodate.Duration."""
     parsed_duration = isodate.parse_duration(duration_str)
     if isinstance(parsed_duration, datetime.timedelta):
         return timedelta_to_duration(parsed_duration)
@@ -83,6 +83,7 @@ def parse_duration_to_isodate_duration(duration_str):
 
 def iso8601_diff(duration_str1, duration_str2):
     # Parse the ISO 8601 duration strings ensuring they are isodate.Duration objects
+    """Calculate the absolute difference between two ISO 8601 duration strings."""
     duration1 = parse_duration_to_isodate_duration(duration_str1)
     duration2 = parse_duration_to_isodate_duration(duration_str2)
 
@@ -108,11 +109,29 @@ def flatten_duration_components(
     minutes: int,
     seconds: int,
 ):
-    """
-    Flatten duration components based on total duration following specific rules.
-    Returns adjusted component values based on the total duration.
-    """
 
+    """Flatten duration components based on total duration following specific rules.
+    
+    This function converts a given duration specified in years, months, weeks,
+    days, hours, minutes, and seconds into a more simplified format based on the
+    total duration in days. It applies specific rules to determine the appropriate
+    granularity of the output, adjusting the component values accordingly. The
+    function ensures accuracy by considering the actual number of days in a year
+    and rounding appropriately based on the remaining days and months.
+    
+    Args:
+        years (int): The number of years.
+        months (int): The number of months.
+        weeks (int): The number of weeks.
+        days (int): The number of days.
+        hours (int): The number of hours.
+        minutes (int): The number of minutes.
+        seconds (int): The number of seconds.
+    
+    Returns:
+        tuple: A tuple containing the adjusted values for years, months, weeks, days, hours,
+            minutes, and seconds.
+    """
     total_days = years * 365 + months * 30 + weeks * 7 + days
     total_months = total_days // 30
 
@@ -252,18 +271,18 @@ def iso8601_diff_to_human(start, end, flatten: bool = True):
 
 
 def iso8601_add(date_a: str, date_b: str, *, clamp_non_negative: bool = False) -> str:
-    """Add two ISO-8601 durations and return an ISO-8601 duration string.
-
-    Parameters
-    ----------
-    date_a, date_b
-        Durations to add.
-    clamp_non_negative
-        If *True* and the resulting duration would be negative, the function
-        returns ``"P0D"`` (zero duration) instead of a negative value.
-    """
 
     # Validate input – treat missing values as zero for convenience
+    """def iso8601_add(date_a: str, date_b: str, *, clamp_non_negative: bool = False)
+    -> str:
+    
+    Add two ISO-8601 durations and return an ISO-8601 duration string.  This
+    function takes two ISO-8601 duration strings, `date_a` and `date_b`,  and adds
+    them together. If either duration is missing, it is treated as zero.  The
+    result is formatted as an ISO-8601 duration string. If the `clamp_non_negative`
+    parameter is set to True and the resulting duration is negative, the function
+    will return "P0D" instead of a negative duration.
+    """
     if not date_a or not date_b:
         return "PT0S"
 
