@@ -18,6 +18,7 @@ class CmdRename(TalemateCommand):
     async def run(self):
         # collect list of characters in the scene
 
+        """Renames a character in the scene based on user input."""
         if self.args:
             character_name = self.args[0]
         else:
