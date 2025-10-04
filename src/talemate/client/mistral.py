@@ -68,14 +68,19 @@ class MistralAIClient(EndpointOverrideMixin, ClientBase):
 
     @property
     def can_be_coerced(self) -> bool:
+        """Indicates if coercion is possible based on reason_enabled."""
         return not self.reason_enabled
 
     @property
     def mistral_api_key(self):
+        """Get the Mistral API key from the configuration."""
+        """Get the Mistral API key from the configuration."""
         return self.config.mistralai.api_key
 
     @property
     def supported_parameters(self):
+        """Return a list of supported parameters."""
+        """Return a list of supported parameters."""
         return [
             "temperature",
             "top_p",
@@ -83,6 +88,29 @@ class MistralAIClient(EndpointOverrideMixin, ClientBase):
         ]
 
     def emit_status(self, processing: bool = None):
+        """Emit the current status of the client.
+        
+        This function updates the processing state and determines the current status
+        based on the presence of an API key and a loaded model. If the API key is
+        missing, it prepares an error action to prompt the user to set the key.
+        Additionally, it gathers common status data and emits a message with the
+        current status, including any relevant error messages.
+        
+        Args:
+            processing (bool?): Indicates whether the client is currently
+        """
+        """Emit the current status of the client.
+        
+        This function updates the processing state and determines the current status
+        based on the presence of an API key and a loaded model. If the API key is
+        missing, it prepares an error action to prompt the user to set the key.
+        Additionally, if no model is loaded, it sets the status to an error. Finally,
+        it emits the status along with relevant data to the client.
+        
+        Args:
+            processing (bool?): Indicates whether the client is currently
+                processing. If provided, it updates the internal processing state.
+        """
         error_action = None
         error_message = None
         if processing is not None:
@@ -125,15 +153,20 @@ class MistralAIClient(EndpointOverrideMixin, ClientBase):
         )
 
     def response_tokens(self, response: str):
+        """Returns the completion tokens from the response usage."""
         return response.usage.completion_tokens
 
     def prompt_tokens(self, response: str):
+        """Returns the prompt tokens from the given response."""
         return response.usage.prompt_tokens
 
     async def status(self):
+        """Emit the current status."""
         self.emit_status()
 
     def clean_prompt_parameters(self, parameters: dict):
+        """Cleans and clamps the temperature parameter in the given dictionary."""
+        """Cleans and clamps the temperature parameter in the given dictionary."""
         super().clean_prompt_parameters(parameters)
         # clamp temperature to 0.1 and 1.0
         # Unhandled Error: Status: 422. Message: {"object":"error","message":{"detail":[{"type":"less_than_equal","loc":["body","temperature"],"msg":"Input should be less than or equal to 1","input":1.31,"ctx":{"le":1.0},"url":"https://errors.pydantic.dev/2.6/v/less_than_equal"}]},"type":"invalid_request_error","param":null,"code":null}
@@ -141,10 +174,45 @@ class MistralAIClient(EndpointOverrideMixin, ClientBase):
             parameters["temperature"] = min(1.0, max(0.1, parameters["temperature"]))
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
 
+        """Generate text from a given prompt and parameters using the Mistral API.
+        
+        This asynchronous function constructs a message payload based on the provided
+        prompt and parameters, including optional coercion prompts if applicable. It
+        initializes a client for the Mistral API and streams the response from the chat
+        model, handling token counts for both the prompt and the completion. The
+        function also includes error handling for API-related issues and logs relevant
+        information throughout the process.
+        
+        Args:
+            prompt (str): The input text prompt to generate a response for.
+            parameters (dict): Additional parameters to customize the generation process.
+            kind (str): The type of message or context for the generation.
+        
+        Returns:
+            str: The generated text response from the Mistral API.
+        
+        """
+        """Generate text from the given prompt and parameters using the Mistral API.
+        
+        This asynchronous function constructs a message payload based on the provided
+        prompt and parameters, including optional coercion prompts if applicable. It
+        initializes a Mistral client and streams the response from the API, handling
+        token counts and logging relevant information throughout the process. In case
+        of errors, it logs the issue and manages specific SDK errors related to API
+        permissions.
+        
+        Args:
+            prompt (str): The input text prompt to generate a response for.
+            parameters (dict): Additional parameters for the API request.
+            kind (str): The type of message or context for the generation.
+        
+        Returns:
+            str: The generated text response from the Mistral API.
+        
+        Raises:
+            Exception: If no Mistral API key is set or for other unexpected errors.
+        """
         if not self.mistral_api_key:
             raise Exception("No mistral.ai API key set")
 
