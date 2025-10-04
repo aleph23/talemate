@@ -52,6 +52,7 @@ class ContextualGenerateEmission(AgentTemplateEmission):
 
     @property
     def context_type(self) -> str:
+        """Return the computed context as a string."""
         return self.content_generation_context.computed_context[0]
 
     @property
@@ -98,15 +99,28 @@ class ContentGenerationContext(pydantic.BaseModel):
 
     @property
     def computed_context(self) -> Tuple[str, str]:
+        """Returns the type and context from the context string."""
         typ, context = self.context.split(":", 1)
         return typ, context
 
     @property
     def scene(self) -> "Scene":
+        """Return the scene of the creator agent."""
         return get_agent("creator").scene
 
     @property
     def spice(self) -> str:
+        """Determine and apply spice based on generation options.
+        
+        This property checks the spice level from generation_options and  determines if
+        spice should be applied based on the template's  support for spice and the
+        availability of spices. If conditions  are met, it randomly decides whether to
+        apply spice and logs the  action. The applied spice is then emitted for further
+        processing.
+        
+        Returns:
+            str: The applied spice or an empty string if no spice is applied.
+        """
         spice_level = self.generation_options.spice_level
 
         if self.template and not getattr(self.template, "supports_spice", False):
@@ -150,6 +164,7 @@ class ContentGenerationContext(pydantic.BaseModel):
 
     @property
     def style(self):
+        """Return the rendering style based on the template and generation options."""
         if self.template and not getattr(self.template, "supports_style", False):
             # template supplied that doesn't support style
             return ""
@@ -164,6 +179,7 @@ class ContentGenerationContext(pydantic.BaseModel):
         self.state[key] = value
 
     def get_state(self, key: str) -> str | int | float | bool | None:
+        """Retrieve the state associated with the given key."""
         return self.state.get(key)
 
 
@@ -174,6 +190,7 @@ class AssistantMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Adds autocomplete action to the given actions dictionary."""
         actions["autocomplete"] = AgentAction(
             enabled=True,
             container=True,
@@ -207,10 +224,12 @@ class AssistantMixin:
 
     @property
     def autocomplete_dialogue_suggestion_length(self):
+        """Gets the length of the autocomplete dialogue suggestion."""
         return self.actions["autocomplete"].config["dialogue_suggestion_length"].value
 
     @property
     def autocomplete_narrative_suggestion_length(self):
+        """Gets the length of the narrative suggestion for autocomplete."""
         return self.actions["autocomplete"].config["narrative_suggestion_length"].value
 
     # actions
@@ -268,10 +287,16 @@ class AssistantMixin:
         self,
         generation_context: ContentGenerationContext,
     ):
-        """
-        Request content from the assistant.
-        """
 
+        """Request content from the assistant based on the provided generation context.
+        
+        This asynchronous function processes a content generation request by extracting
+        relevant context information, preparing template variables, and invoking the
+        appropriate prompt request. It handles different context types, such as lists
+        and character dialogues, and ensures that the generated content is formatted
+        correctly. Additionally, it emits signals before and after the generation
+        process  to allow for any necessary pre- or post-processing.
+        """
         context_typ, context_name = generation_context.computed_context
         editor = get_agent("editor")
 
@@ -370,9 +395,7 @@ class AssistantMixin:
         original: str | None = None,
         generation_options: GenerationOptions = None,
     ) -> str:
-        """
-        Wrapper for contextual_generate that generates a character attribute.
-        """
+        """Generates a character attribute using contextual generation."""
         if not generation_options:
             generation_options = GenerationOptions()
 
@@ -394,10 +417,8 @@ class AssistantMixin:
         length: int = 512,
         generation_options: GenerationOptions = None,
     ) -> str:
-        """
-        Wrapper for contextual_generate that generates a character detail.
-        """
 
+        """Generates a character detail using contextual generation."""
         if not generation_options:
             generation_options = GenerationOptions()
 
@@ -453,8 +474,24 @@ class AssistantMixin:
         emit_signal: bool = True,
         response_length: int | None = None,
     ) -> str:
-        """
-        Autocomplete dialogue.
+        """Generate an autocomplete dialogue response based on the input and character
+        context.
+        
+        This function processes the input string to determine if it continues a recent
+        message from the specified character. It constructs a set of template
+        variables, sends an emission signal before generating a response, and then
+        processes the response to ensure it aligns with the input. The function also
+        handles various prefixes based on the input format and emits the final
+        suggestion if required.
+        
+        Args:
+            input (str): The input string for which to generate an autocomplete suggestion.
+            character (Character): The character context for the autocomplete dialogue.
+            emit_signal (bool?): Whether to emit the autocomplete suggestion signal. Defaults to True.
+            response_length (int | None?): The desired length of the response. If None, defaults to a preset length.
+        
+        Returns:
+            str: The generated autocomplete suggestion based on the input and character context.
         """
         if not response_length:
             response_length = self.autocomplete_dialogue_suggestion_length
@@ -558,9 +595,7 @@ class AssistantMixin:
         emit_signal: bool = True,
         response_length: int | None = None,
     ) -> str:
-        """
-        Autocomplete narrative.
-        """
+        """Autocomplete narrative based on the provided input."""
         if not response_length:
             response_length = self.autocomplete_narrative_suggestion_length
 
@@ -627,17 +662,23 @@ class AssistantMixin:
         message_id: int,
         save_name: str | None = None,
     ):
+
+        """Fork a new scene from a specific message in the current scene.
+        
+        This function allows forking a new scene based on a provided message ID. It
+        first checks if the message exists and then truncates the current scene's
+        history and archived history to maintain a clean state. The function also
+        resets state reinforcements and updates the world state before saving the new
+        scene. If no save name is provided, a unique identifier is generated.
+        
+        Args:
+            message_id (int): The ID of the message from which to fork the scene.
+            save_name (str | None): An optional name for the saved scene; if not provided, a default name will be
+                generated.
+        
+        Raises:
+            ValueError: If the message with the given ID does not exist.
         """
-        Allows to fork a new scene from a specific message
-        in the current scene.
-
-        All content after the message will be removed and the
-        context database will be re imported ensuring a clean state.
-
-        All state reinforcements will be reset to their most recent
-        state before the message.
-        """
-
         emit("status", "Creating scene fork ...", status="busy")
         try:
             if not save_name:
