@@ -22,10 +22,12 @@ class SetSceneStatePayload(pydantic.BaseModel):
 
 
 def ensure_number(v):
-    """
-    if v is a str but digit turn into into or float
-    """
 
+    """Convert a string representation of a number to an int or float.
+    
+    Args:
+        v: The value to convert, which can be a string, int, or float.
+    """
     if isinstance(v, str):
         if v.isdigit():
             return int(v)
@@ -40,6 +42,7 @@ class DevToolsPlugin(Plugin):
     router = "devtools"
 
     async def handle_test_prompt(self, data):
+        """Handles the test prompt by generating a response and queuing it."""
         payload = TestPromptPayload(**data)
         client: ClientBase = get_client(payload.client_name)
 
@@ -74,6 +77,7 @@ class DevToolsPlugin(Plugin):
         )
 
     async def handle_get_scene_state(self, data):
+        """Sends the current scene state to the websocket handler."""
         scene = self.scene
         editor = SceneStateEditor(scene)
         state = editor.dump()
@@ -83,6 +87,7 @@ class DevToolsPlugin(Plugin):
         )
 
     async def handle_update_scene_state(self, data):
+        """Handles the update of the scene state."""
         scene = self.scene
         editor = SceneStateEditor(scene)
 
