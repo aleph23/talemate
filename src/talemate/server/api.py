@@ -25,6 +25,7 @@ _active_frontend_websocket = None
 
 
 async def websocket_endpoint(websocket):
+    """Handles the websocket connection for the frontend."""
     global _active_frontend_websocket
 
     # Reject the connection if another frontend is already connected.
@@ -56,6 +57,7 @@ async def websocket_endpoint(websocket):
     import_initial_node_definitions()
 
     async def frontend_disconnect(exc):
+        """Handle disconnection of the frontend and clean up resources."""
         global _active_frontend_websocket
         nonlocal scene_task
         log.warning(f"frontend disconnected: {exc}")
@@ -77,6 +79,7 @@ async def websocket_endpoint(websocket):
 
     # Create a task to send messages from the queue
     async def send_messages():
+        """Send messages from the queue to the websocket."""
         while True:
             # check if there are messages in the queue
             if message_queue.empty():
@@ -88,6 +91,7 @@ async def websocket_endpoint(websocket):
 
     # Create a task to send regular client status updates
     async def send_status():
+        """Send regular client status updates."""
         while True:
             await instance.emit_clients_status()
             await instance.agent_ready_checks()
@@ -109,6 +113,7 @@ async def websocket_endpoint(websocket):
 
     # task to test connection
     async def test_connection():
+        """Continuously test the connection by sending a ping message."""
         while True:
             try:
                 await websocket.send(json.dumps({"type": "ping"}))
@@ -150,6 +155,7 @@ async def websocket_endpoint(websocket):
                         )
 
                         async def scene_loading_done():
+                            """Notify that the scene loading is complete."""
                             await message_queue.put(
                                 {
                                     "type": "system",
