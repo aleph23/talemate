@@ -17,10 +17,8 @@ class TTSUtilsMixin:
     @set_loading("Preparing TTS context")
     @set_processing
     async def markup_context_for_tts(self, text: str) -> str:
-        """
-        Markup the context for text-to-speech.
-        """
 
+        """Markup the context for text-to-speech from the given text."""
         original_text = text
 
         log.debug("Markup context for TTS", text=text)
