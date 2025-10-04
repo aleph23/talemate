@@ -16,6 +16,7 @@ class Manager(Emitter):
 
     @classmethod
     def register(cls, command_cls):
+        """Registers a command class to the command_classes list."""
         cls.command_classes.append(command_cls)
 
     @classmethod
@@ -29,6 +30,7 @@ class Manager(Emitter):
         self.setup_emitter(scene)
 
     def build_aliases(self):
+        """Builds a dictionary of command aliases."""
         aliases = {}
         for name, method in Manager.__dict__.items():
             if hasattr(method, "aliases"):
@@ -38,6 +40,26 @@ class Manager(Emitter):
 
     async def execute(self, cmd, emit_on_unknown: bool = True, state: dict = None):
         # commands start with ! and are followed by a command name
+        """Execute a command asynchronously, processing its arguments and handling
+        exceptions.
+        
+        This function checks if the provided command is valid and processes it
+        accordingly. It splits the command into its name and arguments, instantiates
+        the appropriate command class, and manages the command's execution lifecycle,
+        including starting and ending the command. If an error occurs during execution,
+        it handles specific exceptions and updates the state if provided.
+        
+        Args:
+            cmd (str): The command string to be executed.
+            emit_on_unknown (bool): Flag to emit a message for unknown commands.
+            state (dict?): A dictionary to maintain the state of command execution.
+        
+        Returns:
+            bool: True if the command was processed, False if it was not a valid command.
+        
+        Raises:
+            Exception: Propagates any exceptions raised during command execution.
+        """
         cmd = cmd.strip()
         cmd_args = ""
         cmd_kwargs = {}
@@ -86,6 +108,7 @@ class Manager(Emitter):
 
 
 def register(command_cls):
+    """Register a command class with the Manager."""
     Manager.command_classes.append(command_cls)
 
     setattr(Manager, f"cmd_{command_cls.name}", command_cls.run)
