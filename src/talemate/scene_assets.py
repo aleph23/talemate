@@ -60,9 +60,7 @@ class SceneAssets:
         return asset_path
 
     def asset_path(self, asset_id: str) -> str:
-        """
-        Returns the path to the asset with the given id.
-        """
+        """Returns the path to the asset with the given id."""
         try:
             return os.path.join(
                 self.asset_directory, f"{asset_id}.{self.assets[asset_id].file_type}"
@@ -78,18 +76,14 @@ class SceneAssets:
         }
 
     def load_assets(self, assets_dict: dict):
-        """
-        Loads assets from a dictionary.
-        """
 
+        """Loads assets from a dictionary."""
         for asset_id, asset_dict in assets_dict.items():
             self.assets[asset_id] = Asset(**asset_dict)
 
     def transfer_asset(self, source: "SceneAssets", asset_id: str):
-        """
-        Will transfer another scenes asset into this scene on the same id
-        """
 
+        """Transfers an asset from the source scene to the current scene."""
         asset = source.assets[asset_id]
 
         asset_path = source.asset_path(asset_id)
@@ -102,6 +96,7 @@ class SceneAssets:
     def set_cover_image(self, asset_bytes: bytes, file_extension: str, media_type: str):
         # add the asset
 
+        """Sets the cover image using the provided asset bytes and metadata."""
         asset = self.add_asset(asset_bytes, file_extension, media_type)
         self.cover_image = asset.id
 
@@ -116,12 +111,10 @@ class SceneAssets:
     def add_asset(
         self, asset_bytes: bytes, file_extension: str, media_type: str
     ) -> Asset:
-        """
-        Takes the asset and stores it in the scene's assets folder.
-        """
 
         # generate a hash for the asset using the content of the image
         # this will be used as the filename
+        """Stores an asset in the scene's assets folder or returns an existing asset."""
         asset_id = hashlib.sha256(asset_bytes).hexdigest()
 
         # if the asset already exists, return the existing asset
@@ -146,13 +139,8 @@ class SceneAssets:
         return asset
 
     def add_asset_from_image_data(self, image_data: str) -> Asset:
-        """
-        Will add an asset from an image data, extracting media type from the
-        data url and then decoding the base64 encoded data.
 
-        Will call add_asset
-        """
-
+        """Add an asset from base64 encoded image data."""
         media_type = image_data.split(";")[0].split(":")[1]
         image_bytes = base64.b64decode(image_data.split(",")[1])
         file_extension = media_type.split("/")[1]
@@ -160,11 +148,8 @@ class SceneAssets:
         return self.add_asset(image_bytes, file_extension, media_type)
 
     def add_asset_from_file_path(self, file_path: str) -> Asset:
-        """
-        Will add an asset from a file path, first loading the file into memory.
-        and then calling add_asset
-        """
 
+        """Add an asset from a specified file path."""
         file_bytes = None
         with open(file_path, "rb") as f:
             file_bytes = f.read()
@@ -186,17 +171,13 @@ class SceneAssets:
         return self.add_asset(file_bytes, file_extension, media_type)
 
     def get_asset(self, asset_id: str) -> Asset:
-        """
-        Returns the asset with the given id.
-        """
 
+        """Returns the asset associated with the given asset_id."""
         return self.assets[asset_id]
 
     def get_asset_bytes(self, asset_id: str) -> bytes | None:
-        """
-        Returns the bytes of the asset with the given id.
-        """
 
+        """Returns the bytes of the asset with the given id."""
         asset_path = self.asset_path(asset_id)
 
         if not asset_path:
@@ -207,10 +188,8 @@ class SceneAssets:
             return f.read()
 
     def get_asset_bytes_as_base64(self, asset_id: str) -> str | None:
-        """
-        Returns the bytes of the asset with the given id as a base64 encoded string.
-        """
 
+        """Returns the base64 encoded string of the asset bytes for the given id."""
         bytes = self.get_asset_bytes(asset_id)
 
         if not bytes:
@@ -219,10 +198,8 @@ class SceneAssets:
         return base64.b64encode(bytes).decode("utf-8")
 
     def remove_asset(self, asset_id: str):
-        """
-        Removes the asset with the given id.
-        """
 
+        """Removes the asset with the given id."""
         asset = self.assets.pop(asset_id)
 
         asset_path = self.asset_directory
