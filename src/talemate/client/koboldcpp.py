@@ -85,6 +85,8 @@ class KoboldCppClient(ClientBase):
 
     @property
     def request_headers(self):
+        """Return the request headers for the API call."""
+        """Return the request headers for the API call."""
         headers = {}
         headers["Content-Type"] = "application/json"
         if self.api_key:
@@ -93,21 +95,15 @@ class KoboldCppClient(ClientBase):
 
     @property
     def url(self) -> str:
-        parts = urlparse(self.api_url)
-        return f"{parts.scheme}://{parts.netloc}"
-
-    @property
-    def is_openai(self) -> bool:
-        """
-        kcpp has two apis
-
-        open-ai implementation at /v1
-        their own implementation at /api/v1
-        """
+        """Return the base URL from the api_url property."""
+        """Return the base URL from the API URL."""
+        """Check if the API URL is not the OpenAI implementation."""
         return "/api/v1" not in self.api_url
 
     @property
     def api_url_for_model(self) -> str:
+        """Get the API URL for the model based on the service type."""
+        """Constructs the API URL for the model based on the service type."""
         if self.is_openai:
             # join /model to url
             return urljoin(self.api_url, "models")
@@ -117,6 +113,7 @@ class KoboldCppClient(ClientBase):
 
     @property
     def api_url_for_generation(self) -> str:
+        """Constructs the API URL for generation based on the service type."""
         if self.is_openai:
             # join /v1/completions
             return urljoin(self.api_url, "completions")
@@ -126,6 +123,8 @@ class KoboldCppClient(ClientBase):
 
     @property
     def max_tokens_param_name(self):
+        """Return the parameter name for token limits based on the API type."""
+        """Return the parameter name for maximum tokens based on the model type."""
         if self.is_openai:
             return "max_tokens"
         else:
@@ -133,6 +132,7 @@ class KoboldCppClient(ClientBase):
 
     @property
     def supported_parameters(self):
+        """Returns a list of supported parameters based on the API type."""
         if not self.is_openai:
             # koboldcpp united api
 
@@ -176,10 +176,13 @@ class KoboldCppClient(ClientBase):
 
     @property
     def supports_embeddings(self) -> bool:
+        """Indicates if embeddings are supported."""
+        """Indicates if embeddings are supported."""
         return True
 
     @property
     def embeddings_url(self) -> str:
+        """Get the URL for embeddings based on the API type."""
         if self.is_openai:
             return urljoin(self.api_url, "embeddings")
         else:
@@ -187,24 +190,33 @@ class KoboldCppClient(ClientBase):
 
     @property
     def embeddings_function(self):
+        """Get the KoboldEmbeddingFunction instance."""
+        """Get the KoboldEmbeddingFunction instance."""
         return KoboldEmbeddingFunction(self.embeddings_url, self.embeddings_model_name)
 
     @property
     def default_prompt_template(self) -> str:
+        """Return the default prompt template string."""
+        """Return the default prompt template string."""
         return "KoboldAI.jinja2"
 
     @property
     def api_url(self) -> str:
+        """Return the API URL from the client configuration."""
+        """Return the API URL from the client configuration."""
         return self.client_config.api_url
 
     @api_url.setter
     def api_url(self, value: str):
+        """Set the API URL in the client configuration."""
         self.client_config.api_url = value
 
     def api_endpoint_specified(self, url: str) -> bool:
+        """Check if the API URL contains the specified endpoint."""
         return "/v1" in self.api_url
 
     def ensure_api_endpoint_specified(self):
+        """Ensure the API endpoint is specified in the API URL."""
         if not self.api_endpoint_specified(self.api_url):
             # url doesn't specify the api endpoint
             # use the koboldcpp united api
@@ -218,6 +230,7 @@ class KoboldCppClient(ClientBase):
 
     async def get_embeddings_model_name(self):
         # if self._embeddings_model_name is set, return it
+        """Retrieve the embeddings model name, fetching it if not already set."""
         if self.embeddings_model_name:
             return self.embeddings_model_name
 
@@ -237,6 +250,7 @@ class KoboldCppClient(ClientBase):
         return self._embeddings_model_name
 
     async def get_embeddings_status(self):
+        """Fetch and update the embeddings status from the API."""
         url_version = urljoin(self.api_url, "api/extra/version")
         async with httpx.AsyncClient() as client:
             response = await client.get(url_version, timeout=2)
@@ -269,6 +283,16 @@ class KoboldCppClient(ClientBase):
                 self._embeddings_model_name = None
 
     async def get_model_name(self):
+        """Retrieve the model name from the specified API endpoint.
+        
+        This asynchronous function ensures that the API endpoint is specified before
+        making a GET request to retrieve model information. It handles potential
+        exceptions during the request and checks for a 404 status code, raising a
+        KeyError if the model info cannot be found. Depending on whether the request is
+        for OpenAI or another service, it extracts the model name from the response
+        data and processes it accordingly. Finally, it calls `get_embeddings_status` to
+        update the embeddings status before returning the model name.
+        """
         self.ensure_api_endpoint_specified()
 
         try:
@@ -302,15 +326,10 @@ class KoboldCppClient(ClientBase):
         return model_name
 
     async def tokencount(self, content: str) -> int:
-        """
-        KoboldCpp has a tokencount endpoint we can use to count tokens
-        for the prompt and response
-
-        If the endpoint is not available, we will use the default token count estimate
-        """
 
         # extract scheme and host from api url
 
+        """Counts tokens for the given content using the tokencount endpoint."""
         parts = urlparse(self.api_url)
 
         url_tokencount = f"{parts.scheme}://{parts.netloc}/api/extra/tokencount"
@@ -329,11 +348,7 @@ class KoboldCppClient(ClientBase):
 
             tokencount = len(response.json().get("ids", []))
             return tokencount
-
-    async def abort_generation(self):
-        """
-        Trigger the stop generation endpoint
-        """
+        """Trigger the stop generation endpoint."""
         if self.is_openai:
             # openai api endpoint doesn't support abort
             return
@@ -345,11 +360,7 @@ class KoboldCppClient(ClientBase):
                 url_abort,
                 headers=self.request_headers,
             )
-
-    async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
+        """Generates text based on the provided prompt and parameters."""
         if self.is_openai:
             return await self._generate_openai(prompt, parameters, kind)
         else:
@@ -357,11 +368,7 @@ class KoboldCppClient(ClientBase):
             return await loop.run_in_executor(
                 None, self._generate_kcpp_stream, prompt, parameters, kind
             )
-
-    def _generate_kcpp_stream(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
+        """Generates a streaming response from the API based on the prompt and parameters."""
         parameters["prompt"] = prompt.strip(" ")
 
         response = ""
@@ -384,12 +391,8 @@ class KoboldCppClient(ClientBase):
             self.update_request_tokens(self.count_tokens(chunk))
 
         return response
-
-    async def _generate_openai(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
-
+        """Generates text from the given prompt and parameters."""
+        """Generates text from the given prompt and parameters."""
         parameters["prompt"] = prompt.strip(" ")
 
         self._returned_prompt_tokens = await self.tokencount(parameters["prompt"])
@@ -420,11 +423,19 @@ class KoboldCppClient(ClientBase):
             return response_text
 
     def jiggle_randomness(self, prompt_config: dict, offset: float = 0.3) -> dict:
-        """
-        adjusts temperature and repetition_penalty
-        by random values using the base value as a center
-        """
 
+        """Adjusts temperature and repetition penalty by random values.
+        
+        This function modifies the 'temperature' and a repetition penalty  in the
+        """
+        """Adjusts temperature and repetition penalty by random values.
+        
+        This function modifies the 'temperature' and a repetition penalty  in the
+        provided prompt_config dictionary. It uses a base value  as a center and
+        applies a random offset within specified limits.  The function determines which
+        repetition penalty key to use and  adjusts its value accordingly, ensuring that
+        the changes are  within a defined range to maintain variability in the output.
+        """
         temp = prompt_config["temperature"]
 
         if "rep_pen" in prompt_config:
@@ -452,11 +463,15 @@ class KoboldCppClient(ClientBase):
             pass
 
     async def visual_automatic1111_setup(self, visual_agent: "VisualBase") -> bool:
-        """
-        Automatically configure the visual agent for automatic1111
-        if the koboldcpp server has a SD model available
-        """
 
+        """Automatically configure the visual agent for automatic1111.
+        
+        This function checks the connection status and attempts to fetch the available
+        SD models from the koboldcpp server. If successful, it retrieves the model name
+        and updates the visual agent's configuration with the appropriate API URL.  The
+        function ensures that the visual agent is enabled if the setup is completed
+        successfully.
+        """
         if not self.connected:
             return False
 
