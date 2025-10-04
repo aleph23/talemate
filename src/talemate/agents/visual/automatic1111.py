@@ -121,6 +121,7 @@ class Automatic1111Mixin:
 
     @property
     def automatic1111_render_settings(self):
+        """Get the render settings for automatic1111 if enabled."""
         if self.actions["automatic1111"].enabled:
             return RenderSettings(
                 steps=self.actions["automatic1111"].config["steps"].value,
@@ -135,13 +136,16 @@ class Automatic1111Mixin:
 
     @property
     def automatic1111_schedule_type(self):
+        """Get the schedule type from the automatic1111 configuration."""
         return self.actions["automatic1111"].config["schedule_type"].value
 
     @property
     def automatic1111_cfg(self):
+        """Get the configuration value for automatic1111."""
         return self.actions["automatic1111"].config["cfg"].value
 
     async def automatic1111_generate(self, prompt: Style, format: str):
+        """Generates images based on the provided prompt and format."""
         url = self.api_url
         resolution = self.resolution_from_format(
             format, self.automatic1111_render_settings.type_model
@@ -178,10 +182,8 @@ class Automatic1111Mixin:
             await self.emit_image(image)
 
     async def automatic1111_ready(self) -> bool:
-        """
-        Will send a GET to /sdapi/v1/memory and on 200 will return True
-        """
 
+        """Checks if the automatic1111 API is ready by sending a GET request."""
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 url=f"{self.api_url}/sdapi/v1/memory", timeout=2

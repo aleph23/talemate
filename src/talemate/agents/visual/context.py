@@ -33,6 +33,7 @@ class VisualContextState(pydantic.BaseModel):
 
     @property
     def title(self) -> str:
+        """Return the title based on the visualization type."""
         if self.vis_type == VIS_TYPES.ENVIRONMENT:
             return "Environment"
         elif self.vis_type == VIS_TYPES.CHARACTER:
