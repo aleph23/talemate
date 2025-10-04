@@ -100,9 +100,7 @@ class SourceEntry(pydantic.BaseModel):
 
 
 async def emit_archive_add(scene: "Scene", entry: ArchiveEntry):
-    """
-    Emits the archive_add signal for an archive entry
-    """
+    """Emits the archive_add signal for an archive entry."""
     await async_signals.get("archive_add").send(
         ArchiveEvent(
             scene=scene,
@@ -117,10 +115,8 @@ async def emit_archive_add(scene: "Scene", entry: ArchiveEntry):
 def resolve_history_entry(
     scene: "Scene", entry: HistoryEntry
 ) -> LayeredArchiveEntry | ArchiveEntry:
-    """
-    Resolves a history entry in the scene's archived history
-    """
 
+    """Resolves a history entry from the scene's archived history."""
     if entry.layer == 0:
         return ArchiveEntry(**scene.archived_history[entry.index])
     else:
@@ -132,10 +128,14 @@ def resolve_history_entry(
 def entry_contained(
     scene: "Scene", entry_id: str, container: HistoryEntry | SourceEntry
 ) -> bool:
-    """
-    Checks if entry_id is contained in container through source entries, checking all the way up to the base layer
-    """
 
+    """Checks if entry_id is contained in the container through source entries.
+    
+    This function collects source entries from the given scene and checks  each
+    entry to see if it matches the provided entry_id. It recursively  checks nested
+    entries if the current entry is not an instance of  SceneMessage, ensuring that
+    all layers of the container are examined  up to the base layer.
+    """
     messages = collect_source_entries(scene, container)
 
     for message in messages:
@@ -150,10 +150,8 @@ def entry_contained(
 
 
 def collect_source_entries(scene: "Scene", entry: HistoryEntry) -> list[SourceEntry]:
-    """
-    Collects the source entries for a history entry
-    """
 
+    """Collects source entries for a given history entry."""
     if entry.start is None or entry.end is None:
         # entries that dont defien a start and end are not regeneratable
         return []
@@ -217,10 +215,23 @@ def pop_history(
     max_iterations: int = None,
     reverse: bool = False,
 ):
-    """
-    Pops the last message from the scene history
-    """
 
+    """Pops the last message of a specified type from the scene history.
+    
+    This function iterates through the `history` list in either reverse or normal
+    order, depending on the `reverse` flag. It identifies messages that match the
+    specified `typ` and optional `source`, collecting them for removal. The process
+    can be limited by the `max_iterations` parameter, and if `all` is set to
+    `False`, only the first matching message will be removed.
+    
+    Args:
+        history (list[SceneMessage]): The list of scene messages to modify.
+        typ (str): The type of message to pop from the history.
+        source (str?): The source of the message to match. Defaults to None.
+        all (bool?): If True, removes all matching messages. Defaults to False.
+        max_iterations (int?): The maximum number of iterations to perform. Defaults to None.
+        reverse (bool?): If True, iterates through the history in normal order. Defaults to False.
+    """
     iterations = 0
 
     if not reverse:
@@ -282,9 +293,7 @@ def history_with_relative_time(
 
 
 async def purge_all_history_from_memory():
-    """
-    Removes all history from the memory agent
-    """
+    """Removes all history from the memory agent."""
     memory = get_agent("memory")
     await memory.delete({"typ": "history"})
 
@@ -294,8 +303,21 @@ async def rebuild_history(
     callback: Callable | None = None,
     generation_options: GenerationOptions | None = None,
 ):
-    """
-    rebuilds all history for a scene
+    """Rebuilds all history for a scene asynchronously.
+    
+    This function clears out archived history while preserving pre-established
+    history,  then purges all history from memory. It continuously rebuilds the
+    historical archive  by interacting with a summarizer agent, updating the
+    scene's state, and emitting  status messages. The process can be interrupted by
+    a cancellation event, and  it handles exceptions that may occur during the
+    rebuild.
+    
+    Args:
+        scene (Scene): The scene object for which the history is being rebuilt.
+        callback (Callable | None?): An optional callback function to be called
+            during the rebuild process.
+        generation_options (GenerationOptions | None?): Options that may affect
+            the generation of the historical archive.
     """
     summarizer = get_agent("summarizer")
 
@@ -372,16 +394,15 @@ class CharacterActivity(pydantic.BaseModel):
 async def character_activity(
     scene: "Scene", since_time_passage: bool = False
 ) -> CharacterActivity:
+
+    """Returns a CharacterActivity object with a list of active characters.
+    
+    This function collects messages from the scene to determine which characters
+    have been active. It sorts the characters based on their last activity, with
+    the most recently active character listed first. If no characters have acted,
+    the none_have_acted flag will be set to True. The search can be limited to stop
+    at a TimePassageMessage if since_time_passage is set to True.
     """
-    Returns a CharacterActivity object containing a list of all active characters sorted by which were last active
-
-    The most recently active character is first in the list.
-
-    If no characters have acted, the none_have_acted flag will be set to True.
-
-    If since_time_passage is True, the search will stop when a TimePassageMessage is found.
-    """
-
     activity: list = []
 
     character_names = scene.character_names
@@ -442,10 +463,27 @@ async def regenerate_history_entry(
     entry: HistoryEntry,
     generation_options: GenerationOptions | None = None,
 ) -> LayeredArchiveEntry | ArchiveEntry:
-    """
-    Regenerates a history entry in the scene's archived history
-    """
 
+    """Regenerate a history entry in the scene's archived history.
+    
+    This function checks if the provided HistoryEntry has valid start and end
+    points,  collects relevant source entries from the scene, and resolves the
+    corresponding  archive entry. It utilizes a summarizer agent to generate a new
+    summary based on  the collected entries and updates the original entry with the
+    new summary. If  any step fails, it raises an UnregeneratableEntryError.
+    
+    Args:
+        scene (Scene): The scene containing the history entry.
+        entry (HistoryEntry): The history entry to regenerate.
+        generation_options (GenerationOptions | None?): Options for the generation process.
+    
+    Returns:
+        LayeredArchiveEntry | ArchiveEntry: The updated history entry after
+            regeneration.
+    
+    Raises:
+        UnregeneratableEntryError: If the entry cannot be regenerated due to missing start/end or other issues.
+    """
     summarizer = get_agent("summarizer")
     if entry.start is None or entry.end is None:
         # entries that dont defien a start and end are not regeneratable
@@ -495,8 +533,13 @@ async def regenerate_history_entry(
 
 
 async def reimport_history(scene: "Scene", emit_status: bool = True):
-    """
-    Reimports the history from the memory agent
+    """Reimports the history from the memory agent.
+    
+    This function handles the reimporting of history by first emitting a status
+    message  indicating the process has started. It then purges all existing
+    history from memory  and validates the new history for the provided scene. In
+    case of any errors during  this process, it logs the error and emits an error
+    status message. Finally, it emits  a success status message upon completion.
     """
     try:
         if emit_status:
@@ -514,6 +557,21 @@ async def reimport_history(scene: "Scene", emit_status: bool = True):
 
 
 async def validate_history(scene: "Scene") -> bool:
+    """Validate and update the history of a scene.
+    
+    This function checks the archived history of a scene for any entries that are
+    missing a memory ID. If any such entries are found, it purges the existing
+    history from memory and attempts to reimport valid entries. It also ensures
+    that all layered history entries have valid IDs and corrects any offset values.
+    The function emits signals to update the memory database with the current state
+    of the archived history.
+    
+    Args:
+        scene (Scene): The scene object containing archived and layered history.
+    
+    Returns:
+        bool: True if the history is valid, False if it was invalid and needed fixing.
+    """
     archived_history = scene.archived_history
     layered_history = scene.layered_history
 
@@ -567,21 +625,30 @@ async def validate_history(scene: "Scene") -> bool:
 
 
 async def add_history_entry(scene: "Scene", text: str, offset: str) -> ArchiveEntry:
-    """
-    Inserts a manual history entry into the base (archived) history.
 
+    """Insert a manual history entry into the base (archived) history.
+    
+    This function handles the insertion of a new history entry into the archived
+    history of a Scene. It first checks if this is the first entry and handles it
+    accordingly. If not, it calculates the appropriate timestamp for the new entry
+    based on the provided offset and ensures that it maintains chronological order
+    relative to existing entries. The function also manages timeline shifts if the
+    new entry's timestamp predates the current scene start and raises a ValueError
+    if the new entry is not older than the first summarized entry.
+    
     Args:
-        scene: The active Scene instance.
-        text: Human-provided text for the entry.
-        offset: ISO-8601 duration representing how long **before the current scene time** the entry occurred.
-
+        scene (Scene): The active Scene instance.
+        text (str): Human-provided text for the entry.
+        offset (str): ISO-8601 duration representing how long before the current scene time the entry
+            occurred.
+    
     Returns:
-        The created ArchiveEntry dataclass instance.
-
+        ArchiveEntry: The created ArchiveEntry dataclass instance.
+    
     Raises:
-        ValueError: If the entry would not be older than the first summarized archive entry or if no summarized entry exists.
+        ValueError: If the entry would not be older than the first summarized archive entry or if
+            no summarized entry exists.
     """
-
     is_first_entry = len(scene.archived_history) == 0
 
     if is_first_entry:
@@ -690,21 +757,26 @@ async def add_history_entry(scene: "Scene", text: str, offset: str) -> ArchiveEn
 
 
 async def delete_history_entry(scene: "Scene", entry: HistoryEntry) -> ArchiveEntry:
-    """
-    Deletes a manual base-layer history entry from the scene archives and removes it from the memory store.
 
+    # Validation – only base layer and manual (start/end are None)
+    """Delete a manual base-layer history entry from the scene archives.
+    
+    This function validates the entry to ensure it is a base-layer manual entry
+    without start or end indices. It then searches for the entry in the scene's
+    archived history, removes it if found, and adjusts the scene's timeline if the
+    removed entry is the oldest. Finally, it synchronizes the scene's time and
+    reimports the history to maintain consistency.
+    
     Args:
-        scene: The Scene object whose history will be modified.
-        entry: The HistoryEntry to remove (must be layer 0 and have no start/end indices).
-
+        scene (Scene): The Scene object whose history will be modified.
+        entry (HistoryEntry): The HistoryEntry to remove (must be layer 0 and have no start/end indices).
+    
     Returns:
-        The ArchiveEntry that was removed.
-
+        ArchiveEntry: The ArchiveEntry that was removed.
+    
     Raises:
         ValueError: If the entry is not a base-layer manual entry or cannot be found.
     """
-
-    # Validation – only base layer and manual (start/end are None)
     if entry.layer != 0 or entry.start is not None or entry.end is not None:
         raise ValueError("Only manual base-layer entries can be deleted.")
 
@@ -746,7 +818,7 @@ async def delete_history_entry(scene: "Scene", entry: HistoryEntry) -> ArchiveEn
 
 
 def _shift_entry_ts(entry: dict, shift_iso: str):
-    """Shift *in-place* the ts/ts_start/ts_end fields of a raw archive entry, clamping to >= 0."""
+    """Shift the ts, ts_start, and ts_end fields of a raw archive entry in-place."""
     for key in ["ts", "ts_start", "ts_end"]:
         if entry.get(key):
             try:
@@ -762,17 +834,20 @@ def _shift_entry_ts(entry: dict, shift_iso: str):
 
 
 def shift_scene_timeline(scene: "Scene", shift_iso: str):
-    """Shift *every* timeline reference in the scene by the provided ISO-8601 duration.
 
-    The function mutates the scene in place:
-
-    1. ``scene.ts`` – overall scene time
-    2. ``ts``, ``ts_start``, ``ts_end`` of every entry in ``scene.archived_history``
-    3. Same fields for every entry in every layer in ``scene.layered_history``
-
-    ``shift_iso`` can be positive (move forward in time) or negative (move backward).
+    """Shift every timeline reference in the scene by the provided ISO-8601 duration.
+    
+    The function mutates the scene in place by adjusting the overall scene time
+    and the timestamps of entries in both the `archived_history` and
+    `layered_history`.  It first checks if the `shift_iso` is a no-op value, and if
+    not, it applies the  shift to the scene's timestamp and each entry's timestamp
+    in the histories.  The `shift_iso` can be positive to move forward in time or
+    negative to move  backward.
+    
+    Args:
+        scene (Scene): The scene object containing the timeline to be shifted.
+        shift_iso (str): The ISO-8601 duration to shift the timeline by.
     """
-
     if shift_iso in ["PT0S", "P0D", "PT0H", "P0M", "P0S", "-PT0S", "-P0D"]:
         # No-op
         return

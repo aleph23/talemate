@@ -31,6 +31,7 @@ def get_agent(typ: str):
 
 
 async def destroy_client(name: str):
+    """Destroys the client associated with the given name."""
     client = CLIENTS.get(name)
     if client:
         await client.destroy()
@@ -47,55 +48,50 @@ def get_client(name: str):
 
 
 def agent_types():
+    """Return the keys of AGENT_CLASSES from agents."""
     return agents.AGENT_CLASSES.keys()
 
 
 def client_types():
+    """Return the keys of CLIENT_CLASSES from clients."""
     return clients.CLIENT_CLASSES.keys()
 
 
 def client_instances():
+    """Return the items of the CLIENTS dictionary."""
     return CLIENTS.items()
 
 
 def agent_instances():
+    """Return items from the AGENTS dictionary."""
     return AGENTS.items()
 
 
 def agent_instances_with_client(client):
-    """
-    return a list of agents that have the specified client
-    """
 
+    """Return agents associated with the specified client."""
     for typ, agent in agent_instances():
         if getattr(agent, "client", None) == client:
             yield agent
 
 
 def emit_agent_status_by_client(client):
-    """
-    Will emit status of all agents that have the specified client
-    """
 
+    """Emit status of all agents associated with the specified client."""
     for agent in agent_instances_with_client(client):
         emit_agent_status(agent.__class__, agent)
 
 
 async def emit_clients_status():
-    """
-    Will emit status of all clients
-    """
     # log.debug("emit", type="client status")
+    """Emit the status of all clients."""
     for client in list(CLIENTS.values()):
         if client:
             await client.status()
 
 
 def _sync_emit_clients_status(*args, **kwargs):
-    """
-    Will emit status of all clients
-    in synchronous mode
-    """
+    """Emit the status of all clients in synchronous mode."""
     loop = asyncio.get_event_loop()
     loop.run_until_complete(emit_clients_status())
 
@@ -104,24 +100,19 @@ handlers["request_client_status"].connect(_sync_emit_clients_status)
 
 
 async def emit_client_bootstraps():
+    """Emit client bootstraps data."""
     emit("client_bootstraps", data=list(await bootstrap.list_all()))
 
 
 def sync_emit_clients_status():
-    """
-    Will emit status of all clients
-    in synchronous mode
-    """
+    """Emit the status of all clients in synchronous mode."""
     loop = asyncio.get_event_loop()
     loop.run_until_complete(emit_clients_status())
 
 
 async def sync_client_bootstraps():
-    """
-    Will loop through all registered client bootstrap lists and spawn / update
-    client instances from them.
-    """
 
+    """Synchronizes client instances from registered bootstrap lists."""
     for service_name, func in bootstrap.LISTS.items():
         async for client_bootstrap in func():
             log.debug(
@@ -154,10 +145,8 @@ def emit_agent_status(cls, agent=None):
 
 
 def emit_agents_status(*args, **kwargs):
-    """
-    Will emit status of all agents
-    """
     # log.debug("emit", type="agent status")
+    """Emit the status of all agents."""
     for typ, cls in sorted(
         agents.AGENT_CLASSES.items(), key=lambda x: x[1].verbose_name
     ):
@@ -177,6 +166,7 @@ async def agent_ready_checks():
 
 
 def get_active_client():
+    """Return the first enabled client from CLIENTS."""
     for client in CLIENTS.values():
         if client.enabled:
             return client
@@ -237,6 +227,7 @@ async def instantiate_clients():
 
 
 async def configure_agents():
+    """Configures agents based on the provided configuration."""
     config: Config = get_config()
     for name, agent_config in config.agents.items():
         agent = AGENTS.get(name)
@@ -298,6 +289,7 @@ async def purge_clients():
 
 
 async def on_config_changed(config: Config):
+    """Handle changes in the configuration."""
     await emit_clients_status()
     emit_agents_status()
 
@@ -307,6 +299,7 @@ async def on_client_disabled(client_status: ClientStatus):
 
 
 async def on_client_enabled(client_status: ClientStatus):
+    """Handles the event when the client is enabled."""
     await ensure_agent_llm_client()
 
 
