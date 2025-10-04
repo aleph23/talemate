@@ -21,10 +21,12 @@ DEV_MODE = True
 
 
 def empty_function(*args, **kwargs):
+    """A function that does nothing."""
     pass
 
 
 def exec_restricted(code: str, filename: str, **kwargs):
+    """Execute code in a restricted environment with custom globals."""
     compiled_code = compile_restricted(code, filename=filename, mode="exec")
 
     # Create a restricted globals dictionary
@@ -49,6 +51,7 @@ def exec_restricted(code: str, filename: str, **kwargs):
 
 def compile_scene_module(module_code: str, **kwargs) -> dict[str, callable]:
     # Compile the module code using RestrictedPython
+    """Compile and execute scene module code with restricted globals."""
     compiled_code = compile_restricted(
         module_code, filename="<scene instructions>", mode="exec"
     )
@@ -90,19 +93,18 @@ class GameInstructionsMixin:
 
     @property
     def scene_module_path(self):
+        """Return the path to the game.py module in the scene's save directory."""
         return os.path.join(self.scene.save_dir, "game.py")
 
     async def scene_has_instructions(self, scene: "Scene") -> bool:
-        """Returns True if the scene has instructions."""
+        """Return True if the scene has instructions."""
         return await self.scene_has_module(
             scene
         ) or await self.scene_has_template_instructions(scene)
 
     async def run_scene_instructions(self, scene: "Scene"):
-        """
-        runs the game/__init__.py of the scene
-        """
 
+        """Runs the scene instructions based on the scene module availability."""
         if await self.scene_has_module(scene):
             await self.run_scene_module(scene)
         else:
@@ -147,10 +149,8 @@ class GameInstructionsMixin:
     # SCENE PYTHON INSTRUCTIONS SUPPORT
 
     async def run_scene_module(self, scene: "Scene"):
-        """
-        runs the game/__init__.py of the scene
-        """
 
+        """Runs the game/__init__.py of the scene."""
         if not await self.scene_has_module(scene):
             return
 
@@ -168,10 +168,8 @@ class GameInstructionsMixin:
             del scene._module
 
     async def load_scene_module(self, scene: "Scene"):
-        """
-        loads the game.py of the scene
-        """
 
+        """Loads the game module for the specified scene."""
         if not await self.scene_has_module(scene):
             return
 
@@ -204,8 +202,6 @@ class GameInstructionsMixin:
             )
 
     async def scene_has_module(self, scene: "Scene"):
-        """
-        checks if the scene has a game.py
-        """
 
+        """Check if the scene has a game.py module."""
         return os.path.exists(self.scene_module_path)
