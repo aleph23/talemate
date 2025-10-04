@@ -32,6 +32,7 @@ class CreatorAgent(
 
     @classmethod
     def init_actions(cls) -> dict[str, AgentAction]:
+        """Initialize and return a dictionary of actions."""
         actions = {}
         MemoryRAGMixin.add_actions(actions)
         AssistantMixin.add_actions(actions)
@@ -47,6 +48,7 @@ class CreatorAgent(
 
     @set_processing
     async def generate_title(self, text: str):
+        """Generates a title based on the provided text."""
         title = await Prompt.request(
             "creator.generate-title",
             self.client,

@@ -44,6 +44,8 @@ class DetermineContentContext(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up the input and output sockets for the component."""
+        """Sets up input and output sockets for the component."""
         self.add_input("state")
         self.add_input("description", socket_type="str", optional=True)
 
@@ -52,6 +54,7 @@ class DetermineContentContext(AgentNode):
         self.add_output("content_context", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Executes the run process to set output values."""
         context = await self.agent.determine_content_context_for_description(
             self.require_input("description")
         )
@@ -80,6 +83,7 @@ class DetermineCharacterDescription(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("state")
         self.add_input("character", socket_type="character")
         self.add_input("extra_context", socket_type="str", optional=True)
@@ -87,6 +91,7 @@ class DetermineCharacterDescription(AgentNode):
         self.add_output("description", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Run the agent to determine the character description."""
         character = self.require_input("character")
         extra_context = self.get_input_value("extra_context")
 
@@ -120,6 +125,8 @@ class DetermineCharacterDialogueInstructions(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
+        """Sets up input and output sockets for the component."""
         self.add_input("state")
         self.add_input("character", socket_type="character")
         self.add_input("instructions", socket_type="str", optional=True)
@@ -129,6 +136,7 @@ class DetermineCharacterDialogueInstructions(AgentNode):
         self.add_output("dialogue_instructions", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Executes the dialogue instruction process for a character."""
         character = self.require_input("character")
         instructions = self.normalized_input_value("instructions")
 
@@ -246,6 +254,7 @@ class ContextualGenerate(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output sockets and sets default properties."""
         self.add_input("state")
         self.add_input("context_type", socket_type="str", optional=True)
         self.add_input("context_name", socket_type="str", optional=True)
@@ -272,6 +281,17 @@ class ContextualGenerate(AgentNode):
         self.add_output("text", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Execute the run process with the provided state.
+        
+        This method retrieves various input values required for the  generation
+        process, including context type, instructions,  and character details. It
+        constructs a context string and  invokes the agent's contextual generation
+        method with the  gathered parameters. Finally, it sets the output values
+        including the generated text and the provided state.
+        
+        Args:
+            state (GraphState): The current state of the graph to be updated.
+        """
         scene = active_scene.get()
         context_type = self.require_input("context_type")
         context_name = self.normalized_input_value("context_name")
@@ -339,6 +359,8 @@ class GenerateThematicList(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output properties for the component."""
+        """Initializes inputs and outputs for the component."""
         self.add_input("state")
         self.add_input("instructions", socket_type="str", optional=True)
 
@@ -349,6 +371,8 @@ class GenerateThematicList(AgentNode):
         self.add_output("list", socket_type="list")
 
     async def run(self, state: GraphState):
+        """Executes the run process with given state and parameters."""
+        """Executes the main logic of the agent with given state."""
         instructions = self.normalized_input_value("instructions")
         iterations = self.require_number_input("iterations")
 
