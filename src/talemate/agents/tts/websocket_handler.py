@@ -152,11 +152,13 @@ class TTSWebsocketHandler(Plugin):
     def connect(self):
         # needs to be after config is saved so the TTS agent has already
         # refreshed to the latest config
+        """Connects the event handler for configuration changes."""
         async_signals.get("config.changed.follow").connect(
             self.on_app_config_change_followup
         )
 
     async def on_app_config_change_followup(self, event):
+        """Handles follow-up actions on app configuration change."""
         self._send_api_status()
 
     # ---------------------------------------------------------------------
@@ -165,6 +167,7 @@ class TTSWebsocketHandler(Plugin):
 
     async def _send_voice_list(self, select_voice_id: str | None = None):
         # global voice library
+        """Sends a list of voices and scene voices through the websocket."""
         voice_library = get_voice_library()
         voices = [v.model_dump() for v in voice_library.voices.values()]
         voices.sort(key=lambda x: x["label"])
@@ -192,6 +195,7 @@ class TTSWebsocketHandler(Plugin):
 
     def _broadcast_update(self, select_voice_id: str | None = None):
         # After any mutation we broadcast the full list for simplicity
+        """Broadcasts the full voice list after a mutation."""
         asyncio.create_task(self._send_voice_list(select_voice_id))
 
     def _send_api_status(self):
@@ -210,12 +214,24 @@ class TTSWebsocketHandler(Plugin):
     # ---------------------------------------------------------------------
 
     async def handle_list(self, data: dict):
+        """Handles the voice list by sending it."""
         await self._send_voice_list()
 
     async def handle_api_status(self, data: dict):
+        """Send the API status asynchronously."""
         self._send_api_status()
 
     async def handle_add(self, data: dict):
+        """Handles the addition of a voice to the library.
+        
+        This function attempts to create an AddVoicePayload from the provided  data. It
+        validates the input and checks for the active scene. If the  voice already
+        exists in the library, it signals a failure. Upon successful  addition, it
+        saves the updated voice library and broadcasts the update.
+        
+        Args:
+            data (dict): The data containing voice information to be added.
+        """
         try:
             voice = AddVoicePayload(**data)
         except pydantic.ValidationError as e:
@@ -303,14 +319,8 @@ class TTSWebsocketHandler(Plugin):
         await self.signal_operation_done()
 
     async def handle_test(self, data: dict):
-        """Handle a request to test a voice.
 
-        Supports two payload formats:
-
-        1. Existing voice - identified by ``voice_id`` (legacy behaviour)
-        2. Unsaved voice - identified by at least ``provider`` and ``provider_id``.
-        """
-
+        """Handle a request to test a voice."""
         tts_agent: "TTSAgent" = get_agent("tts")
 
         try:
@@ -357,6 +367,7 @@ class TTSWebsocketHandler(Plugin):
 
         # Run generation in background so we don't block the event loop
         async def _run_test():
+            """Run the test asynchronously and signal when done."""
             try:
                 await tts_agent.generate_chunks(context)
             finally:
@@ -365,8 +376,15 @@ class TTSWebsocketHandler(Plugin):
         asyncio.create_task(_run_test())
 
     async def handle_test_character_voice(self, data: dict):
-        """Handle a request to test a character voice."""
 
+        """Handle a request to test a character voice.
+        
+        This function processes a request to test a character's voice by validating the
+        input data  and retrieving the corresponding character from the scene. It
+        checks for the existence of the  character and their voice, and if valid, it
+        prepares the necessary parameters to invoke the  voice testing functionality.
+        If any validation fails, appropriate failure signals are sent.
+        """
         try:
             payload = TestCharacterVoicePayload(**data)
         except pydantic.ValidationError as e:
@@ -395,8 +413,8 @@ class TTSWebsocketHandler(Plugin):
         )
 
     async def handle_test_mixed(self, data: dict):
-        """Handle a request to test a mixed voice."""
 
+        """Handle a request to test a mixed voice."""
         tts_agent: "TTSAgent" = get_agent("tts")
 
         try:
@@ -437,8 +455,17 @@ class TTSWebsocketHandler(Plugin):
         asyncio.create_task(_run_test())
 
     async def handle_save_mixed(self, data: dict):
-        """Handle a request to save a mixed voice."""
 
+        """Handle a request to save a mixed voice.
+        
+        This function processes the input data to create a mixed voice using the TTS
+        agent.  It validates the weights of the voices to ensure they sum to 1.0 and
+        checks if the  TTS API is ready for the specified provider. After building the
+        mixer and generating  a unique voice ID, it attempts to save the mixed voice.
+        If successful, the new voice  is added to the voice library, and updates are
+        broadcasted. Error handling is included  to manage validation and operational
+        failures.
+        """
         tts_agent: "TTSAgent" = get_agent("tts")
 
         try:
@@ -500,8 +527,16 @@ class TTSWebsocketHandler(Plugin):
             await self.signal_operation_failed(f"Failed to save mixed voice: {str(e)}")
 
     async def handle_generate_for_scene_message(self, data: dict):
-        """Handle a request to generate a voice for a scene message."""
 
+        """Handle a request to generate a voice for a scene message.
+        
+        This asynchronous function processes a request to generate text-to-speech (TTS)
+        for a scene message based on the provided data. It validates the input data,
+        retrieves the appropriate message from the scene, and checks the message type
+        to ensure it is valid. If the message is a character message, it also retrieves
+        the corresponding character. Finally, it invokes the TTS agent to generate the
+        speech and signals the operation's completion or failure as necessary.
+        """
         tts_agent: "TTSAgent" = get_agent("tts")
         scene: "Scene" = self.scene
 
@@ -558,8 +593,8 @@ class TTSWebsocketHandler(Plugin):
         await self.signal_operation_done()
 
     async def handle_stop_and_clear(self, data: dict):
-        """Handle a request from the frontend to stop and clear the current TTS queue."""
 
+        """Handle a request to stop and clear the current TTS queue."""
         tts_agent: "TTSAgent" = get_agent("tts")
 
         if not tts_agent:
@@ -574,23 +609,8 @@ class TTSWebsocketHandler(Plugin):
             await self.signal_operation_failed(str(e))
 
     async def handle_upload_voice_file(self, data: dict):
-        """Handle uploading a new audio file for a voice.
 
-        The *provider* defines which MIME types it accepts via
-        ``VoiceProvider.upload_file_types``.  This method therefore:
-
-        1. Parses the data-URL to obtain the raw bytes **and** MIME type.
-        2. Verifies the MIME type against the provider's allowed list
-           (if the provider restricts uploads).
-        3. Stores the file under
-
-           ``tts/voice/<provider>/<slug(label)>.<extension>``
-
-           where *extension* is derived from the MIME type (e.g. ``audio/wav`` → ``wav``).
-        4. Returns the relative path ("provider_id") back to the frontend so
-           it can populate the voice's ``provider_id`` field.
-        """
-
+        """Handle uploading a new audio file for a voice."""
         try:
             payload = UploadVoiceFilePayload(**data)
         except pydantic.ValidationError as e:

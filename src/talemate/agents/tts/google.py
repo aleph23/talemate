@@ -139,6 +139,7 @@ class GoogleMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Add Google Gemini actions to the provided actions dictionary."""
         actions["_config"].config["apis"].choices.append(
             {
                 "value": "google",
@@ -190,6 +191,7 @@ class GoogleMixin:
 
     @property
     def google_configured(self) -> bool:
+        """Check if Google API key and model are configured."""
         return bool(self.google_api_key) and bool(self.google_model)
 
     @property
@@ -206,6 +208,7 @@ class GoogleMixin:
 
     @property
     def google_not_configured_action(self) -> Action | None:
+        """Returns an Action to configure Google API settings if not set."""
         if not self.google_api_key:
             return Action(
                 action_name="openAppConfig",
@@ -224,18 +227,22 @@ class GoogleMixin:
 
     @property
     def google_info(self) -> str:
+        """Return the Google information string."""
         return GOOGLE_INFO
 
     @property
     def google_max_generation_length(self) -> int:
+        """Return the maximum generation length for Google."""
         return 1024
 
     @property
     def google_model(self) -> str:
+        """Get the model value from the Google action configuration."""
         return self.actions["google"].config["model"].value
 
     @property
     def google_model_choices(self) -> list[str]:
+        """Return a list of Google model choices with labels and values."""
         return [
             {"label": choice["label"], "value": choice["value"]}
             for choice in self.actions["google"].config["model"].choices
@@ -243,10 +250,12 @@ class GoogleMixin:
 
     @property
     def google_api_key(self) -> Optional[str]:
+        """Returns the Google API key from the configuration."""
         return self.config.google.api_key
 
     @property
     def google_agent_details(self) -> dict:
+        """Returns Google agent details based on configuration status."""
         details = {}
 
         if not self.google_configured:
@@ -266,7 +275,7 @@ class GoogleMixin:
         return details
 
     def _make_google_client(self) -> genai.Client:
-        """Return a fresh genai.Client so updated creds propagate immediately."""
+        """Create and return a new genai.Client instance."""
         return genai.Client(api_key=self.google_api_key or None)
 
     async def google_generate(
@@ -275,8 +284,16 @@ class GoogleMixin:
         context: GenerationContext,
         chunk_size: int = 1024,  # kept for signature parity
     ) -> Union[bytes, None]:
-        """Generate audio and wrap raw PCM into a playable WAV container."""
 
+        """Generate audio and wrap raw PCM into a playable WAV container.
+        
+        This asynchronous function generates audio content using a specified voice and
+        wraps the raw PCM data into a WAV format suitable for playback. It utilizes the
+        Google client to request audio generation based on the provided chunk and
+        context.  The function handles the response, extracts the PCM data, and formats
+        it into a  WAV container, ensuring compatibility with web browsers. Error
+        handling is included  to log any issues that arise during the process.
+        """
         voice_name = chunk.voice.provider_id
         client = self._make_google_client()
 
