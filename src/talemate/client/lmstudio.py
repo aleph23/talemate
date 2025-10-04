@@ -23,6 +23,7 @@ class LMStudioClient(ClientBase):
 
     @property
     def supported_parameters(self):
+        """Return a list of supported parameters."""
         return [
             "temperature",
             "top_p",
@@ -37,12 +38,18 @@ class LMStudioClient(ClientBase):
     def api_key(self):
         # LMStudio doesn't currently support API keys so we'll just use a dummy key
         # since the openai client requires it.
+        """Return a dummy API key for the OpenAI client."""
+        """Return a dummy API key for the OpenAI client."""
         return "sk-1234"
 
     def make_client(self):
+        """Create an AsyncOpenAI client instance."""
+        """Create an AsyncOpenAI client instance."""
         return AsyncOpenAI(base_url=self.api_url + "/v1", api_key=self.api_key)
 
     async def get_model_name(self):
+        """Retrieve the model name from the client."""
+        """Retrieve the model name from the client."""
         client = self.make_client()
         models = await client.models.list(timeout=self.status_request_timeout)
         try:
@@ -55,16 +62,8 @@ class LMStudioClient(ClientBase):
 
         if model_name:
             model_name = model_name.replace("\\", "/").split("/")[-1]
-
-        return model_name
-
-    async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters using a streaming
-        request so that token usage can be tracked incrementally via
-        `update_request_tokens`.
-        """
-
+        """Generates text from the given prompt and parameters using a streaming request."""
+        """Generates text from the given prompt and parameters using a streaming request."""
         self.log.debug(
             "generate",
             prompt=prompt[:128] + " ...",

@@ -54,10 +54,8 @@ class register_list:
 
 
 async def list_all(exclude_urls: list[str] = list()):
-    """
-    Return a list of client bootstrap objects.
-    """
 
+    """Return a list of client bootstrap objects, excluding specified URLs."""
     for service_name, func in LISTS.items():
         async for item in func():
             if item.api_url not in exclude_urls:
