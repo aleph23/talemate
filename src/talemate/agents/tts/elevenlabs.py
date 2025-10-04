@@ -6,6 +6,7 @@ import structlog
 
 # Lazy imports for heavy dependencies
 def _import_heavy_deps():
+    """Import heavy dependencies for the application."""
     global AsyncElevenLabs, ApiError
     from elevenlabs.client import AsyncElevenLabs
 
@@ -66,6 +67,7 @@ class ElevenLabsMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Add ElevenLabs actions to the provided actions dictionary."""
         actions["_config"].config["apis"].choices.append(
             {
                 "value": "elevenlabs",
@@ -111,20 +113,24 @@ class ElevenLabsMixin:
 
     @classmethod
     def add_voices(cls, voices: dict[str, VoiceLibrary]):
+        """Add voices to the VoiceLibrary."""
         voices["elevenlabs"] = VoiceLibrary(api="elevenlabs", local=True)
 
     @property
     def elevenlabs_chunk_size(self) -> int:
+        """Get the chunk size for ElevenLabs configuration."""
         return self.actions["elevenlabs"].config["chunk_size"].value
 
     @property
     def elevenlabs_configured(self) -> bool:
+        """Check if Eleven Labs is configured with an API key and model."""
         api_key_set = bool(self.elevenlabs_api_key)
         model_set = bool(self.elevenlabs_model)
         return api_key_set and model_set
 
     @property
     def elevenlabs_not_configured_reason(self) -> str | None:
+        """Return the reason ElevenLabs is not configured, if applicable."""
         if not self.elevenlabs_api_key:
             return "ElevenLabs API key not set"
         if not self.elevenlabs_model:
@@ -133,6 +139,7 @@ class ElevenLabsMixin:
 
     @property
     def elevenlabs_not_configured_action(self) -> Action | None:
+        """Returns an Action if ElevenLabs API key or model is not configured."""
         if not self.elevenlabs_api_key:
             return Action(
                 action_name="openAppConfig",
@@ -151,6 +158,7 @@ class ElevenLabsMixin:
 
     @property
     def elevenlabs_max_generation_length(self) -> int:
+        """Return the maximum generation length for ElevenLabs."""
         return 1024
 
     @property
@@ -159,6 +167,7 @@ class ElevenLabsMixin:
 
     @property
     def elevenlabs_model_choices(self) -> list[str]:
+        """Returns a list of model choices for the Eleven Labs configuration."""
         return [
             {"label": choice["label"], "value": choice["value"]}
             for choice in self.actions["elevenlabs"].config["model"].choices
@@ -166,10 +175,12 @@ class ElevenLabsMixin:
 
     @property
     def elevenlabs_info(self) -> str:
+        """Return the ELEVENLABS_INFO string."""
         return ELEVENLABS_INFO
 
     @property
     def elevenlabs_agent_details(self) -> dict:
+        """Retrieve details about the ElevenLabs agent configuration."""
         details = {}
 
         if not self.elevenlabs_configured:
@@ -190,11 +201,33 @@ class ElevenLabsMixin:
 
     @property
     def elevenlabs_api_key(self) -> str:
+        """Get the Eleven Labs API key from the configuration."""
         return self.config.elevenlabs.api_key
 
     async def elevenlabs_generate(
         self, chunk: Chunk, context: GenerationContext, chunk_size: int = 1024
     ) -> Union[bytes, None]:
+        """Generate audio from text using the ElevenLabs API.
+        
+        This asynchronous function converts cleaned text into speech audio by utilizing
+        the ElevenLabs text-to-speech service. It handles API key validation, lazy
+        loading of dependencies, and manages streaming audio data into a byte buffer.
+        The function also includes error handling for API-specific errors and general
+        exceptions, ensuring that detailed error messages are logged and emitted to the
+        frontend UI.
+        
+        Args:
+            chunk (Chunk): An object containing the text to be converted and associated metadata.
+            context (GenerationContext): The context for the generation process.
+            chunk_size (int?): The size of the audio chunks to be processed. Defaults to 1024.
+        
+        Returns:
+            Union[bytes, None]: The generated audio data in bytes, or None if the API key is not set.
+        
+        Raises:
+            ApiError: If there is an error with the ElevenLabs API during the conversion process.
+            Exception: For any unexpected errors that occur during execution.
+        """
         api_key = self.elevenlabs_api_key
         if not api_key:
             return

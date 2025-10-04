@@ -145,6 +145,7 @@ class ChatterboxMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Add actions to the provided actions dictionary."""
         actions["_config"].config["apis"].choices.append(
             {
                 "value": "chatterbox",
@@ -189,22 +190,27 @@ class ChatterboxMixin:
 
     @property
     def chatterbox_max_generation_length(self) -> int:
+        """Returns the maximum generation length for the chatterbox."""
         return 512
 
     @property
     def chatterbox_device(self) -> str:
+        """Get the device configuration for the chatterbox."""
         return self.actions["chatterbox"].config["device"].value
 
     @property
     def chatterbox_chunk_size(self) -> int:
+        """Get the chunk size from the chatterbox configuration."""
         return self.actions["chatterbox"].config["chunk_size"].value
 
     @property
     def chatterbox_info(self) -> str:
+        """Return the chatterbox information."""
         return CHATTERBOX_INFO
 
     @property
     def chatterbox_agent_details(self) -> dict:
+        """Returns details of the Chatterbox agent if configured."""
         if not self.chatterbox_configured:
             return {}
         details = {}
@@ -218,11 +224,14 @@ class ChatterboxMixin:
         return details
 
     def chatterbox_delete_voice(self, voice: Voice):
-        """
-        Remove the voice from the file system.
-        Only do this if the path is within TALEMATE_ROOT.
-        """
 
+        """Remove the voice from the file system.
+        
+        This function checks if the provided voice is a Talemate asset using the
+        voice_is_talemate_asset function. If it is, the function attempts to delete the
+        corresponding voice file from the file system. It logs the process and any
+        errors encountered during the deletion attempt.
+        """
         is_talemate_asset, resolved = voice_is_talemate_asset(
             voice, provider(voice.provider)
         )
@@ -254,6 +263,7 @@ class ChatterboxMixin:
         output_path: str,
         **kwargs,
     ):
+        """Generate an audio file from text using the specified model."""
         wav = model.generate(text=text, audio_prompt_path=audio_prompt_path, **kwargs)
         ta.save(output_path, wav, model.sr)
         return output_path
@@ -261,6 +271,7 @@ class ChatterboxMixin:
     async def chatterbox_generate(
         self, chunk: Chunk, context: GenerationContext
     ) -> bytes | None:
+        """Generates audio from text using the chatterbox TTS instance."""
         chatterbox_instance: ChatterboxInstance | None = getattr(
             self, "chatterbox_instance", None
         )
@@ -310,6 +321,7 @@ class ChatterboxMixin:
                 return f.read()
 
     async def chatterbox_prepare_chunk(self, chunk: Chunk):
+        """Prepares the voice chunk by setting its exaggeration parameter."""
         voice = chunk.voice
         P = provider(voice.provider)
         exaggeration = P.voice_parameter(voice, "exaggeration")
