@@ -36,6 +36,8 @@ class TextGeneratorWebuiClient(ClientBase):
 
     @property
     def request_headers(self):
+        """Return the request headers for the API call."""
+        """Return the request headers for the API call."""
         headers = {}
         headers["Content-Type"] = "application/json"
         if self.api_key:
@@ -50,6 +52,8 @@ class TextGeneratorWebuiClient(ClientBase):
 
         # note that this is not the full list of their supported parameters
         # but only those we send.
+        """Return a list of supported parameters for the API."""
+        """Return a list of supported parameters for the API."""
         return [
             "temperature",
             "top_p",
@@ -82,6 +86,7 @@ class TextGeneratorWebuiClient(ClientBase):
         ]
 
     def tune_prompt_parameters(self, parameters: dict, kind: str):
+        """Tune prompt parameters for the model."""
         super().tune_prompt_parameters(parameters, kind)
         parameters["stopping_strings"] = STOPPING_STRINGS + parameters.get(
             "extra_stopping_strings", []
@@ -95,6 +100,8 @@ class TextGeneratorWebuiClient(ClientBase):
             parameters["do_sample"] = True
 
     def finalize_llama3(self, parameters: dict, prompt: str) -> tuple[str, bool]:
+        """Finalize parameters and prompt for llama3 instruct models."""
+        """Finalize parameters and prompt for llama3 instruct models."""
         if "<|eot_id|>" not in prompt:
             return prompt, False
 
@@ -113,6 +120,8 @@ class TextGeneratorWebuiClient(ClientBase):
         return prompt, True
 
     def finalize_YI(self, parameters: dict, prompt: str) -> tuple[str, bool]:
+        """Finalize YI parameters based on the model name."""
+        """Finalize YI parameters based on the model name."""
         if not self.model_name:
             return prompt, False
 
@@ -131,6 +140,7 @@ class TextGeneratorWebuiClient(ClientBase):
         return prompt, True
 
     async def get_model_name(self):
+        """Fetches the model name from the API."""
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self.api_url}/v1/internal/model/info",
@@ -148,9 +158,7 @@ class TextGeneratorWebuiClient(ClientBase):
         return model_name
 
     async def abort_generation(self):
-        """
-        Trigger the stop generation endpoint
-        """
+        """Trigger the stop generation endpoint."""
         async with httpx.AsyncClient() as client:
             await client.post(
                 f"{self.api_url}/v1/internal/stop-generation",
@@ -158,15 +166,14 @@ class TextGeneratorWebuiClient(ClientBase):
             )
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
+        """Generates a response based on the given prompt and parameters."""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             None, self._generate, prompt, parameters, kind
         )
 
     def _generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
+        """Generates a response from the API based on the given prompt and parameters."""
         parameters["prompt"] = prompt.strip(" ")
 
         response = ""
@@ -188,14 +195,8 @@ class TextGeneratorWebuiClient(ClientBase):
             response += chunk
             self.update_request_tokens(self.count_tokens(chunk))
 
-        return response
-
-    def jiggle_randomness(self, prompt_config: dict, offset: float = 0.3) -> dict:
-        """
-        adjusts temperature and repetition_penalty
-        by random values using the base value as a center
-        """
-
+        """Adjusts temperature and repetition_penalty in prompt_config by random values."""
+        """Adjusts temperature and repetition_penalty in prompt_config by random values."""
         temp = prompt_config["temperature"]
         rep_pen = prompt_config["repetition_penalty"]
 
