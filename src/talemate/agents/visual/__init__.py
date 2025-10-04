@@ -62,6 +62,7 @@ class VisualBase(Agent):
 
     @classmethod
     def init_actions(cls) -> dict[str, AgentAction]:
+        """Initialize and return a dictionary of agent actions."""
         actions = {
             "_config": AgentAction(
                 enabled=True,
@@ -160,22 +161,27 @@ class VisualBase(Agent):
 
     @property
     def enabled(self):
+        """Returns the status of the is_enabled property."""
         return self.is_enabled
 
     @property
     def has_toggle(self):
+        """Indicates if the toggle is available."""
         return True
 
     @property
     def experimental(self):
+        """Indicates whether the feature is experimental."""
         return False
 
     @property
     def backend(self):
+        """Get the backend configuration value."""
         return self.actions["_config"].config["backend"].value
 
     @property
     def backend_name(self):
+        """Return the label of the backend specified in the configuration."""
         key = self.actions["_config"].config["backend"].value
 
         for backend in BACKENDS:
@@ -184,20 +190,24 @@ class VisualBase(Agent):
 
     @property
     def default_style(self):
+        """Return the default style from the configuration."""
         return STYLE_MAP.get(
             self.actions["_config"].config["default_style"].value, Style()
         )
 
     @property
     def generate_timeout(self):
+        """Gets the timeout value from the configuration."""
         return self.actions["_config"].config["timeout"].value
 
     @property
     def ready(self):
+        """Indicates if the backend is ready."""
         return self.backend_ready
 
     @property
     def api_url(self):
+        """Return the API URL from the configuration."""
         try:
             return self.actions[self.backend].config["api_url"].value
         except KeyError:
@@ -205,6 +215,15 @@ class VisualBase(Agent):
 
     @property
     def agent_details(self):
+        """Retrieve detailed information about the agent.
+        
+        This property constructs a dictionary containing details about the  agent's
+        backend and client. It utilizes the AgentDetail class to  format the
+        information, including icons and descriptions. If the  agent is not ready but
+        is enabled, a status message is added to  indicate the readiness issue.
+        Additionally, it checks for any  backend-specific details by dynamically
+        calling the appropriate  method based on the backend name.
+        """
         details = {
             "backend": AgentDetail(
                 icon="mdi-server-outline",
@@ -235,19 +254,23 @@ class VisualBase(Agent):
 
     @property
     def process_in_background(self):
+        """Check if the process is enabled in the background."""
         return self.actions["process_in_background"].enabled
 
     @property
     def allow_automatic_generation(self):
+        """Returns whether automatic generation is enabled."""
         return self.actions["automatic_generation"].enabled
 
     async def on_ready_check_success(self):
+        """Handles the successful completion of a readiness check."""
         prev_ready = self.backend_ready
         self.backend_ready = True
         if not prev_ready:
             await self.emit_status()
 
     async def on_ready_check_failure(self, error):
+        """Handles the failure of a readiness check."""
         prev_ready = self.backend_ready
         self.backend_ready = False
         self.ready_check_error = str(error)
@@ -256,6 +279,7 @@ class VisualBase(Agent):
             await self.emit_status()
 
     async def on_image_generation_error(self, error):
+        """Handles image generation errors by emitting error messages."""
         emit(
             "image_generation_failed",
             websocket_passthrough=True,
@@ -264,6 +288,7 @@ class VisualBase(Agent):
         emit("status", "Image generation failed.", status="error")
 
     async def ready_check(self):
+        """Check if the backend is ready."""
         if not self.enabled:
             return
         backend = self.backend
@@ -318,6 +343,7 @@ class VisualBase(Agent):
         self.initialized = True
 
     def resolution_from_format(self, format: str, model_type: str = "sdxl"):
+        """Retrieve resolution based on format and model type."""
         if model_type not in RESOLUTION_MAP:
             raise ValueError(f"Model type {model_type} not found in resolution map")
         return RESOLUTION_MAP[model_type].get(
@@ -325,6 +351,19 @@ class VisualBase(Agent):
         )
 
     def prepare_prompt(self, prompt: str, styles: list[Style] = None) -> Style:
+        """Prepare a styled prompt based on the given input and configurations.
+        
+        This function initializes a Style object with the provided prompt and
+        optionally prepends or appends additional styles. It also incorporates
+        positive and negative prefixes and suffixes from the configuration of  the
+        actions associated with prompts. The final styled prompt is returned  as a
+        Style object.
+        
+        Args:
+            prompt (str): The input prompt to be styled.
+            styles (list[Style]?): A list of additional styles to prepend
+                to the prompt. Defaults to None.
+        """
         prompt_style = Style()
         prompt_style.load(prompt)
 
@@ -366,6 +405,7 @@ class VisualBase(Agent):
         return prompt_style
 
     def vis_type_styles(self, vis_type: str):
+        """Return the style for the given visualization type."""
         if vis_type == VIS_TYPES.CHARACTER:
             portrait_style = STYLE_MAP["character_portrait"].copy()
             return portrait_style
@@ -387,6 +427,15 @@ class VisualBase(Agent):
     async def apply_image_character(
         self, image: str, character_name: str, replace: bool = False
     ):
+        """Applies a cover image to a character in the scene.
+        
+        This asynchronous function retrieves a character by name and applies a cover
+        image  if certain conditions are met. It checks if the character exists and
+        whether a cover  image is already set. If not, it adds the image as an asset
+        and updates the character's  cover image. Additionally, it sets the scene's
+        cover image if one is not already present  and emits the current status of the
+        scene.
+        """
         character = self.scene.get_character(character_name)
 
         if not character:
@@ -409,6 +458,7 @@ class VisualBase(Agent):
         self.scene.emit_status()
 
     async def emit_image(self, image: str):
+        """Generates and emits an image with its context."""
         context = visual_context.get()
         await self.apply_image(image)
         emit(
@@ -424,6 +474,20 @@ class VisualBase(Agent):
     async def generate(
         self, format: str = "portrait", prompt: str = None, automatic: bool = False
     ):
+        """Generate a visual output based on the provided context and prompt.
+        
+        This asynchronous function handles the generation of visual content by first
+        checking the context and prompt inputs. It augments the prompt with styles
+        based on the visual type and prepares it for generation. If the conditions for
+        image generation are not met, it emits a system message with the prompt
+        instead. The function also manages backend-specific generation calls and
+        handles errors related to the generation process.
+        
+        Args:
+            format (str): The format of the visual output, default is "portrait".
+            prompt (str): The prompt for generating the visual content, default is None.
+            automatic (bool): Flag to indicate if automatic generation is allowed, default is False.
+        """
         context: VisualContextState = visual_context.get()
 
         log.debug("visual generate", context=context)
@@ -577,6 +641,7 @@ class VisualBase(Agent):
         instructions: str = None,
         prompt_only: bool = False,
     ):
+        """Generates the environment background."""
         with VisualContext(
             vis_type=VIS_TYPES.ENVIRONMENT,
             instructions=instructions,
@@ -591,6 +656,7 @@ class VisualBase(Agent):
         replace: bool = False,
         prompt_only: bool = False,
     ):
+        """Generates a character portrait based on the provided parameters."""
         with VisualContext(
             vis_type=VIS_TYPES.CHARACTER,
             character_name=character_name,
