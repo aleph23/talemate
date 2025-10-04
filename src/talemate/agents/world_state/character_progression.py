@@ -71,10 +71,12 @@ class CharacterProgressionMixin:
 
     @property
     def character_progression_enabled(self) -> bool:
+        """Returns whether character progression is enabled."""
         return self.actions["character_progression"].enabled
 
     @property
     def character_progression_frequency(self) -> int:
+        """Return the frequency of character progression."""
         return self.actions["character_progression"].config["frequency"].value
 
     @property
@@ -83,25 +85,34 @@ class CharacterProgressionMixin:
 
     @property
     def character_progression_max_changes(self) -> int:
+        """Get the maximum number of changes for character progression."""
         return self.actions["character_progression"].config["max_changes"].value
 
     @property
     def character_progression_as_suggestions(self) -> bool:
+        """Get the character progression setting as suggestions."""
         return self.actions["character_progression"].config["as_suggestions"].value
 
     # signal connect
 
     def connect(self, scene):
+        """Connects the scene and sets up the game loop signal."""
         super().connect(scene)
         talemate.emit.async_signals.get("game_loop").connect(
             self.on_game_loop_track_character_progression
         )
 
     async def on_game_loop_track_character_progression(self, emission: GameLoopEvent):
-        """
-        Called when a conversation is generated
-        """
 
+        """Tracks character progression during the game loop.
+        
+        This function is called to monitor and update the character progression  based
+        on the game loop events. It checks if character progression is  enabled and
+        whether the required frequency for updates has been met.  If so, it iterates
+        through the characters in the scene, determining  their development and
+        processing the corresponding calls for each  character, while respecting player
+        character settings.
+        """
         if not self.enabled or not self.character_progression_enabled:
             return
 
@@ -142,6 +153,15 @@ class CharacterProgressionMixin:
         calls: list[focal.Call],
         as_suggestions: bool = True,
     ):
+        """Processes character progression calls and updates the character state.
+        
+        This asynchronous function handles a list of progression calls for a given
+        character. If `as_suggestions` is set to True, it adds a suggestion to the
+        world state manager. Otherwise, it directly applies changes to the character's
+        attributes or description based on the provided calls. The function supports
+        adding, updating, and removing attributes as well as updating the character's
+        description.
+        """
         world_state_manager: WorldStateManager = self.scene.world_state_manager
         if as_suggestions:
             await world_state_manager.add_suggestion(
@@ -185,6 +205,7 @@ class CharacterProgressionMixin:
 
         @set_loading("Generating character attribute", cancellable=True)
         async def add_attribute(name: str, instructions: str) -> str:
+            """Adds a character attribute with the specified name and instructions."""
             return await creator.generate_character_attribute(
                 character,
                 attribute_name=name,
@@ -194,6 +215,7 @@ class CharacterProgressionMixin:
 
         @set_loading("Generating character attribute", cancellable=True)
         async def update_attribute(name: str, instructions: str) -> str:
+            """Updates a character attribute based on the provided name and instructions."""
             return await creator.generate_character_attribute(
                 character,
                 attribute_name=name,
@@ -203,10 +225,12 @@ class CharacterProgressionMixin:
             )
 
         async def remove_attribute(name: str, reason: str) -> str:
+            """Removes an attribute based on the given name and reason."""
             return None
 
         @set_loading("Generating character description", cancellable=True)
         async def update_description(instructions: str) -> str:
+            """Updates the character description based on provided instructions."""
             return await creator.generate_character_detail(
                 character,
                 detail_name="description",
