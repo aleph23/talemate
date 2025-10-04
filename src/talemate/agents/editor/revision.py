@@ -517,7 +517,7 @@ class RevisionMixin:
 
     async def revision_collect_repetition_range(self) -> list[str]:
 
-        """Collects messages from the scene's history for revision."""
+        """Collects narrator and character messages from the scene's history for revision."""
         scene: "Scene" = self.scene
 
         ctx = revision_context.get()

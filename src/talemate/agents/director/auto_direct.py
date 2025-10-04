@@ -152,8 +152,14 @@ class AutoDirectMixin:
 
     @property
     def auto_direct_instruct_any(self) -> bool:
+        """
+        Will check whether actor or narrator instructions are enabled.
 
-        """Check if actor or narrator instructions are enabled."""
+        For narrator instructions to be enabled instruct_narrator needs to be enabled as well.
+
+        Returns:
+            bool: True if either actor or narrator instructions are enabled.
+        """
         return self.auto_direct_instruct_actors or self.auto_direct_instruct_narrator
 
     # signal connect

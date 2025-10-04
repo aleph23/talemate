@@ -794,7 +794,11 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
     @set_processing
     async def is_character_present(self, character: str) -> bool:
 
-        """Check if a character is present and active in the current scene."""
+        """Check if a character is present and active in the current scene.
+        Arguments:
+
+        - `character`: The character to check.
+        """
         if len(self.scene.history) < 10:
             text = self.scene.intro + "\n\n" + self.scene.snapshot(lines=50)
         else:
@@ -811,7 +815,11 @@ class WorldStateAgent(CharacterProgressionMixin, Agent):
     @set_processing
     async def is_character_leaving(self, character: str) -> bool:
 
-        """Check if a character is leaving the current scene."""
+        """Check if a character is leaving the current scene.
+        Arguments:
+
+        - `character`: The character to check.
+        """
         if len(self.scene.history) < 10:
             text = self.scene.intro + "\n\n" + self.scene.snapshot(lines=50)
         else:

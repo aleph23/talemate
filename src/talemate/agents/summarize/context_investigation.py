@@ -235,7 +235,14 @@ class ContextInvestigationMixin:
         pad_entries: int = 5,
     ) -> str:
 
-        """Processes a context investigation based on the provided parameters."""
+        """Processes a context investigation based on the provided parameters.
+        Arguments:
+        - layer: The layer to investigate
+        - index: The index in the layer to investigate
+        - query: The query to investigate
+        - analysis: Scene analysis text
+        - pad_entries: if > 0 will pad the entries with the given number of entries before and after the start and end index
+        """
         log.debug(
             "summarizer.investigate_context", layer=layer, index=index, query=query
         )

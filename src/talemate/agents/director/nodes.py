@@ -145,7 +145,6 @@ class LogAction(AgentNode):
 
     def setup(self):
         """Sets up input and output properties for the component."""
-        """Sets up input and output properties for the component."""
         self.add_input("state")
         self.add_input("action", socket_type="str")
         self.add_input("action_description", socket_type="str")
@@ -158,7 +157,6 @@ class LogAction(AgentNode):
         self.add_output("state")
 
     async def run(self, state: GraphState):
-        """Logs an action and sets output values based on the provided state."""
         """Logs an action and sets output values based on the provided state."""
         state = self.require_input("state")
         action = self.require_input("action")

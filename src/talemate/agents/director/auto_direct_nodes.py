@@ -82,7 +82,6 @@ class GenerateSceneTypes(AgentNode):
 
     def setup(self):
         """Sets up the inputs and outputs for the component."""
-        """Sets up the inputs and outputs for the component."""
         self.add_input("state")
         self.add_input("instructions", socket_type="str", optional=True)
         self.add_input("max_scene_types", socket_type="int", optional=True)
@@ -123,7 +122,6 @@ class IsDueForInstruction(AgentNode):
 
     def setup(self):
         """Sets up input and output sockets for the actor."""
-        """Sets up input and output sockets for the actor."""
         self.add_input("actor_name", socket_type="str")
 
         self.set_property("actor_name", "")
@@ -132,7 +130,6 @@ class IsDueForInstruction(AgentNode):
         self.add_output("actor_name", socket_type="str")
 
     async def run(self, state: GraphState):
-        """Executes the run process for the given GraphState."""
         """Executes the run process for the given GraphState."""
         actor_name = self.require_input("actor_name")
 

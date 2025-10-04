@@ -191,7 +191,7 @@ class ModelPrompt:
 
     def create_user_override(self, template_name: str, model_name: str):
 
-        """Copies a template file to a user-specific location."""
+        """Will copy STD_TEMPLATE_PATH/template_name to USER_TEMPLATE_PATH/model_name.jinja2"""
         template_name = template_name.split(".jinja2")[0]
 
         cleaned_model_name = self.clean_model_name(model_name)

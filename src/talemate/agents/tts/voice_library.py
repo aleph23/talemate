@@ -130,7 +130,10 @@ def _scene_library_path(scene: "Scene") -> Path:
 
 async def load_scene_voice_library(scene: "Scene") -> VoiceLibrary:
 
-    """Load and return the voice library for the given scene."""
+    """Load and return the voice library for the given scene.
+    If the file does not exist an empty ``VoiceLibrary`` instance is returned.
+    The returned instance is *not* stored on the scene – caller decides.
+    """
     path = _scene_library_path(scene)
 
     try:
@@ -148,7 +151,9 @@ async def load_scene_voice_library(scene: "Scene") -> VoiceLibrary:
 
 async def save_scene_voice_library(scene: "Scene", library: VoiceLibrary):
 
-    """Persist library to the scene's voice-library.json."""
+    """Persist library to the scene's voice-library.json.
+    The directory ``scene/{name}/info`` is created if necessary.
+    """
     path = _scene_library_path(scene)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)

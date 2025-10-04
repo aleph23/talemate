@@ -56,21 +56,21 @@ class TabbyAPIClient(ClientBase):
     @property
     def api_handles_prompt_template(self) -> bool:
         """Returns whether the API handles the prompt template."""
-        """Returns whether the API handles the prompt template."""
         return self.client_config.api_handles_prompt_template
 
     @property
     def experimental(self):
         """Returns the experimental description."""
-        """Returns the experimental description."""
         return EXPERIMENTAL_DESCRIPTION
+    
 
-        """Determines if the client can pass LLM coercion."""
+    @property
+    def can_be_coerced(self):
+        """Determines if the client can pass LLM coercion. (e.g., is able to predefine partial LLM output in the prompt)"""
         return not self.reason_enabled
 
     @property
     def supported_parameters(self):
-        """Return a list of supported parameter names."""
         """Return a list of supported parameter names."""
         return [
             "max_tokens",
@@ -93,13 +93,11 @@ class TabbyAPIClient(ClientBase):
 
     def prompt_template(self, system_message: str, prompt: str):
         """Return the prompt if api_handles_prompt_template is enabled."""
-        """Return the prompt if api_handles_prompt_template is enabled."""
         if not self.api_handles_prompt_template:
             return super().prompt_template(system_message, prompt)
         return prompt
 
     async def get_model_name(self):
-        """Fetches the model name from the API."""
         """Fetches the model name from the API."""
         url = urljoin(self.api_url, "model")
         headers = {
@@ -297,7 +295,9 @@ class TabbyAPIClient(ClientBase):
                 "status", message="Error during generation (check logs)", status="error"
             )
             return ""
-        """Adjusts temperature and presence penalty in prompt_config by random values."""
+
+
+    def jiggle_randomness(self, prompt_config: dict, offset: float = 0.3) -> dict:
         """Adjusts temperature and presence penalty in prompt_config by random values."""
         temp = prompt_config["temperature"]
 

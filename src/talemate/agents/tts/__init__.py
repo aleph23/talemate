@@ -648,7 +648,8 @@ class TTSAgent(
 
     @property
     def used_apis(self) -> list[str]:
-        """Returns a list of APIs that are currently in use."""
+        """Returns a list of APIs that are currently in use.
+        The api is in use if it is the narrator voice or if any of the active characters in the scene use a voice from the api."""
         return [api for api in self.apis if self.api_used(api)]
 
     def api_enabled(self, api: str) -> bool:
@@ -679,6 +680,8 @@ class TTSAgent(
         
         Args:
             api (str): The api to check.
+        Returns:
+            bool: Whether the api is in use
         """
         if self.narrator_voice and self.narrator_voice.provider == api:
             return True
