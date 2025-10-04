@@ -25,6 +25,8 @@ class JSONEncoder(json.JSONEncoder):
     """
 
     def default(self, obj):
+        """Convert a date or datetime object to ISO format or return its string
+        representation."""
         try:
             if isinstance(obj, (date, datetime)):
                 return obj.isoformat()
@@ -46,6 +48,7 @@ class DataParsingError(Exception):
 
 def fix_faulty_json(data: str) -> str:
     # Fix missing commas
+    """Fixes common issues in a faulty JSON string."""
     data = re.sub(r"}\s*{", "},{", data)
     data = re.sub(r"]\s*{", "],{", data)
     data = re.sub(r"}\s*\[", "},{", data)
@@ -72,16 +75,20 @@ def fix_faulty_json(data: str) -> str:
 
 
 def extract_json(s):
-    """
-    Extracts a JSON string from the beginning of the input string `s`.
-
-    Parameters:
+    """Extract a JSON string from the beginning of the input string `s`.
+    
+    This function scans the input string for the first complete JSON object or
+    array, counting the opening and closing brackets to ensure they match. It
+    returns both the extracted JSON string and the parsed JSON object. If no valid
+    JSON string is found, a ValueError is raised.
+    
+    Args:
         s (str): The input string containing a JSON string at the beginning.
-
+    
     Returns:
         str: The extracted JSON string.
         dict: The parsed JSON object.
-
+    
     Raises:
         ValueError: If a valid JSON string is not found.
     """
@@ -128,15 +135,19 @@ def extract_json(s):
 
 
 def extract_json_v2(text):
-    """
-    Extracts JSON structures from code blocks in a text string.
-
-    Parameters:
+    """Extract JSON structures from code blocks in a text string.
+    
+    This function processes a given text input to extract unique JSON objects found
+    within code blocks, which are delineated by triple backticks. It handles both
+    single and multiple JSON objects, applying necessary fixes to malformed JSON
+    and ensuring that duplicates are not included in the final output.
+    
+    Args:
         text (str): The input text containing code blocks with JSON.
-
+    
     Returns:
         list: A list of unique parsed JSON objects.
-
+    
     Raises:
         DataParsingError: If invalid JSON is encountered in code blocks.
     """
@@ -206,15 +217,20 @@ def extract_json_v2(text):
 
 
 def extract_yaml_v2(text):
-    """
-    Extracts YAML structures from code blocks in a text string.
-
-    Parameters:
+    """Extract YAML structures from code blocks in a text string.
+    
+    This function processes a given text to extract unique YAML objects found
+    within code blocks. It splits the text by code block markers, parses the YAML
+    content, and handles potential parsing errors by attempting to fix faulty YAML.
+    The function also checks for nested structures to ensure that separate
+    documents are correctly identified and returned.
+    
+    Args:
         text (str): The input text containing code blocks with YAML.
-
+    
     Returns:
         list: A list of unique parsed YAML objects.
-
+    
     Raises:
         DataParsingError: If invalid YAML is encountered in code blocks.
     """
@@ -283,16 +299,22 @@ def extract_yaml_v2(text):
 
 
 def fix_yaml_colon_in_strings(yaml_text):
-    """
-    Fixes YAML issues with unquoted strings containing colons.
-
-    Parameters:
-        yaml_text (str): The input YAML text to fix
-
-    Returns:
-        str: Fixed YAML text
-    """
     # Split the YAML text into lines
+    """Fixes YAML issues with unquoted strings containing colons.
+    
+    This function processes the input YAML text by splitting it into lines and
+    examining each line for key-value pairs or list items that contain unquoted
+    colons. If such cases are found, it converts them into block scalar notation to
+    ensure proper YAML formatting. The function handles both list items and key-
+    value pairs, ensuring that the output maintains the correct indentation and
+    structure.
+    
+    Args:
+        yaml_text (str): The input YAML text to fix.
+    
+    Returns:
+        str: Fixed YAML text.
+    """
     lines = yaml_text.split("\n")
     result_lines = []
 
@@ -339,16 +361,8 @@ def fix_yaml_colon_in_strings(yaml_text):
 
 
 def fix_faulty_yaml(yaml_text):
-    """
-    Fixes common YAML syntax issues by applying a series of fixers.
-
-    Parameters:
-        yaml_text (str): The input YAML text to fix
-
-    Returns:
-        str: Fixed YAML text
-    """
     # Apply specific fixers in sequence
+    """Fix common YAML syntax issues."""
     fixed_text = fix_yaml_colon_in_strings(yaml_text)
 
     # Add more fixers here as needed
@@ -357,9 +371,7 @@ def fix_faulty_yaml(yaml_text):
 
 
 def extract_data(text, schema_format: str = "json"):
-    """
-    Extracts data from text based on the schema format.
-    """
+    """Extracts data from text based on the specified schema format."""
     if schema_format == "json":
         return extract_json_v2(text)
     elif schema_format == "yaml":

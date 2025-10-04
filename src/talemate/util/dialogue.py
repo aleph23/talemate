@@ -42,6 +42,7 @@ def handle_endofline_special_delimiter(content: str) -> str:
     # but it will be missing one or more spaces, so we need to
     # to normalize to END-OF-LINE before we can split on it
 
+    """Remove content after the last 'END-OF-LINE' delimiter and trim whitespace."""
     content = content.split("END-OF-LINE")[0].strip()
 
     return content
@@ -50,11 +51,23 @@ def handle_endofline_special_delimiter(content: str) -> str:
 def remove_trailing_markers(
     content: str, pair_markers: list[str] = None, enclosure_markers: list[str] = None
 ) -> str:
-    """
-    Will check for uneven balance in the specified markers
-    and remove the trailing ones
-    """
 
+    """Remove trailing markers from the content.
+    
+    This function checks for uneven balance in the specified pair_markers  and
+    removes any trailing markers from the content. If no pair_markers  or
+    enclosure_markers are provided, default values are used. The function  iterates
+    through the markers, ensuring that any unmatched markers at  the end of the
+    content are removed, resulting in a balanced string.
+    
+    Args:
+        content (str): The string content to process.
+        pair_markers (list[str]?): List of markers that should be
+            treated as pairs. Defaults to ['"', "*"] if not provided.
+        enclosure_markers (list[str]?): List of markers that should
+            be treated as enclosures. Defaults to ["(", "[", "{"] if not
+            provided.
+    """
     if not pair_markers:
         pair_markers = ['"', "*"]
 
@@ -77,9 +90,15 @@ def remove_trailing_markers(
 
 
 def parse_messages_from_str(string: str, names: list[str]) -> list[str]:
-    """
-    Given a big string containing raw chat history, this function attempts to
-    parse it out into a list where each item is an individual message.
+    """def parse_messages_from_str(string: str, names: list[str]) -> list[str]:
+    
+    Parse a string containing chat history into individual messages.  This function
+    takes a raw chat history string and a list of speaker names,  then uses regular
+    expressions to identify and extract messages from the  string. It compiles a
+    regex pattern to match the names and finds the  starting indexes of each
+    message. If only one message is found, it returns  that message; otherwise, it
+    splits the string into a list of messages based  on the identified start
+    indexes.
     """
     sanitized_names = [re.escape(name) for name in names]
 
@@ -131,6 +150,8 @@ def strip_partial_sentences(text: str) -> str:
 
 
 def clean_message(message: str) -> str:
+    """Remove leading and trailing whitespace and reduce multiple spaces to a single
+    space."""
     message = message.strip()
     message = re.sub(r" +", " ", message)
     return message
@@ -178,6 +199,7 @@ def remove_extra_linebreaks(s: str) -> str:
 
 
 def replace_exposition_markers(s: str) -> str:
+    """Replace exposition markers in the input string with asterisks."""
     s = s.replace("(", "*").replace(")", "*")
     s = s.replace("[", "*").replace("]", "*")
     return s
@@ -193,6 +215,23 @@ def ensure_dialog_format(
     #    return f"\"{line}\""
     #
 
+    """Ensure the dialog format of a given line of text.
+    
+    This function processes a line of text to ensure it adheres to a specific
+    dialog format,  taking into account the presence of a talking character and the
+    desired formatting style.  It checks for asterisks and quotes to determine the
+    appropriate wrapping and handles  multiple lines by applying the
+    `ensure_dialog_line_format` function. Errors during  formatting are logged
+    without interrupting the process.
+    
+    Args:
+        line (str): The line of text to format.
+        talking_character (str?): The character speaking in the dialog.
+        formatting (str?): The desired formatting style, default is "md".
+    
+    Returns:
+        str: The formatted dialog line.
+    """
     if talking_character:
         line = line[len(talking_character) + 1 :].lstrip()
     eval_line = line.strip()
@@ -245,14 +284,25 @@ def ensure_dialog_format(
 
 
 def ensure_dialog_line_format(line: str, default_wrap: str = None) -> str:
-    """
-    a Python function that standardizes the formatting of dialogue and action/thought
-    descriptions in text strings. This function is intended for use in a text-based
-    game where spoken dialogue is encased in double quotes (" ") and actions/thoughts are
-    encased in asterisks (* *). The function must correctly format strings, ensuring that
-    each spoken sentence and action/thought is properly encased
-    """
 
+    """Ensure the formatting of dialogue and action/thought descriptions in a text
+    string.
+    
+    This function standardizes the formatting of dialogue and action/thought
+    descriptions  in text strings for use in a text-based game. It processes the
+    input string to ensure  that spoken dialogue is encased in double quotes (" ")
+    and actions/thoughts are  encased in asterisks (* *). The function handles
+    various edge cases, such as  unbalanced markers and whitespace, to produce a
+    correctly formatted output.
+    
+    Args:
+        line (str): The input string containing dialogue and action/thought descriptions.
+        default_wrap (str?): A default wrapping character to use if the line
+            is not already wrapped. Defaults to None.
+    
+    Returns:
+        str: The formatted string with standardized dialogue and action/thought markers.
+    """
     i = 0
 
     segments = []
@@ -393,6 +443,18 @@ def ensure_dialog_line_format(line: str, default_wrap: str = None) -> str:
 def clean_uneven_markers(chunk: str, marker: str):
     # if there is an uneven number of quotes, remove the last one if its
     # at the end of the chunk. If its in the middle, add a quote to the endc
+    """Clean uneven markers from a given string.
+    
+    This function checks for an uneven number of occurrences of the specified
+    marker in the input string `chunk`. If the count of the marker is odd, it
+    adjusts the string by either removing or adding the marker based on its
+    position. The function ensures that the resulting string has an even number of
+    markers by applying specific rules depending on the marker's location.
+    
+    Args:
+        chunk (str): The input string to be cleaned.
+        marker (str): The marker to check for uneven occurrences.
+    """
     count = chunk.count(marker)
 
     if count % 2 == 1:
@@ -409,16 +471,14 @@ def clean_uneven_markers(chunk: str, marker: str):
 
 
 def split_anchor_text(text: str, anchor_length: int = 10) -> tuple[str, str]:
-    """
-    Splits input text into two parts: non-anchor and anchor.
-    The anchor is the last `anchor_length` words of the text.
-
+    """Splits input text into non-anchor and anchor parts.
+    
     Args:
-        text (str): The input text to be split
-        anchor_length (int): Number of words to use as anchor
-
+        text (str): The input text to be split.
+        anchor_length (int): Number of words to use as anchor.
+    
     Returns:
-        tuple[str, str]: A tuple containing (non_anchor, anchor)
+        tuple[str, str]: A tuple containing (non_anchor, anchor).
     """
     if not text:
         return "", ""
@@ -444,19 +504,21 @@ def split_anchor_text(text: str, anchor_length: int = 10) -> tuple[str, str]:
 
 
 def separate_sentences(text: str) -> str:
-    """
-    Separates a text into sentences and joins them with double newlines.
-    """
+    """Separates a text into sentences and joins them with double newlines."""
     return "\n\n".join(sent_tokenize(text))
 
 
 def parse_tts_markup(markup: str) -> list[DialogueChunk]:
-    """
-    Parses TTS markup in the format:
-    [Speaker Name] text content
-    [Narrator] narrative text
-
-    Returns a list of DialogueChunk objects.
+    """Parses TTS markup into DialogueChunk objects.
+    
+    This function processes a string containing TTS markup formatted as  [Speaker
+    Name] followed by text content. It splits the input into  lines, matches each
+    line against the expected pattern, and  categorizes the content as either
+    dialogue or exposition. The  resulting DialogueChunk objects are collected into
+    a list and  returned.
+    
+    Args:
+        markup (str): The TTS markup string to be parsed.
     """
     if not markup:
         return []
