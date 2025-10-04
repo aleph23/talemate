@@ -9,6 +9,7 @@ class PromptContextState(pydantic.BaseModel):
     content: list[str] = pydantic.Field(default_factory=list)
 
     def push(self, content: str, proxy: list[str]):
+        """Adds content to the internal list and proxy if not already present."""
         if content not in self.content:
             self.content.append(content)
             proxy.append(content)
@@ -17,6 +18,7 @@ class PromptContextState(pydantic.BaseModel):
         return content in self.content
 
     def extend(self, content: list[str], proxy: list[str]):
+        """Extends the current collection by pushing items from content."""
         for item in content:
             self.push(item, proxy)
 

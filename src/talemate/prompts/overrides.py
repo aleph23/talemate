@@ -40,6 +40,7 @@ def get_template_overrides(agent_type: str) -> List[TemplateOverride]:
 
     # Helper function to get file modification time
     def get_file_mtime(filepath: str) -> Optional[datetime]:
+        """Retrieve the modification time of a file."""
         try:
             return datetime.fromtimestamp(os.path.getmtime(filepath))
         except (OSError, ValueError):
@@ -47,6 +48,17 @@ def get_template_overrides(agent_type: str) -> List[TemplateOverride]:
 
     # Helper function to calculate human readable time difference
     def get_time_difference(time1: datetime, time2: datetime) -> str:
+        """Calculate the human-readable time difference between two datetime objects.
+        
+        This function computes the absolute difference between two given  datetime
+        objects, `time1` and `time2`. It extracts the number of  days, hours, and
+        minutes from the difference and formats them into  a human-readable string. If
+        the difference is less than a minute,  it returns "less than a minute".
+        
+        Args:
+            time1 (datetime): The first datetime object.
+            time2 (datetime): The second datetime object.
+        """
         diff = abs(time1 - time2)
         days = diff.days
         hours = diff.seconds // 3600
