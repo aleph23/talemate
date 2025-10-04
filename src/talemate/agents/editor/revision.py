@@ -121,6 +121,7 @@ class Issues(pydantic.BaseModel):
 
     @property
     def log(self) -> list[str]:
+        """Returns the combined repetition and bad prose logs."""
         return self.repetition_log + self.bad_prose_log
 
 
@@ -178,6 +179,7 @@ class RevisionMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Add actions to the provided actions dictionary."""
         actions["revision"] = AgentAction(
             enabled=False,
             can_be_disabled=True,
@@ -348,6 +350,7 @@ class RevisionMixin:
 
     @property
     def revision_enabled(self):
+        """Returns whether the revision action is enabled."""
         return self.actions["revision"].enabled
 
     @property
@@ -356,30 +359,37 @@ class RevisionMixin:
 
     @property
     def revision_automatic_targets(self) -> list[str]:
+        """Return a list of automatic revision targets."""
         return self.actions["revision"].config["automatic_revision_targets"].value
 
     @property
     def revision_method(self):
+        """Gets the revision method from the actions configuration."""
         return self.actions["revision"].config["revision_method"].value
 
     @property
     def revision_repetition_detection_method(self):
+        """Get the repetition detection method from the revision configuration."""
         return self.actions["revision"].config["repetition_detection_method"].value
 
     @property
     def revision_repetition_threshold(self):
+        """Get the repetition threshold for revision actions."""
         return self.actions["revision"].config["repetition_threshold"].value
 
     @property
     def revision_repetition_range(self):
+        """Get the repetition range from the revision configuration."""
         return self.actions["revision"].config["repetition_range"].value
 
     @property
     def revision_repetition_min_length(self):
+        """Get the minimum length for revision repetition."""
         return self.actions["revision"].config["repetition_min_length"].value
 
     @property
     def revision_split_on_comma(self):
+        """Gets the value of split_on_comma from the revision configuration."""
         return self.actions["revision"].config["split_on_comma"].value
 
     @property
@@ -392,11 +402,13 @@ class RevisionMixin:
 
     @property
     def revision_detect_bad_prose_threshold(self):
+        """Gets the threshold for detecting bad prose in revisions."""
         return self.actions["revision"].config["detect_bad_prose_threshold"].value
 
     # signal connect
 
     def connect(self, scene):
+        """Connects various signals to the revision_on_generation method."""
         async_signals.get("agent.conversation.generated").connect(
             self.revision_on_generation
         )
@@ -504,11 +516,8 @@ class RevisionMixin:
     # helpers
 
     async def revision_collect_repetition_range(self) -> list[str]:
-        """
-        Collect the range of text to revise against by going through the scene's
-        history and collecting narrator and character messages
-        """
 
+        """Collects messages from the scene's history for revision."""
         scene: "Scene" = self.scene
 
         ctx = revision_context.get()
@@ -563,10 +572,23 @@ class RevisionMixin:
     async def _revision_evaluate_semantic_similarity(
         self, text: str, character: "Character | None" = None
     ) -> list[SimilarityMatch]:
-        """
-        Detect repetition using semantic similarity
-        """
 
+        """Evaluate semantic similarity to detect repetition in text.
+        
+        This asynchronous function processes the input `text` by first checking if it
+        starts with the character's name, then collects a range of historical sentences
+        for comparison. It compiles the text into sentences, filters out those below a
+        specified minimum length, and uses a memory agent to compare the filtered
+        sentences against historical data. The function returns a list of unique
+        similarity matches, including contextual neighbors for each match.
+        
+        Args:
+            text (str): The input text to evaluate for semantic similarity.
+            character (Character | None?): The character associated with the text, if any.
+        
+        Returns:
+            list[SimilarityMatch]: A list of unique similarity matches found in the text.
+        """
         memory_agent = get_agent("memory")
         character_name_prefix = (
             text.startswith(f"{character.name}: ") if character else False
@@ -621,12 +643,8 @@ class RevisionMixin:
     async def _revision_evaluate_fuzzy_similarity(
         self, text: str, character: "Character | None" = None
     ) -> list[SimilarityMatch]:
-        """
-        Detect repetition using fuzzy matching and dedupe
 
-        Will return a tuple with the deduped text and the deduped text
-        """
-
+        """Detects and deduplicates similar text using fuzzy matching."""
         compare_against: list[str] = await self.revision_collect_repetition_range()
 
         matches = []
@@ -645,8 +663,19 @@ class RevisionMixin:
         return list(set(matches))
 
     async def revision_detect_bad_prose(self, text: str) -> list[dict]:
-        """
-        Detect bad prose in the text
+        """Detect bad prose in the text.
+        
+        This function analyzes the provided text to identify instances of bad prose
+        based on specified writing style phrases. It first compiles the text into
+        sentences and checks the writing style for active phrases. Depending on the
+        configuration, it may split sentences on commas and evaluates phrases using
+        both regex and semantic similarity methods to identify problematic prose.
+        
+        Args:
+            text (str): The input text to be analyzed for bad prose.
+        
+        Returns:
+            list[dict]: A list of identified bad prose instances, each represented as a dictionary.
         """
         try:
             sentences = compile_text_to_sentences(text)
@@ -696,10 +725,8 @@ class RevisionMixin:
     async def _revision_detect_bad_prose_semantic_similarity(
         self, sentences: list[str], phrases: list[PhraseDetection]
     ) -> list[dict]:
-        """
-        Detect bad prose in the text using semantic similarity
-        """
 
+        """Detects bad prose in the text using semantic similarity."""
         memory_agent = get_agent("memory")
 
         if not memory_agent:
@@ -750,9 +777,7 @@ class RevisionMixin:
     async def _revision_detect_bad_prose_regex(
         self, sentence: str, phrase: PhraseDetection
     ) -> list[dict]:
-        """
-        Detect bad prose in the text using regex
-        """
+        """Detects unwanted phrases in a sentence using regex."""
         if str(phrase.classification).lower() != "unwanted":
             return []
 
@@ -776,8 +801,19 @@ class RevisionMixin:
         character: "Character | None" = None,
         detect_bad_prose: bool = True,
     ) -> Issues:
-        """
-        Collect issues from the text
+        """Collect issues from the text.
+        
+        This asynchronous function analyzes the provided text for repetition and bad
+        prose.  It utilizes different methods for detecting repetition based on the
+        specified  `self.revision_repetition_detection_method`. If enabled, it also
+        checks for bad prose  using the `self.revision_detect_bad_prose` method. The
+        results are compiled into  an `Issues` object, which includes logs of detected
+        issues.
+        
+        Args:
+            text (str): The text to analyze for issues.
+            character (Character | None?): The character context for analysis. Defaults to None.
+            detect_bad_prose (bool?): Flag to enable bad prose detection. Defaults to True.
         """
         writing_style = self.scene.writing_style
         detect_bad_prose = (
@@ -834,10 +870,16 @@ class RevisionMixin:
         self,
         info: RevisionInformation,
     ) -> str:
-        """
-        Revise the text by deduping
-        """
 
+        """Revise the text by deduping.
+        
+        This function processes the provided text to remove duplicate sentences  based
+        on the specified character's context. It first checks for a character  name
+        prefix and collects issues related to repetition. If significant  repetition is
+        found, it deduplicates the text and sends notifications  regarding the changes
+        made. If the reduction in text length is excessive,  it reverts to the original
+        text to prevent loss of content.
+        """
         info.revision_method = "dedupe"
 
         text = info.text
@@ -1019,6 +1061,7 @@ class RevisionMixin:
         )
 
         async def rewrite_text(text: str) -> str:
+            """Return the input text unchanged."""
             return text
 
         emission.response = analysis
@@ -1092,10 +1135,24 @@ class RevisionMixin:
         info: RevisionInformation,
         response_length: int = 768,
     ) -> str:
-        """
-        Unslop the text
-        """
 
+        """Unslop the text by revising it based on identified issues.
+        
+        This function processes the input text by first checking for a character name
+        prefix and then collecting issues related to the text. It utilizes a summarizer
+        to analyze the scene and selects an appropriate template for the revision.
+        After sending a signal before the revision, it requests a response from a
+        prompt, extracts any fixes from the response, and sends a signal after the
+        revision. Finally, it emits a message detailing the original text, identified
+        issues, and changes made.
+        
+        Args:
+            info (RevisionInformation): An object containing the text and character information for revision.
+            response_length (int?): The length of the response to generate. Defaults to 768.
+        
+        Returns:
+            str: The revised text after applying the necessary fixes.
+        """
         text = info.text
         character = info.character
 
@@ -1203,6 +1260,7 @@ class RevisionMixin:
     def inject_prompt_paramters(
         self, prompt_param: dict, kind: str, agent_function_name: str
     ):
+        """Injects parameters into the prompt based on the agent function name."""
         super().inject_prompt_paramters(prompt_param, kind, agent_function_name)
 
         if agent_function_name == "revision_revise":

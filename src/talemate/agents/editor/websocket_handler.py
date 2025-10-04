@@ -30,13 +30,20 @@ class EditorWebsocketHandler(Plugin):
 
     @property
     def editor(self):
+        """Gets the editor agent."""
         return get_agent("editor")
 
     async def handle_request_revision(self, data: dict):
-        """
-        Generate clickable actions for the user
-        """
 
+        """Generate clickable actions for the user.
+        
+        This function handles the revision of a message based on the provided data.  It
+        first checks if the revision feature is enabled and retrieves the corresponding
+        message from the scene. If the message is a CharacterMessage, it fetches the
+        associated character. After validating the message, it creates a
+        RevisionContext  to process the revision and updates the message in the scene
+        with the revised text.
+        """
         editor = self.editor
         scene: "Scene" = self.scene
 
