@@ -38,6 +38,7 @@ class DirectorAgent(
 
     @classmethod
     def init_actions(cls) -> dict[str, AgentAction]:
+        """Initialize and return a dictionary of agent actions."""
         actions = {
             "direct": AgentAction(
                 enabled=True,
@@ -80,6 +81,7 @@ class DirectorAgent(
 
     @property
     def enabled(self):
+        """Returns the status of the is_enabled property."""
         return self.is_enabled
 
     @property
@@ -88,13 +90,16 @@ class DirectorAgent(
 
     @property
     def experimental(self):
+        """Indicates if the feature is experimental."""
         return True
 
     @property
     def actor_direction_mode(self):
+        """Gets the actor direction mode from the actions configuration."""
         return self.actions["direct"].config["actor_direction_mode"].value
 
     async def log_function_call(self, call: Call):
+        """Logs a function call and emits a message."""
         log.debug("director.log_function_call", call=call)
         message = DirectorMessage(
             message=f"Called {call.name}",
@@ -107,6 +112,7 @@ class DirectorAgent(
     async def log_action(
         self, action: str, action_description: str, console_only: bool = False
     ):
+        """Logs an action with its description to the scene and emits it."""
         message = DirectorMessage(
             message=action_description,
             action=action,
@@ -124,4 +130,5 @@ class DirectorAgent(
     def allow_repetition_break(
         self, kind: str, agent_function_name: str, auto: bool = False
     ):
+        """Always returns False."""
         return False

@@ -17,6 +17,7 @@ log = structlog.get_logger()
 class MemoryRAGMixin:
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Adds long term memory action to the provided actions dictionary."""
         actions["use_long_term_memory"] = AgentAction(
             enabled=True,
             container=True,
@@ -79,18 +80,22 @@ class MemoryRAGMixin:
 
     @property
     def long_term_memory_enabled(self):
+        """Returns whether long-term memory is enabled."""
         return self.actions["use_long_term_memory"].enabled
 
     @property
     def long_term_memory_retrieval_method(self):
+        """Returns the retrieval method for long-term memory."""
         return self.actions["use_long_term_memory"].config["retrieval_method"].value
 
     @property
     def long_term_memory_number_of_queries(self):
+        """Gets the number of queries for long-term memory."""
         return self.actions["use_long_term_memory"].config["number_of_queries"].value
 
     @property
     def long_term_memory_answer_length(self):
+        """Gets the length of the long-term memory answer."""
         return int(self.actions["use_long_term_memory"].config["answer_length"].value)
 
     @property
@@ -99,10 +104,8 @@ class MemoryRAGMixin:
 
     @property
     def long_term_memory_cache_key(self):
-        """
-        Build the key from the various options
-        """
 
+        """Build the cache key from long-term memory options."""
         parts = [
             self.long_term_memory_retrieval_method,
             self.long_term_memory_number_of_queries,
@@ -112,6 +115,7 @@ class MemoryRAGMixin:
         return "-".join(map(str, parts))
 
     def connect(self, scene):
+        """Connect to a new scene and reset the cache."""
         super().connect(scene)
 
         # new scene, reset cache
@@ -120,6 +124,7 @@ class MemoryRAGMixin:
     # methods
 
     async def rag_set_cache(self, content: list[str]):
+        """Sets the cache for the RAG with the provided content."""
         self.scene.rag_cache[self.long_term_memory_cache_key] = {
             "content": content,
             "fingerprint": self.scene.history[-1].fingerprint
@@ -128,6 +133,14 @@ class MemoryRAGMixin:
         }
 
     async def rag_get_cache(self) -> list[str] | None:
+        """Retrieve cached content from long-term memory if available.
+        
+        This asynchronous function checks if the long-term memory cache is present.  If
+        it is, it retrieves the latest fingerprint from the scene's history.  The
+        function then checks the cache for the corresponding content based on the
+        fingerprint. If the cache is valid, it returns the cached content; otherwise,
+        it returns None.
+        """
         if not self.long_term_memory_cache:
             return None
 
@@ -145,10 +158,25 @@ class MemoryRAGMixin:
         prompt: str = "",
         sub_instruction: str = "",
     ) -> list[str]:
-        """
-        Builds long term memory to be inserted into a prompt
-        """
 
+        """Build long term memory to be inserted into a prompt.
+        
+        This asynchronous function constructs a memory context based on the provided
+        prompt and sub_instruction.  It first checks if long term memory is enabled and
+        retrieves cached memory if available.  If no sub_instruction is provided, it
+        generates one based on the character context or defaults to a generic
+        instruction.  The function then utilizes a specified retrieval method to
+        analyze the prompt and extract relevant context,  before caching the result for
+        future use.
+        
+        Args:
+            character (Character | None): An optional character object to provide context for the memory.
+            prompt (str): The prompt to be used for memory retrieval.
+            sub_instruction (str): Additional instructions to guide the memory building process.
+        
+        Returns:
+            list[str]: A list of strings representing the constructed memory context.
+        """
         if not self.long_term_memory_enabled:
             return []
 
