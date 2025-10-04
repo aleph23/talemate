@@ -52,15 +52,19 @@ class GetVoice(AgentNode):
 
     @property
     def voice_library(self) -> VoiceLibrary:
+        """Returns the voice library of the agent."""
+        """Get the voice library of the agent."""
         return self.agent.voice_library
 
     def setup(self):
+        """Sets up input and output for voice processing."""
         self.add_input("voice_id", socket_type="str", optional=True)
         self.set_property("voice_id", UNRESOLVED)
 
         self.add_output("voice", socket_type="tts/voice")
 
     async def run(self, state: GraphState):
+        """Executes the run process to set output values based on voice_id."""
         voice_id = self.require_input("voice_id")
 
         voice = self.voice_library.get_voice(voice_id)
@@ -80,9 +84,11 @@ class GetNarratorVoice(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up the output for text-to-speech voice."""
         self.add_output("voice", socket_type="tts/voice")
 
     async def run(self, state: GraphState):
+        """Runs the agent and sets the output voice."""
         voice = self.agent.narrator_voice
 
         self.set_output_values({"voice": voice})
@@ -100,6 +106,7 @@ class UnpackVoice(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("voice", socket_type="tts/voice")
         self.add_output("voice", socket_type="tts/voice")
         self.add_output("label", socket_type="str")
@@ -111,6 +118,7 @@ class UnpackVoice(AgentNode):
         self.add_output("is_scene_asset", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Run the process with the given GraphState."""
         voice: Voice = self.require_input("voice")
 
         self.set_output_values(
@@ -141,6 +149,8 @@ class Generate(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output sockets for the component."""
+        """Initializes inputs and outputs for the component."""
         self.add_input("state")
         self.add_input("text", socket_type="text", optional=True)
         self.add_input("voice", socket_type="tts/voice", optional=True)

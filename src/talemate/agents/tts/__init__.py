@@ -75,13 +75,15 @@ async_signals.register(
 
 
 def parse_chunks(text: str) -> list[str]:
-    """
-    Takes a string and splits it into chunks based on punctuation.
 
-    In case of an error it will return the original text as a single chunk and
-    the error will be logged.
+    """Splits a string into chunks based on punctuation.
+    
+    This function processes the input string by removing asterisks and ensuring
+    that sentence terminators are correctly placed before quotes. It replaces
+    ellipses with a placeholder, tokenizes the text into sentences, and cleans up
+    any empty chunks. In case of an error, the original text is returned as a
+    single chunk, and the error is logged.
     """
-
     try:
         text = text.replace("*", "")
 
@@ -154,6 +156,7 @@ class TTSAgent(
 
     @classmethod
     def config_options(cls, agent=None):
+        """Configure options for the agent."""
         config_options = super().config_options(agent=agent)
 
         if not agent:
@@ -181,6 +184,7 @@ class TTSAgent(
 
     @classmethod
     def init_actions(cls) -> dict[str, AgentAction]:
+        """Initialize and return a dictionary of agent actions for TTS configuration."""
         actions = {
             "_config": AgentAction(
                 enabled=True,
@@ -294,58 +298,84 @@ class TTSAgent(
 
     @property
     def enabled(self):
+        """Returns the enabled status of the object."""
         return self.is_enabled
 
     @property
     def has_toggle(self):
+        """Indicates if the toggle is available."""
         return True
 
     @property
     def experimental(self):
+        """Indicates whether the feature is experimental."""
         return False
 
     @property
     def voice_library(self) -> VoiceLibrary:
+        """Gets the instance of the VoiceLibrary."""
         return voice_library.get_instance()
 
     # config helpers
 
     @property
     def narrator_voice_id(self) -> str:
+        """Get the narrator voice ID from the configuration."""
         return self.actions["_config"].config["narrator_voice_id"].value
 
     @property
     def generate_for_player(self) -> bool:
+        """Returns whether to generate for the player."""
         return self.actions["_config"].config["generate_for_player"].value
 
     @property
     def generate_for_npc(self) -> bool:
+        """Returns whether NPC generation is enabled."""
         return self.actions["_config"].config["generate_for_npc"].value
 
     @property
     def generate_for_narration(self) -> bool:
+        """Returns whether narration generation is enabled."""
         return self.actions["_config"].config["generate_for_narration"].value
 
     @property
     def generate_for_context_investigation(self) -> bool:
+        """Returns the value of generate_for_context_investigation from the config."""
         return (
             self.actions["_config"].config["generate_for_context_investigation"].value
         )
 
     @property
     def speaker_separation(self) -> str:
+        """Get the speaker separation configuration value."""
         return self.actions["_config"].config["speaker_separation"].value
 
     @property
     def apis(self) -> list[str]:
+        """Return a list of APIs from the configuration."""
         return self.actions["_config"].config["apis"].value
 
     @property
     def all_apis(self) -> list[str]:
+        """Returns a list of API values from the configuration."""
         return [api["value"] for api in self.actions["_config"].config["apis"].choices]
 
     @property
     def agent_details(self):
+        """Retrieve detailed information about the agent's configuration and voice
+        settings.
+        
+        This property constructs a dictionary containing details about the narrator
+        voice and any character voices present in the scene. It checks the status of
+        APIs used by the voices, marking them as enabled or disabled based on their
+        readiness. Additionally, it aggregates information from other agent detail
+        functions if available, ensuring a comprehensive overview of the agent's
+        capabilities.
+        
+        Returns:
+            dict: A dictionary containing agent details, including voice configurations and API
+                statuses.
+        """
         details = {}
 
         self.actions["_config"].config[
@@ -414,6 +444,14 @@ class TTSAgent(
 
     @property
     def status(self):
+        """Get the current status of the object.
+        
+        This property checks the state of the object based on its attributes.  It first
+        verifies if the object is enabled. If it is, it then checks  if the object is
+        ready and whether it is currently processing in the  background or foreground.
+        The possible statuses returned are "disabled",  "busy_bg", "busy", "idle", and
+        "uninitialized".
+        """
         if not self.enabled:
             return "disabled"
         if self.ready:
@@ -424,6 +462,7 @@ class TTSAgent(
 
     @property
     def narrator_voice(self) -> Voice | None:
+        """Gets the narrator's voice from the voice library."""
         return self.voice_library.get_voice(self.narrator_voice_id)
 
     @property
@@ -475,6 +514,7 @@ class TTSAgent(
     # events
 
     def connect(self, scene):
+        """Connects signals to their respective handlers."""
         super().connect(scene)
         async_signals.get("game_loop_new_message").connect(
             self.on_game_loop_new_message
@@ -488,6 +528,14 @@ class TTSAgent(
         )
 
     async def on_scene_loop_init(self, event: "SceneLoopEvent"):
+        """Initializes the scene loop if certain conditions are met.
+        
+        This asynchronous function checks if the scene loop is enabled, ready,  and set
+        to generate for narration. If the scene environment is "creative"  or if there
+        are existing content messages, it will not proceed. Otherwise,  it generates an
+        introduction for the scene using the `generate` method  with the intro content
+        retrieved from `get_intro`.
+        """
         if not self.enabled or not self.ready or not self.generate_for_narration:
             return
 
@@ -505,6 +553,7 @@ class TTSAgent(
         await self.generate(self.scene.get_intro(), character=None)
 
     async def on_voice_library_update(self, voice_library: VoiceLibrary):
+        """Handles updates to the voice library and refreshes narrator voice choices."""
         log.debug("Voice library updated - refreshing narrator voice choices")
         self.actions["_config"].config[
             "narrator_voice_id"
@@ -512,10 +561,18 @@ class TTSAgent(
         await self.emit_status()
 
     async def on_game_loop_new_message(self, emission: GameLoopNewMessageEvent):
-        """
-        Called when a conversation is generated
-        """
 
+        """Handle new messages in the game loop and trigger text generation.
+        
+        This function processes incoming messages from the game loop, checking the
+        environment and various conditions to determine if text generation should
+        occur. It filters messages based on their type and source, retrieves the
+        associated character if applicable, and then calls the generate method to
+        produce the appropriate response.
+        
+        Args:
+            emission (GameLoopNewMessageEvent): The event containing the new message
+        """
         if self.scene.environment == "creative":
             return
 
@@ -591,46 +648,38 @@ class TTSAgent(
 
     @property
     def used_apis(self) -> list[str]:
-        """
-        Returns a list of apis that are in use
-
-        The api is in use if it is the narrator voice or if any of the active characters in the scene use a voice from the api.
-        """
+        """Returns a list of APIs that are currently in use."""
         return [api for api in self.apis if self.api_used(api)]
 
     def api_enabled(self, api: str) -> bool:
-        """
-        Returns whether the api is currently in the .apis list, which means it is enabled.
-        """
+        """Check if the api is enabled in the .apis list."""
         return api in self.apis
 
     def api_ready(self, api: str) -> bool:
-        """
-        Returns whether the api is ready.
 
-        The api must be enabled and configured.
-        """
-
+        """Check if the API is enabled and configured."""
         if not self.api_enabled(api):
             return False
 
         return self.api_configured(api)
 
     def api_configured(self, api: str) -> bool:
+        """Check if the specified API is configured."""
         return getattr(self, f"{api}_configured", True)
 
     def api_used(self, api: str) -> bool:
-        """
-        Returns whether the narrator or any of the active characters in the scene
-        use a voice from the given api
 
+        """Check if the narrator or any active characters use a specific API.
+        
+        This function evaluates whether the narrator's voice or any of the voices of
+        the characters in the current scene are provided by the specified API. It first
+        checks the narrator's voice, and if not found, it iterates through the
+        characters in the scene to determine if any character's voice matches the given
+        API. If the scene is not set, it returns False.
+        
         Args:
-            api (str): The api to check
-
-        Returns:
-            bool: Whether the api is in use
+            api (str): The api to check.
         """
-
         if self.narrator_voice and self.narrator_voice.provider == api:
             return True
 
@@ -654,8 +703,21 @@ class TTSAgent(
         | ContextInvestigationMessage
         | None,
     ) -> bool:
-        """
-        Returns whether the ai assisted speaker separation should be used for the given text.
+        """Determine if AI-assisted speaker separation should be applied to the given
+        text.
+        
+        This function evaluates the conditions under which AI-assisted speaker
+        separation is appropriate based on the provided text and message. It checks for
+        the presence of quotes in the text, the source of the message, and the current
+        speaker separation setting. If the conditions are met, it returns True;
+        otherwise, it returns False.
+        
+        Args:
+            text (str): The text to evaluate for speaker separation.
+            message (CharacterMessage | NarratorMessage | ContextInvestigationMessage | None): The message context that may influence the separation decision.
+        
+        Returns:
+            bool: True if AI-assisted speaker separation should be used, False otherwise.
         """
         try:
             if not message and '"' not in text:
@@ -688,9 +750,7 @@ class TTSAgent(
     # tts markup cache
 
     async def get_tts_markup_cache(self, text: str) -> str | None:
-        """
-        Returns the cached tts markup for the given text.
-        """
+        """Returns cached tts markup for the given text if available."""
         fp = hash(text)
         cached_markup = self.get_scene_state("tts_markup_cache")
         if cached_markup and cached_markup.get("fp") == fp:
@@ -698,6 +758,7 @@ class TTSAgent(
         return None
 
     async def set_tts_markup_cache(self, text: str, markup: str):
+        """Sets the TTS markup cache with a hashed text and its corresponding markup."""
         fp = hash(text)
         self.set_scene_states(
             tts_markup_cache={
@@ -716,13 +777,20 @@ class TTSAgent(
         force_voice: Voice | None = None,
         message: CharacterMessage | NarratorMessage | None = None,
     ):
-        """
-        Public entry-point for voice generation.
-
-        The actual audio generation happens sequentially inside a single
-        background queue.  If a queue is currently active, we simply append the
-        new request to it; if not, we create a new queue (with its own unique
-        id) and start processing.
+        """Generate voice audio from the provided text and character information.
+        
+        This function serves as the public entry point for voice generation, processing
+        the input text and character details to create audio chunks. It manages speaker
+        separation, utilizes AI-assisted markup when applicable, and enqueues the
+        generated chunks for background processing. The function also handles voice
+        selection based on character attributes and ensures that the audio generation
+        can be interrupted if necessary.
+        
+        Args:
+            text (str): The text to be converted into voice audio.
+            character (Character | None): The character associated with the voice.
+            force_voice (Voice | None): An optional voice to override the default.
+            message (CharacterMessage | NarratorMessage | None): An optional message context.
         """
         if not self.enabled or not self.ready or not text:
             return
@@ -880,14 +948,16 @@ class TTSAgent(
     # ---------------------------------------------------------------------
 
     async def _process_queue(self, queue_id: str):
+
         """Sequentially processes all GenerationContext objects in the queue.
-
-        Once the last context has been processed the queue state is reset so a
-        future generation call will create a new queue (and therefore a new
-        id).  The *queue_id* argument allows us to later add cancellation logic
-        that can target a specific queue instance.
+        
+        This function continuously dequeues and processes items from the
+        _generation_queue until it is empty. It utilizes a lock to ensure  thread
+        safety while accessing the queue. After processing, it resets  the queue state,
+        allowing for future generation calls to create a new  queue and ID. The
+        queue_id parameter is used for potential cancellation  logic targeting specific
+        queue instances.
         """
-
         try:
             while True:
                 async with self._queue_lock:
@@ -957,6 +1027,7 @@ class TTSAgent(
 
     # Deprecated: kept for backward compatibility but no longer used.
     async def generate_chunks(self, context: GenerationContext):
+        """Generates chunks from the given context."""
         for chunk in context.chunks:
             await self._generate_chunk(chunk, context)
 

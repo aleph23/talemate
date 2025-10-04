@@ -89,6 +89,7 @@ class OpenAIMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Add OpenAI actions to the provided actions dictionary."""
         actions["_config"].config["apis"].choices.append(
             {
                 "value": "openai",
@@ -131,14 +132,17 @@ class OpenAIMixin:
 
     @classmethod
     def add_voices(cls, voices: dict[str, VoiceLibrary]):
+        """Add a voice to the voices dictionary."""
         voices["openai"] = VoiceLibrary(api="openai")
 
     @property
     def openai_chunk_size(self) -> int:
+        """Get the OpenAI chunk size from the configuration."""
         return self.actions["openai"].config["chunk_size"].value
 
     @property
     def openai_max_generation_length(self) -> int:
+        """Return the maximum generation length for OpenAI."""
         return 1024
 
     @property
@@ -147,6 +151,7 @@ class OpenAIMixin:
 
     @property
     def openai_model_choices(self) -> list[str]:
+        """Return a list of OpenAI model choices with labels and values."""
         return [
             {"label": choice["label"], "value": choice["value"]}
             for choice in self.actions["openai"].config["model"].choices
@@ -154,10 +159,12 @@ class OpenAIMixin:
 
     @property
     def openai_api_key(self) -> str:
+        """Return the OpenAI API key from the configuration."""
         return self.config.openai.api_key
 
     @property
     def openai_configured(self) -> bool:
+        """Check if OpenAI is configured with an API key and model."""
         return bool(self.openai_api_key) and bool(self.openai_model)
 
     @property
@@ -166,6 +173,7 @@ class OpenAIMixin:
 
     @property
     def openai_not_configured_reason(self) -> str | None:
+        """Return the reason why OpenAI is not configured."""
         if not self.openai_api_key:
             return "OpenAI API key not set"
         if not self.openai_model:
@@ -174,6 +182,7 @@ class OpenAIMixin:
 
     @property
     def openai_not_configured_action(self) -> Action | None:
+        """Returns an Action to configure OpenAI settings if not set."""
         if not self.openai_api_key:
             return Action(
                 action_name="openAppConfig",
@@ -192,6 +201,7 @@ class OpenAIMixin:
 
     @property
     def openai_agent_details(self) -> dict:
+        """Retrieve OpenAI agent configuration details."""
         details = {}
 
         if not self.openai_configured:
