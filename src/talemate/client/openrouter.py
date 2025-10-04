@@ -116,7 +116,18 @@ MODELS_FETCHED = False
 
 
 async def fetch_available_models(api_key: str = None):
-    """Fetch available models from OpenRouter API"""
+    """Fetch available models from OpenRouter API.
+    
+    This function retrieves a list of available model IDs from the OpenRouter API
+    using the provided api_key. It checks if the models have already been fetched
+    to avoid redundant API calls. If the models are not cached and a valid api_key
+    is provided, it makes an asynchronous request to the API, processes the
+    response,  and updates the global AVAILABLE_MODELS variable with the fetched
+    model IDs.
+    
+    Args:
+        api_key (str?): The API key for authentication. If not provided,
+    """
     global AVAILABLE_MODELS, DEFAULT_MODEL, MODELS_FETCHED
     if not api_key:
         return []
@@ -160,6 +171,7 @@ def fetch_models_sync(api_key: str):
 
 
 def on_talemate_started(event):
+    """Fetch models when a talemate event starts."""
     fetch_models_sync(get_config().openrouter.api_key)
 
 
@@ -234,22 +246,31 @@ class OpenRouterClient(ClientBase):
 
     @property
     def provider_only(self) -> list[str]:
+        """Returns the provider_only configuration as a list of strings."""
         return self.client_config.provider_only
 
     @property
     def provider_ignore(self) -> list[str]:
+        """Returns the provider_ignore list from client_config."""
+        """Returns the provider_ignore list from client_config."""
         return self.client_config.provider_ignore
 
     @property
     def can_be_coerced(self) -> bool:
+        """Indicates if coercion is possible based on the reason_enabled property."""
+        """Indicates if coercion is possible based on the reason_enabled property."""
         return not self.reason_enabled
 
     @property
     def openrouter_api_key(self):
+        """Get the OpenRouter API key from the configuration."""
+        """Returns the OpenRouter API key from the configuration."""
         return self.config.openrouter.api_key
 
     @property
     def supported_parameters(self):
+        """Return a list of supported parameters."""
+        """Return a list of supported parameters."""
         return [
             "temperature",
             "top_p",
@@ -262,6 +283,18 @@ class OpenRouterClient(ClientBase):
         ]
 
     def emit_status(self, processing: bool = None):
+        """Emit the current status of the client.
+        
+        This function updates the processing state and determines the current status
+        based on the presence of an API key and a loaded model. If the API key is
+        missing, it prepares an error action to prompt the user to set the key.
+        Additionally, if no model is loaded, it sets the status to an error. Finally,
+        it emits the status along with relevant data to the client.
+        
+        Args:
+            processing (bool?): Indicates whether the client is currently
+                processing. If provided, it updates the internal processing state.
+        """
         error_action = None
         error_message = None
         if processing is not None:
@@ -307,6 +340,8 @@ class OpenRouterClient(ClientBase):
 
     async def status(self):
         # Fetch models if we have an API key and haven't fetched yet
+        """Fetch models and emit status if conditions are met."""
+        """Fetch models and emit status if conditions are met."""
         if self.openrouter_api_key and not self._models_fetched:
             self._models_fetched = True
             # Update the Meta class with new model choices
@@ -315,10 +350,44 @@ class OpenRouterClient(ClientBase):
         self.emit_status()
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters using OpenRouter API.
-        """
 
+        """Generate text from a given prompt and parameters using the OpenRouter API.
+        
+        This asynchronous function constructs a request to the OpenRouter API by
+        preparing the necessary messages and payload based on the provided prompt and
+        parameters. It handles coercion if applicable, manages provider settings, and
+        streams the response while tracking token usage. The function also includes
+        error handling for connection timeouts and other exceptions.
+        
+        Args:
+            prompt (str): The input text prompt to generate a response for.
+            parameters (dict): Additional parameters for the API request.
+            kind (str): The type of message or context for the generation.
+        
+        Returns:
+            str: The generated text response from the OpenRouter API.
+        
+        """
+        """Generate text from a given prompt and parameters using the OpenRouter API.
+        
+        This asynchronous function constructs a request to the OpenRouter API by
+        preparing the necessary messages and payload based on the provided prompt and
+        parameters. It handles coercion if applicable, manages provider settings, and
+        streams the response from the API. The function also tracks token usage and
+        handles potential exceptions, including connection timeouts.
+        
+        Args:
+            prompt (str): The input text prompt to generate a response for.
+            parameters (dict): Additional parameters for the API request.
+            kind (str): The type of message or context for the generation.
+        
+        Returns:
+            str: The generated text response from the OpenRouter API.
+        
+        Raises:
+            Exception: If no OpenRouter API key is set or if an error occurs during the API request.
+            httpx.ConnectTimeout: If the request to the OpenRouter API times out.
+        """
         if not self.openrouter_api_key:
             raise Exception("No OpenRouter API key set")
 

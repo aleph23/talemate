@@ -99,18 +99,24 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def disable_safety_settings(self):
+        """Get the disable_safety_settings property from client_config."""
+        """Get the value of disable_safety_settings from client_config."""
         return self.client_config.disable_safety_settings
 
     @property
     def min_reason_tokens(self) -> int:
+        """Return the minimum number of reason tokens."""
         return MIN_THINKING_TOKENS
 
     @property
     def can_be_coerced(self) -> bool:
+        """Indicates if coercion is possible based on reason_enabled."""
         return not self.reason_enabled
 
     @property
     def google_credentials(self):
+        """Return Google credentials from the specified path."""
+        """Return Google credentials from the specified path."""
         path = self.google_credentials_path
         if not path:
             return None
@@ -119,6 +125,7 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def google_credentials_path(self):
+        """Returns the path to Google Cloud credentials."""
         return self.config.google.gcloud_credentials_path
 
     @property
@@ -127,10 +134,13 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def google_api_key(self):
+        """Returns the Google API key from the configuration."""
         return self.config.google.api_key
 
     @property
     def vertexai_ready(self) -> bool:
+        """Check if Vertex AI is ready based on credentials and location."""
+        """Check if Vertex AI is ready based on credentials and location."""
         return all(
             [
                 self.google_credentials_path,
@@ -140,6 +150,8 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def developer_api_ready(self) -> bool:
+        """Check if the developer API is ready."""
+        """Check if the developer API is ready."""
         return all(
             [
                 self.google_api_key,
@@ -148,6 +160,7 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def using(self) -> str:
+        """Returns the current usage status of the API."""
         if self.developer_api_ready:
             return "API"
         if self.vertexai_ready:
@@ -157,6 +170,7 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
     @property
     def ready(self):
         # all google settings must be set
+        """Check if the system is ready based on various settings."""
         return (
             self.vertexai_ready
             or self.developer_api_ready
@@ -165,6 +179,8 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def safety_settings(self):
+        """Return safety settings if not disabled."""
+        """Returns safety settings if not disabled."""
         if not self.disable_safety_settings:
             return None
 
@@ -195,6 +211,8 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def http_options(self) -> genai_types.HttpOptions | None:
+        """Returns HttpOptions if the endpoint override base URL is configured."""
+        """Returns HttpOptions if the endpoint override base URL is configured."""
         if not self.endpoint_override_base_url_configured:
             return None
 
@@ -202,6 +220,7 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def thinking_config(self) -> genai_types.ThinkingConfig | None:
+        """Get the thinking configuration if reasoning is enabled."""
         if not self.reason_enabled:
             return None
 
@@ -212,6 +231,7 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def supported_parameters(self):
+        """Returns a list of supported parameters."""
         return [
             "temperature",
             "top_p",
@@ -226,9 +246,32 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def requires_reasoning_pattern(self) -> bool:
+        """Indicates whether reasoning pattern is required."""
+        """Indicates whether reasoning pattern is required."""
         return False
 
     def emit_status(self, processing: bool = None):
+        """Emit the current status of the client.
+        
+        This function updates the processing state and determines the current status
+        based on the readiness of the client and whether a model is loaded. If the
+        client is not ready, it prepares an error action for setting up Google API
+        credentials. The status and relevant data are then emitted to the client.
+        
+        Args:
+            processing (bool?): Indicates whether the client is currently
+        """
+        """Emit the current status of the client.
+        
+        This method updates the processing state and determines the current status
+        based on the readiness of the client and whether a model is loaded. If the
+        client is not ready, it prepares an error action for setting up Google API
+        credentials. The status and relevant data are then emitted to the client  with
+        the appropriate details.
+        
+        Args:
+            processing (bool?): Indicates whether the client is currently
+        """
         error_action = None
         if processing is not None:
             self.processing = processing
@@ -278,6 +321,8 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
         )
 
     def set_client_base_url(self, base_url: str | None):
+        """Set the base URL for the client."""
+        """Set the base URL for the client."""
         if getattr(self, "client", None):
             try:
                 self.client.http_options.base_url = base_url
@@ -287,6 +332,15 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
                 )
 
     def make_client(self) -> genai.Client:
+        """def make_client(self) -> genai.Client:
+        Create and return a genai.Client instance.  This function configures the Google
+        application credentials if  provided and checks the readiness of the Vertex AI
+        and developer  API. Depending on the readiness status, it initializes and
+        returns  a genai.Client instance with the appropriate parameters, either  using
+        Vertex AI settings or API key settings.
+        
+        Args:
+            self: The instance of the class containing the necessary"""
         if self.google_credentials_path:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.google_credentials_path
         if self.vertexai_ready and not self.developer_api_ready:
@@ -301,13 +355,17 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
             )
 
     def response_tokens(self, response: str):
-        """Return token count for a response which may be a string or SDK object."""
+        """Return the token count for a response string."""
         return count_tokens(response)
 
     def prompt_tokens(self, prompt: str):
+        """Returns the token count for the given prompt."""
+        """Returns the token count for the given prompt."""
         return count_tokens(prompt)
 
     def clean_prompt_parameters(self, parameters: dict):
+        """Cleans the prompt parameters by removing 'top_k' if it is 0."""
+        """Cleans the prompt parameters by removing 'top_k' if it is 0."""
         super().clean_prompt_parameters(parameters)
 
         # if top_k is 0, remove it
@@ -315,10 +373,46 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
             del parameters["top_k"]
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
 
+        """Generate text from the given prompt and parameters.
+        
+        This asynchronous function generates text based on the provided prompt and
+        parameters. It first checks if the setup is complete and then prepares the
+        necessary messages and contents for the generation process. The function
+        handles coercion if applicable and streams the response from the model,
+        processing each chunk to separate reasoning from the generated text. It also
+        manages token accounting for the prompt and response.
+        
+        Args:
+            prompt (str): The input prompt for text generation.
+            parameters (dict): A dictionary of parameters to customize the generation.
+            kind (str): The type of system message to be used.
+        
+        Returns:
+            str: The generated text response.
+        
+        """
+        """Generate text from the given prompt and parameters.
+        
+        This asynchronous function constructs a request to generate content based on
+        the provided prompt and parameters. It first checks if the setup is complete
+        and prepares the necessary messages, including handling coercion if applicable.
+        The function then streams the response from the model, processing each chunk to
+        separate reasoning from the generated text, while also managing token counts
+        for prompt and response.
+        
+        Args:
+            prompt (str): The input prompt for text generation.
+            parameters (dict): A dictionary of parameters to customize the generation.
+            kind (str): The type of system message to retrieve.
+        
+        Returns:
+            str: The generated text response from the model.
+        
+        Raises:
+            Exception: If the Google setup is incomplete.
+            APIError: If there is an error with the API during content generation.
+        """
         if not self.ready:
             raise Exception("Google setup incomplete")
 
