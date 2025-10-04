@@ -53,6 +53,7 @@ class FocalContext:
         current_focal_context.reset(self.token)
 
     async def process_hooks(self, call: Call):
+        """Process hooks after a call."""
         for hook in self.hooks_after_call:
             await hook(call)
 
@@ -83,6 +84,7 @@ class Focal:
             callback.state = self.state
 
     def render_instructions(self) -> str:
+        """Render the instructions based on the current state and max calls."""
         prompt = Prompt.get(
             "focal.instructions",
             {
@@ -97,6 +99,18 @@ class Focal:
         template_name: str,
         retry_state: dict | None = None,
     ) -> str:
+        """Sends a request using the specified template name.
+        
+        This function logs the request details and prepares the schema format  based on
+        the client's preferences. It then calls the Prompt.request  method to obtain a
+        response, which is processed and executed if valid.  If the response is empty
+        and retries are available, the function will  attempt to resend the request
+        until the retries are exhausted.
+        
+        Args:
+            template_name (str): The name of the template to use for the request.
+            retry_state (dict | None?): A dictionary to track retry attempts.
+        """
         log.debug(
             "focal.request", template_name=template_name, callbacks=self.callbacks
         )
@@ -143,6 +157,14 @@ class Focal:
         return response
 
     async def _execute(self, response: str, state: State):
+        """Executes a series of callback functions based on the provided response.
+        
+        This asynchronous function extracts calls from the given response and
+        processes each call by invoking the corresponding callback function. It
+        respects a maximum call limit and handles errors gracefully, logging  relevant
+        information. If a focal context is available, it processes  additional hooks
+        before and after each callback execution.
+        """
         try:
             calls: list[Call] = await self._extract(response)
         except Exception as e:
@@ -237,14 +259,16 @@ class Focal:
 def collect_calls(
     calls: list[Call], nested: bool = False, filter: Callable = None
 ) -> list:
+
+    """Collects calls from a list, optionally including nested calls.
+    
+    This function iterates through a list of calls and appends each call to the
+    results list if it passes the provided filter function.  If the `nested`
+    parameter is set to True and a call's result is a list of calls, it recursively
+    collects those nested calls as well.  The function ensures that only valid
+    `Call` instances are processed, maintaining the integrity of the collected
+    results.
     """
-    Takes a list of calls and collects into a list.
-
-    If nested is True and call result is a list of calls, it will also collect those.
-
-    If a filter function is provided, it will be used to filter the results.
-    """
-
     results = []
 
     for call in calls:

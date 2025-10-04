@@ -47,6 +47,7 @@ class Argument(pydantic.BaseModel):
     preserve_newlines: bool = False
 
     def extra_instructions(self, state: State) -> str:
+        """Returns extra instructions based on the state schema format."""
         if state.schema_format == "yaml" and self.preserve_newlines:
             return f" {YAML_PRESERVE_NEWLINES}"
         return ""
@@ -63,6 +64,14 @@ class Call(pydantic.BaseModel):
 
     @pydantic.field_validator("arguments")
     def check_for_schema_examples(cls, v: dict[str, Any]) -> dict[str, str]:
+        """Check for schema examples in the provided arguments.
+        
+        This function validates the values in the 'arguments' field of a Pydantic
+        model.  It checks if any string value starts with a valid type prefix (e.g.,
+        'str - ', 'int - ').  If such a prefix is found, it raises an
+        ExampleCallbackArguments exception to indicate  that the argument contains a
+        schema example, which is not allowed.
+        """
         valid_types = ["str", "int", "float", "bool", "dict", "list"]
         for key, value in v.items():
             if isinstance(value, str):
@@ -75,6 +84,7 @@ class Call(pydantic.BaseModel):
 
     @pydantic.field_validator("arguments")
     def join_string_lists(cls, v: dict[str, Any]) -> dict[str, str]:
+        """Join lists of strings in a dictionary into single strings."""
         return {
             key: "\n".join(str(item) for item in value)
             if isinstance(value, list)
@@ -92,9 +102,11 @@ class Callback(pydantic.BaseModel):
 
     @property
     def pretty_name(self) -> str:
+        """Return the pretty version of the name with spaces and title case."""
         return self.name.replace("_", " ").title()
 
     def render(self, usage: str, examples: list[dict] = None, **argument_usage) -> str:
+        """Renders a prompt based on the provided usage and arguments."""
         prompt = Prompt.get(
             "focal.callback",
             {
@@ -113,6 +125,7 @@ class Callback(pydantic.BaseModel):
     ## schema
 
     def _usage(self, argument_usage) -> dict:
+        """Returns a dictionary of function usage and argument details."""
         return {
             "function": self.name,
             "arguments": {
@@ -122,18 +135,21 @@ class Callback(pydantic.BaseModel):
         }
 
     def _example(self, example: dict) -> dict:
+        """Return a dictionary with function name and filtered arguments."""
         return {
             "function": self.name,
             "arguments": {k: v for k, v in example.items() if not k.startswith("_")},
         }
 
     def usage(self, argument_usage) -> str:
+        """Return formatted usage information for the given argument."""
         fmt: str = self.state.schema_format
         text = getattr(self, f"{fmt}_usage")(argument_usage)
         text = text.rstrip()
         return f"```{fmt}\n{text}\n```"
 
     def example(self, example: dict) -> str:
+        """Generate a formatted example string from the given dictionary."""
         fmt: str = self.state.schema_format
         text = getattr(self, f"{fmt}_example")(example)
         text = text.rstrip()
@@ -142,15 +158,19 @@ class Callback(pydantic.BaseModel):
     ## JSON
 
     def json_usage(self, argument_usage) -> str:
+        """Convert usage data to a JSON string."""
         return json.dumps(self._usage(argument_usage), indent=2)
 
     def json_example(self, example: dict) -> str:
+        """Convert a dictionary example to a formatted JSON string."""
         return json.dumps(self._example(example), indent=2)
 
     ## YAML
 
     def yaml_usage(self, argument_usage) -> str:
+        """Convert usage information to YAML format."""
         return yaml.dump(self._usage(argument_usage), **YAML_OPTIONS)
 
     def yaml_example(self, example: dict) -> str:
+        """Convert a dictionary to a YAML string."""
         return yaml.dump(self._example(example), **YAML_OPTIONS)
