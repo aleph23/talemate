@@ -105,6 +105,8 @@ class Focal(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output sockets for the component."""
+        """Initializes input and output sockets for the component."""
         self.add_input("state")
         self.add_input("template", socket_typoe="str")
         self.add_input("callbacks", socket_type="list")
@@ -122,6 +124,7 @@ class Focal(Node):
         self.add_output("response", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Executes the main processing logic for the agent."""
         scene: "Scene" = active_scene.get()
 
         in_state = self.get_input_value("state")
@@ -167,6 +170,7 @@ class Focal(Node):
         )
 
         async def process(*args, **kwargs):
+            """Handles a request using the focal_handler."""
             return await focal_handler.request(template)
 
         process.__name__ = self.title.replace(" ", "_").lower()
@@ -218,6 +222,8 @@ class Callback(Node):
 
     def setup(self):
         # self.add_input("arguments", socket_type="list")
+        """Sets up the function input and output properties."""
+        """Sets up the function input and output properties."""
         self.add_input("fn", socket_type="function")
 
         self.set_property("name", "my_function")
@@ -226,6 +232,8 @@ class Callback(Node):
         self.add_output("callback", socket_type="focal/callback")
 
     async def run(self, state: GraphState):
+        """Creates a callback from the provided function and its arguments."""
+        """Creates a callback from the provided function and its arguments."""
         fn = self.get_input_value("fn")
 
         if not isinstance(fn, FunctionWrapper):
@@ -293,6 +301,8 @@ class ProcessCall(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
+        """Sets up input and output sockets for the component."""
         self.add_input("calls", socket_type="list")
 
         self.set_property("name", UNRESOLVED)
