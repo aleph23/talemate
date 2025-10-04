@@ -27,6 +27,7 @@ log = structlog.get_logger("talemate.game.engine.nodes.core.logic")
 
 
 def is_truthy(value):
+    """Check if the value is considered truthy."""
     return value is not None and value is not False and value is not UNRESOLVED
 
 
@@ -51,6 +52,22 @@ class LogicalRouter(Node):
 
     async def run(self, state: GraphState):
         # Get all flag values
+        """Execute the logical operation based on input flags and set output values.
+        
+        This asynchronous function retrieves input values and checks the connection
+        status of the corresponding sockets. It evaluates the logical operation
+        specified by `self._op` using the active flags derived from the inputs. The
+        result determines the deactivation state of the outputs and sets the output
+        values accordingly. Additionally, it logs detailed information for debugging if
+        the verbosity level is set to VERBOSE.
+        
+        Args:
+            state (GraphState): The current state of the graph.
+        
+        
+        Raises:
+            ValueError: If an unknown operation is specified in `self._op`.
+        """
         a = self.get_input_value("a")
         b = self.get_input_value("b")
         c = self.get_input_value("c")
@@ -197,10 +214,12 @@ class Invert(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for a boolean value."""
         self.add_input("value", socket_type="bool")
         self.add_output("value", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Processes input value and sets the output to its boolean negation."""
         value = self.get_input_value("value")
         result = not Socket.as_bool(value)
         self.set_output_values({"value": result})
@@ -238,6 +257,7 @@ class Switch(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the NodeStyle for the node."""
         return NodeStyle(
             icon="F0641",
         )
@@ -246,6 +266,7 @@ class Switch(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the instance."""
         self.add_input("value")
 
         self.set_property("pass_through", True)
@@ -294,6 +315,7 @@ class RSwitch(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the NodeStyle for the node."""
         return NodeStyle(
             icon="F0641",
         )
@@ -308,6 +330,7 @@ class RSwitch(Node):
         self.add_output("value")
 
     async def run(self, state: GraphState):
+        """Processes input values and sets the output based on a condition."""
         check = self.get_input_value("check")
         yes = self.get_input_value("yes")
         no = self.get_input_value("no")
@@ -341,6 +364,7 @@ class RSwitchAdvanced(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the NodeStyle for the node."""
         return NodeStyle(
             icon="F0641",
         )
@@ -349,6 +373,7 @@ class RSwitchAdvanced(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output parameters for the instance."""
         self.add_input("check", optional=True)
         self.add_input("yes", optional=True)
         self.add_input("no", optional=True)
@@ -438,6 +463,7 @@ class Case(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the instance."""
         self.add_input("value")
 
         self.set_property("attribute_name", "")
@@ -454,6 +480,25 @@ class Case(Node):
         self.add_output("none")
 
     async def run(self, state: GraphState):
+        """Runs the main logic to compare input values against predefined cases.
+        
+        This asynchronous function retrieves an input value and an attribute name,
+        then compares the value against several predefined cases. Depending on the
+        comparison result, it sets the output values accordingly. If the verbosity
+        level of the provided state is sufficient, it logs the relevant details for
+        debugging purposes.
+        """
+        """Processes input value and sets output based on comparison cases.
+        
+        This function retrieves an input value and an attribute name, then  compares
+        the value against predefined cases. Depending on the  comparison result, it
+        sets the appropriate output values. If the  verbosity level of the provided
+        state is normal or higher, it logs  the details of the operation for debugging
+        purposes.
+        
+        Args:
+            state (GraphState): The current state containing verbosity level.
+        """
         value = self.get_input_value("value")
         attribute_name = self.get_property("attribute_name")
 
@@ -554,6 +599,7 @@ class MakeBool(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the NodeStyle for the node."""
         return NodeStyle(
             auto_title="{value}",
         )
@@ -566,6 +612,8 @@ class MakeBool(Node):
         self.add_output("value", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Executes the run process by getting and setting input and output values."""
+        """Executes the run process by getting and setting input and output values."""
         value = self.get_input_value("value")
         self.set_output_values({"value": value})
 
@@ -602,11 +650,14 @@ class AsBool(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initialize input and output properties for the component."""
+        """Initialize input and output properties for the component."""
         self.add_input("value", optional=True)
         self.set_property("default", False)
         self.add_output("value", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Processes the input value and sets the output value."""
         value = self.get_input_value("value")
         default = self.get_property("default")
 
@@ -668,6 +719,13 @@ class ApplyDefault(Node):
         self.add_output("value")
 
     async def run(self, state: GraphState):
+        """Executes the main logic for processing input values.
+        
+        This asynchronous function retrieves the input value associated with  "value"
+        and checks for conditions based on the properties "apply_on_none"  and
+        "apply_on_unresolved". If the input value is UNRESOLVED or None,  it defaults
+        to a specified value. Finally, it sets the output values  accordingly.
+        """
         value = self.get_input_value("value")
         default = self.require_input("default")
         apply_on_none = self.get_property("apply_on_none")
