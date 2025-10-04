@@ -33,6 +33,8 @@ class GenerateNarrationBase(AgentNode):
         super().__init__(**kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
+        """Sets up input and output sockets for the component."""
         self.add_input("state")
         self.add_input("narrative_direction", socket_type="str", optional=True)
 
@@ -40,11 +42,15 @@ class GenerateNarrationBase(AgentNode):
         self.add_output("message", socket_type="message_object")
 
     async def prepare_input_values(self) -> dict:
+        """Prepare and return input values without the 'state' key."""
+        """Prepare and return input values without the 'state' key."""
         input_values = self.get_input_values()
         input_values.pop("state", None)
         return input_values
 
     async def run(self, state: GraphState):
+        """Executes an action using the agent and prepares output values."""
+        """Executes an action using the agent and prepares output values."""
         input_values = await self.prepare_input_values()
         try:
             agent_fn = getattr(self.agent, self._action_name)
@@ -95,6 +101,7 @@ class GenerateAfterDialogNarration(GenerateNarrationBase):
     _title: ClassVar[str] = "Generate After Dialog Narration"
 
     def setup(self):
+        """Set up the character input."""
         super().setup()
         self.add_input("character", socket_type="character")
 
@@ -119,6 +126,7 @@ class GenerateQueryNarration(GenerateNarrationBase):
     _title: ClassVar[str] = "Generate Query Narration"
 
     def setup(self):
+        """Sets up the input parameters for the instance."""
         super().setup()
         self.add_input("query", socket_type="str")
         self.add_input("extra_context", socket_type="str", optional=True)
@@ -135,6 +143,7 @@ class GenerateCharacterNarration(GenerateNarrationBase):
     _title: ClassVar[str] = "Generate Character Narration"
 
     def setup(self):
+        """Sets up the input for the character socket."""
         super().setup()
         self.add_input("character", socket_type="character")
 
@@ -149,11 +158,13 @@ class GenerateTimeNarration(GenerateNarrationBase):
     _title: ClassVar[str] = "Generate Time Narration"
 
     def setup(self):
+        """Initialize the setup by adding input and setting properties."""
         super().setup()
         self.add_input("duration", socket_type="str")
         self.set_property("duration", "P0T1S")
 
     async def prepare_input_values(self) -> dict:
+        """Prepare and return input values with human-readable duration."""
         input_values = await super().prepare_input_values()
         input_values["time_passed"] = iso8601_duration_to_human(
             input_values["duration"]
@@ -185,6 +196,7 @@ class GenerateCharacterExitNarration(GenerateNarrationBase):
     _title: ClassVar[str] = "Generate Character Exit Narration"
 
     def setup(self):
+        """Set up the character input."""
         super().setup()
         self.add_input("character", socket_type="character")
 
@@ -203,11 +215,13 @@ class UnpackSource(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("source", socket_type="str")
         self.add_output("action_name", socket_type="str")
         self.add_output("arguments", socket_type="dict")
 
     async def run(self, state: GraphState):
+        """Executes the run process and sets output values."""
         action_name = ""
         arguments = {}
 
