@@ -7,6 +7,7 @@ log = structlog.get_logger("talemate.server.world_state_manager.scene_intent")
 
 class SceneIntentMixin:
     async def handle_get_scene_intent(self, data: dict):
+        """Handles the retrieval of the scene intent and queues it for processing."""
         scene_intent: SceneIntent = self.scene.intent_state
 
         self.websocket_handler.queue_put(
