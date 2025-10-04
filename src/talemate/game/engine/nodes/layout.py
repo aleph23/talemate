@@ -54,6 +54,20 @@ class JSONEncoder(json.JSONEncoder):
 
 
 def list_node_files(search_paths: list[str] = None, dedupe: bool = True) -> list[str]:
+    """List JSON files from specified search paths.
+    
+    This function searches for JSON files in the provided `search_paths`  or
+    defaults to a predefined set of `SEARCH_PATHS`. It collects the  found files,
+    converts their paths to be relative to `TALEMATE_ROOT`,  and optionally
+    deduplicates the results based on filenames. If  `dedupe` is set to True, only
+    the first occurrence of each filename  is retained in the final list.
+    
+    Args:
+        search_paths (list[str]?): A list of paths to search for
+            JSON files. If None, defaults to `SEARCH_PATHS`.
+        dedupe (bool?): A flag indicating whether to deduplicate
+            files based on their filenames. Defaults to True.
+    """
     if search_paths is None:
         search_paths = SEARCH_PATHS.copy()
     else:
@@ -87,6 +101,17 @@ def list_node_files(search_paths: list[str] = None, dedupe: bool = True) -> list
 
 
 def export_flat_graph(graph: "Graph") -> dict:
+    """def export_flat_graph(graph: "Graph") -> dict:
+    Export a flat representation of the given graph.  This function constructs a
+    dictionary that represents the structure of  the provided graph, including
+    nodes, connections, groups, comments,  properties, and fields. It first gathers
+    field definitions and module  properties, then populates the flat
+    representation with relevant data  from the graph. The function also ensures
+    that node references and  connections are properly set before compiling the
+    final output.
+    
+    Args:
+        graph (Graph): The graph object to be exported."""
     fields = {}
     for name, field in graph.field_definitions.items():
         fields[name] = field.model_dump()
@@ -204,7 +229,7 @@ def import_flat_graph(flat_data: dict, main_graph: "Graph" = None) -> Graph:
     main_graph.extends = flat_data.get("extends", None)
 
     def create_mode_module(node_data: dict) -> NodeBase:
-        """Helper function to create a node instance from node data"""
+        """Create a node instance from node data."""
         node_cls = get_node(node_data["registry"])
         if not node_cls:
             raise ValueError(f"Unknown node type: {node_data['registry']}")
@@ -226,7 +251,7 @@ def import_flat_graph(flat_data: dict, main_graph: "Graph" = None) -> Graph:
         return node
 
     def add_connections(graph: Graph, connections: list, node_map: dict):
-        """Helper function to add connections to a graph"""
+        """Add connections to a graph."""
         graph.edges = {}
 
         for connection in connections:
@@ -282,6 +307,26 @@ def import_flat_graph(flat_data: dict, main_graph: "Graph" = None) -> Graph:
 def load_graph(
     file_name: str, search_paths: list[str] = None, graph_cls=None
 ) -> tuple[Graph, PathInfo]:
+    """Load a graph from a specified file, searching through given paths.
+    
+    This function attempts to locate a graph file by first checking the provided
+    `search_paths`. If the file is not found, it recursively searches through
+    subdirectories. The function also handles cases where the `file_name` includes
+    path components, ensuring that the search is conducted in the correct
+    directories.
+    
+    Args:
+        file_name (str): The name of the file containing the graph.
+        search_paths (list[str]?): A list of directories to search for the file. Defaults to a predefined set of
+            search paths.
+        graph_cls (optional): A class to use for creating the graph.
+    
+    Returns:
+        tuple[Graph, PathInfo]: A tuple containing the loaded graph and associated path information.
+    
+    Raises:
+        FileNotFoundError: If the specified file cannot be found in any of the search paths.
+    """
     if search_paths is None:
         search_paths = SEARCH_PATHS.copy()
     else:
@@ -319,6 +364,17 @@ def load_graph(
 def load_graph_from_file(
     file_path: str, graph_cls=None, search_paths: list[str] = None
 ) -> tuple[Graph, PathInfo]:
+    """def load_graph_from_file(
+    file_path: str, graph_cls=None, search_paths: list[str] = None ) ->
+    tuple[Graph, PathInfo]:     Load a graph from a specified file.      This
+    function reads a JSON file located at `file_path` to construct a graph object.
+    It checks for any extended components to load, determines the appropriate graph
+    class      to use, and removes any invalid nodes from the data. Finally, it
+    returns a tuple      containing the initialized graph and path information.
+    Args:         file_path (str): The path to the JSON file containing graph data.
+    graph_cls: Optional; a specific graph class to use for initialization.
+    search_paths (list[str], optional): A list of search paths for relative file
+    resolution."""
     with open(file_path, "r") as file:
         data = json.load(file)
 
@@ -345,10 +401,8 @@ def load_graph_from_file(
 
 
 def remove_invalid_nodes(nodes: dict):
-    """
-    Remove nodes that have no properties
-    """
 
+    """Remove nodes that do not exist in the registry."""
     for node_id, node_data in list(nodes.items()):
         registry_name = node_data["registry"]
         try:
@@ -359,10 +413,13 @@ def remove_invalid_nodes(nodes: dict):
 
 
 async def save_graph(graph: Graph, file_path: str):
+    """Saves a graph to a specified file in JSON format."""
     with SaveContext():
         async with aiofiles.open(file_path, "w") as file:
             await file.write(json.dumps(graph.model_dump(), indent=2, cls=JSONEncoder))
 
 
 def normalize_node_filename(node_name: str) -> str:
+    """Normalize the node filename by converting to lowercase and replacing spaces
+    with hyphens."""
     return node_name.lower().replace(" ", "-") + ".json"

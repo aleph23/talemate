@@ -57,6 +57,7 @@ class Sort(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("state")
         self.add_input("items", socket_type="list")
         self.add_input("sort_keys", socket_type=["str", "list"], optional=True)
@@ -67,6 +68,14 @@ class Sort(Node):
         self.add_output("sorted_items", socket_type="list")
 
     async def run(self, state: GraphState):
+        """Sorts a list of items based on specified sort keys.
+        
+        This asynchronous function retrieves input values for "items" and "sort_keys".
+        It checks the type of "sort_keys" and ensures it is a list, raising an error if
+        it is not. The function then sorts the items based on the provided sort keys
+        or reverses the order if specified. Finally, it sets the sorted items as output
+        values.
+        """
         items = self.get_input_value("items")
 
         sort_keys = self.get_input_value("sort_keys")
@@ -109,10 +118,12 @@ class JSON(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for JSON and data."""
         self.add_input("json", socket_type="str")
         self.add_output("data", socket_type="dict,list")
 
     async def run(self, state: GraphState):
+        """Processes input JSON and sets output values."""
         json_string = self.get_input_value("json")
 
         # convert json string to python object
@@ -148,6 +159,7 @@ class Contains(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the object."""
         self.add_input("object", socket_type="any")
         self.add_input("value", socket_type="any")
 
@@ -156,6 +168,24 @@ class Contains(Node):
         self.add_output("contains", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Checks if a specified value is present in a given object.
+        
+        This asynchronous method retrieves an input value and an object, then checks
+        if the value exists within the object. The object can be a generator, which  is
+        converted to a list for the check. The function handles different types  of
+        objects, including dictionaries, lists, and strings, and logs the result  if
+        the verbosity level is sufficient.
+        """
+        """Checks if a specified value is present in a given object.
+        
+        This asynchronous function retrieves an "object" and a "value" using the
+        get_input_value method. It then checks if the object is iterable and  converts
+        it to a list if it is a generator. The function determines if  the value exists
+        within the object, which can be a dictionary, list,  string, or any object that
+        supports the __contains__ method. If the  verbosity level of the state is set
+        to NORMAL or higher, it logs the  details of the check before setting the
+        output values.
+        """
         object = self.get_input_value("object")
         value = self.get_input_value("value")
 
@@ -209,6 +239,8 @@ class DictGet(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
+        """Sets up input and output sockets for the component."""
         self.add_input("dict", socket_type="dict")
         self.add_input("key", socket_type="str")
         self.add_output("value", socket_type="any")
@@ -217,6 +249,8 @@ class DictGet(Node):
         self.set_property("key", UNRESOLVED)
 
     async def run(self, state: GraphState):
+        """Processes input values and sets output values based on a key."""
+        """Processes input values and sets output values based on a key."""
         data = self.get_input_value("dict")
         key = self.get_input_value("key")
 
@@ -267,6 +301,7 @@ class DictPop(Node):
         self.set_property("key", UNRESOLVED)
 
     async def run(self, state: GraphState):
+        """Processes input values and updates output based on a key."""
         data = self.get_input_value("dict")
         key = self.get_input_value("key")
 
@@ -312,6 +347,7 @@ class DictSet(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("dict", socket_type="dict", optional=True)
         self.add_input("key", socket_type="str", optional=True)
         self.add_input("value", socket_type="any")
@@ -323,6 +359,8 @@ class DictSet(Node):
         self.set_property("key", UNRESOLVED)
 
     async def run(self, state: GraphState):
+        """Updates the output values with a key-value pair in a dictionary."""
+        """Updates the output values based on input key-value pairs."""
         data = self.get_input_value("dict")
 
         if not self.is_set(data):
@@ -366,6 +404,7 @@ class MakeDict(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes the input, output, and property for the setup."""
         self.add_input("state", optional=True)
 
         self.set_property("data", {})
@@ -373,6 +412,8 @@ class MakeDict(Node):
         self.add_output("dict", socket_type="dict")
 
     async def run(self, state: GraphState):
+        """Executes the run process and sets output values."""
+        """Executes the run process and sets output values."""
         new_dict = self.get_property("data")
 
         self.set_output_values({"dict": new_dict})
@@ -422,6 +463,8 @@ class Get(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up inputs and outputs for the object."""
+        """Sets up inputs and outputs for the object."""
         self.add_input("object", socket_type="any")
         self.add_input("attribute", socket_type="str")
 
@@ -432,6 +475,14 @@ class Get(Node):
         self.add_output("object", socket_type="any")
 
     async def run(self, state: GraphState):
+        """Run the process to retrieve a value based on the input object and attribute.
+        
+        This asynchronous function retrieves a value from an input object based on the
+        specified  attribute. It handles different types of input objects, including
+        dictionaries and lists,  and raises an error if the attribute is not valid for
+        a list. The retrieved value, along  with the object and attribute, is then set
+        as output values.
+        """
         obj = self.get_input_value("object")
         attribute = self.get_input_value("attribute")
 
@@ -483,6 +534,7 @@ class Set(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
         return NodeStyle(
             title_color="#2e4657",
             icon="F01DA",  # upload
@@ -501,6 +553,7 @@ class Set(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the object."""
         self.add_input("object", socket_type="any")
         self.add_input("attribute", socket_type="str")
         self.add_input("value", socket_type="any")
@@ -512,6 +565,8 @@ class Set(Node):
         self.add_output("value", socket_type="any")
 
     async def run(self, state: GraphState):
+        """Updates an object's attribute with a new value based on its type."""
+        """Run the asynchronous operation to set a value on an object or list."""
         obj = self.get_input_value("object")
         attribute = self.get_input_value("attribute")
         value = self.get_input_value("value")
@@ -568,6 +623,7 @@ class MakeList(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes inputs, properties, and outputs for the component."""
         self.add_input("state", optional=True)
         self.add_input("item_type", socket_type="str", optional=True)
 
@@ -577,6 +633,7 @@ class MakeList(Node):
         self.add_output("list", socket_type="list")
 
     async def run(self, state: GraphState):
+        """Processes the input state and sets the output list."""
         item_type = self.get_input_value("item_type")
         if item_type == UNRESOLVED:
             item_type = self.get_property("item_type")
@@ -610,6 +667,7 @@ class ListAppend(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("list", socket_type="list", optional=True)
         self.add_input("item", socket_type="any")
 
@@ -617,6 +675,7 @@ class ListAppend(Node):
         self.add_output("item", socket_type="any")
 
     async def run(self, state: GraphState):
+        """Append an item to a list and set output values."""
         list_obj = self.get_input_value("list")
         item = self.get_input_value("item")
 
@@ -666,6 +725,14 @@ class ListRemove(Node):
         self.add_output("removed", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Removes an item from a list and updates the state.
+        
+        This asynchronous function retrieves a list and an item from the input values.
+        It checks if the list is valid and attempts to remove the specified item.  If
+        the item is successfully removed, it updates the output values accordingly.
+        Verbose logging is performed based on the state verbosity level to provide
+        insight into the operation's success or failure.
+        """
         list_obj = self.get_input_value("list")
         item = self.get_input_value("item")
 
@@ -709,11 +776,13 @@ class Length(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output for the object."""
         self.add_input("object")
 
         self.add_output("length", socket_type="int")
 
     async def run(self, state: GraphState):
+        """Processes the input value and sets the output length."""
         obj = self.get_input_value("object")
 
         # if object is generator convert to list
@@ -775,6 +844,8 @@ class SelectItem(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets and initializes properties."""
+        """Sets up input and output sockets and initializes properties."""
         self.add_input("items", socket_type="list")
 
         self.add_input("except", socket_type="any", optional=True)
@@ -786,6 +857,18 @@ class SelectItem(Node):
         self.set_property("selection_function", "cycle")
 
     async def run(self, state: GraphState):
+        """Run the selection process based on the provided state and selection function.
+        
+        This asynchronous function retrieves input values and determines which item to
+        select from a list based on the specified selection function. It manages the
+        state for cycling through items, handles exceptions for invalid indices, and
+        logs the selection process if verbosity is set to a verbose level. The function
+        supports various selection strategies, including direct access, random
+        selection, cycling through items, and sorted cycling.
+        
+        Args:
+            state (GraphState): The current state object containing data and properties for selection.
+        """
         items = self.get_input_value("items")
         index = self.get_property("index")
         selection_function = self.get_property("selection_function")
