@@ -13,6 +13,7 @@ class TTSPlugin:
         self.tts = None
 
     async def handle(self, data: dict):
+        """Handles incoming data and processes it based on the action specified."""
         action = data.get("action")
 
         if action == "test":
