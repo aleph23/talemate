@@ -58,6 +58,8 @@ class Counter(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up inputs, outputs, and properties for the component."""
+        """Sets up input and output sockets and initializes properties."""
         self.add_input("state")
         self.add_input("dict", socket_type="dict")
         self.add_input("key", socket_type="str", optional=True)
@@ -71,6 +73,10 @@ class Counter(Node):
         self.add_output("dict", socket_type="dict")
 
     async def run(self, state: GraphState):
+        """Executes the run logic for updating a dictionary value based on input
+        parameters."""
+        """Executes the run logic for updating a dictionary value based on input
+        parameters."""
         dict_ = self.get_input_value("dict")
         key = self.get_input_value("key")
         reset = self.get_input_value("reset")
