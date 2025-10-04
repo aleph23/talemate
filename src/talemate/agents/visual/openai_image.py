@@ -59,10 +59,12 @@ class OpenAIImageMixin:
 
     @property
     def openai_model_type(self):
+        """Gets the OpenAI model type from the configuration."""
         return self.actions["openai_image"].config["model_type"].value
 
     @property
     def openai_quality(self):
+        """Get the quality value of the OpenAI image configuration."""
         return self.actions["openai_image"].config["quality"].value
 
     async def openai_image_generate(self, prompt: Style, format: str):
