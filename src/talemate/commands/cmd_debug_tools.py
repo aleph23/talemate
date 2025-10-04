@@ -28,6 +28,7 @@ class CmdPromptChangeSectioning(TalemateCommand):
     aliases = []
 
     async def run(self):
+        """Set the sectioning handler based on provided arguments."""
         if not self.args:
             self.emit("system", "You must specify a sectioning handler")
             return
@@ -51,6 +52,7 @@ class CmdLongTermMemoryStats(TalemateCommand):
     aliases = ["ltm_stats"]
 
     async def run(self):
+        """Emit a message about the long-term memory entries in the database."""
         memory = get_agent("memory")
 
         count = await memory.count()
@@ -89,6 +91,7 @@ class CmdSummarizerUpdateLayeredHistory(TalemateCommand):
     aliases = ["update_layered_history"]
 
     async def run(self):
+        """Run the summarization process."""
         summarizer = get_agent("summarizer")
 
         await summarizer.summarize_to_layered_history()
@@ -105,6 +108,7 @@ class CmdSummarizerResetLayeredHistory(TalemateCommand):
     aliases = ["reset_layered_history"]
 
     async def run(self):
+        """Runs the summarization process on the layered history."""
         summarizer = get_agent("summarizer")
 
         # if arg is provided remove the last n layers
@@ -128,6 +132,7 @@ class CmdSummarizerContextInvestigation(TalemateCommand):
     aliases = ["ctx_inv"]
 
     async def run(self):
+        """Runs the summarizer to request context investigations based on user input."""
         summarizer = get_agent("summarizer")
 
         #     async def investigate_context(self, layer:int, index:int, query:str, analysis:str="", max_calls:int=3) -> str:
