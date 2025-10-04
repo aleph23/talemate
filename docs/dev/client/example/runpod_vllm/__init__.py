@@ -59,13 +59,17 @@ class RunPodVLLMClient(ClientBase):
 
     @property
     def experimental(self):
+        """Indicates whether the feature is experimental."""
         return False
 
     def set_client(self, **kwargs):
+        """Set the client runpod ID from keyword arguments."""
         log.debug("set_client", kwargs=kwargs, runpod_id=self.runpod_id)
         self.runpod_id = kwargs.get("runpod_id", self.runpod_id)
 
     def tune_prompt_parameters(self, parameters: dict, kind: str):
+        """Filter the prompt parameters to keep only valid keys."""
+        """Filter parameters to keep only valid prompt tuning keys."""
         super().tune_prompt_parameters(parameters, kind)
 
         keys = list(parameters.keys())
@@ -77,12 +81,12 @@ class RunPodVLLMClient(ClientBase):
                 del parameters[key]
 
     async def get_model_name(self):
+        """Return the model name."""
+        """Return the model name."""
         return self.model_name
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
+        """Generates text from the given prompt and parameters asynchronously."""
         prompt = prompt.strip()
 
         self.log.debug("generate", prompt=prompt[:128] + " ...", parameters=parameters)
@@ -127,6 +131,8 @@ class RunPodVLLMClient(ClientBase):
             return ""
 
     def reconfigure(self, **kwargs):
+        """Reconfigure the model and API authentication settings."""
+        """Reconfigure the model and API authentication settings."""
         if kwargs.get("model"):
             self.model_name = kwargs["model"]
         if "runpod_id" in kwargs:
