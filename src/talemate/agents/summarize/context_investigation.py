@@ -69,18 +69,22 @@ class ContextInvestigationMixin:
 
     @property
     def context_investigation_enabled(self):
+        """Returns whether context investigation is enabled."""
         return self.actions["context_investigation"].enabled
 
     @property
     def context_investigation_available(self):
+        """Check if context investigation is available."""
         return self.context_investigation_enabled and self.layered_history_available
 
     @property
     def context_investigation_answer_length(self) -> int:
+        """Returns the length of the context investigation answer."""
         return int(self.actions["context_investigation"].config["answer_length"].value)
 
     @property
     def context_investigation_update_method(self) -> str:
+        """Return the update method for context investigation."""
         return self.actions["context_investigation"].config["update_method"].value
 
     # signal connect
@@ -103,10 +107,16 @@ class ContextInvestigationMixin:
     async def on_summarization_scene_analysis_before_deep_analysis(
         self, emission: SceneAnalysisDeepAnalysisEmission
     ):
-        """
-        Handles context investigation for deep scene analysis.
-        """
 
+        """Handles context investigation for deep scene analysis.
+        
+        This function initiates context investigations if enabled. It first suggests
+        context investigations based on the provided emission parameters. Then, it
+        requests the context investigations and logs the results. The function also
+        manages the merging of context investigation results with the current state
+        based on the specified update method, ensuring that the scene and context
+        states are updated accordingly.
+        """
         if not self.context_investigation_enabled:
             return
 
@@ -152,10 +162,8 @@ class ContextInvestigationMixin:
     async def on_inject_context_investigation(
         self, emission: ConversationAgentEmission | NarratorAgentEmission
     ):
-        """
-        Injects context investigation into the conversation.
-        """
 
+        """Injects context investigation into the conversation if enabled."""
         if not self.context_investigation_enabled:
             return
 
@@ -183,6 +191,7 @@ class ContextInvestigationMixin:
         max_calls: int = 3,
         character: "Character" = None,
     ) -> str:
+        """Suggest context investigations based on the provided analysis parameters."""
         template_vars = {
             "max_tokens": self.client.max_token_length,
             "scene": self.scene,
@@ -225,18 +234,8 @@ class ContextInvestigationMixin:
         max_calls: int = 3,
         pad_entries: int = 5,
     ) -> str:
-        """
-        Processes a context investigation.
 
-        Arguments:
-
-        - layer: The layer to investigate
-        - index: The index in the layer to investigate
-        - query: The query to investigate
-        - analysis: Scene analysis text
-        - pad_entries: if > 0 will pad the entries with the given number of entries before and after the start and end index
-        """
-
+        """Processes a context investigation based on the provided parameters."""
         log.debug(
             "summarizer.investigate_context", layer=layer, index=index, query=query
         )
@@ -337,10 +336,12 @@ class ContextInvestigationMixin:
         """
 
         async def abort():
+            """Abort context investigations and log the action."""
             log.debug("Aborting context investigations")
 
         async def investigate_context(chapter_number: str, query: str) -> str:
             # look for \d.\d in the chapter number, extract as layer and index
+            """Investigate the context based on the chapter number and query."""
             match = re.match(r"(\d+)\.(\d+)", chapter_number)
             if not match:
                 log.error(
