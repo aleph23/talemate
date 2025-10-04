@@ -26,6 +26,7 @@ class AutoDirectCandidates(AgentNode):
         self.add_output("characters", socket_type="list")
 
     async def run(self, state: GraphState):
+        """Executes the agent to set output values for candidates."""
         candidates = self.agent.auto_direct_candidates()
         self.set_output_values({"characters": candidates})
 
@@ -47,6 +48,7 @@ class DetermineSceneIntent(AgentNode):
         self.add_output("scene_phase", socket_type="scene_intent/scene_phase")
 
     async def run(self, state: GraphState):
+        """Executes the scene intent and sets the output values."""
         phase: ScenePhase = await self.agent.auto_direct_set_scene_intent()
 
         self.set_output_values({"state": state, "scene_phase": phase})
@@ -79,6 +81,8 @@ class GenerateSceneTypes(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up the inputs and outputs for the component."""
+        """Sets up the inputs and outputs for the component."""
         self.add_input("state")
         self.add_input("instructions", socket_type="str", optional=True)
         self.add_input("max_scene_types", socket_type="int", optional=True)
@@ -87,6 +91,7 @@ class GenerateSceneTypes(AgentNode):
         self.add_output("state")
 
     async def run(self, state: GraphState):
+        """Generates scene types based on instructions and sets output values."""
         instructions = self.normalized_input_value("instructions")
         max_scene_types = self.normalized_input_value("max_scene_types")
 
@@ -117,6 +122,8 @@ class IsDueForInstruction(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the actor."""
+        """Sets up input and output sockets for the actor."""
         self.add_input("actor_name", socket_type="str")
 
         self.set_property("actor_name", "")
@@ -125,6 +132,8 @@ class IsDueForInstruction(AgentNode):
         self.add_output("actor_name", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Executes the run process for the given GraphState."""
+        """Executes the run process for the given GraphState."""
         actor_name = self.require_input("actor_name")
 
         is_due = self.agent.auto_direct_is_due_for_instruction(actor_name)

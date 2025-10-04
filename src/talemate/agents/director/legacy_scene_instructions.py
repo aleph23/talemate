@@ -23,6 +23,7 @@ class LegacySceneInstructionsMixin(
     # signal connect
 
     def connect(self, scene):
+        """Connects signals for the game loop and scene initialization."""
         super().connect(scene)
         talemate.emit.async_signals.get("game_loop_actor_iter").connect(
             self.LSI_on_player_dialog
@@ -77,6 +78,15 @@ class LegacySceneInstructionsMixin(
     async def LSI_direct(self) -> bool:
         # no character, see if there are NPC characters at all
         # if not we always want to direct narration
+        """Determines whether to direct narration based on NPC presence.
+        
+        This function checks if there are any NPC characters present in the scene.  If
+        there are none, or if the game state indicates to always direct, it will
+        proceed to direct the narration. The function also manages the
+        next_direct_scene variable, ensuring it resets appropriately after a  certain
+        number of turns. Additionally, it logs a deprecation warning  indicating that
+        this function will be replaced in the future.
+        """
         always_direct = (
             not self.scene.npc_character_names
             or self.scene.game_state.ops.always_direct
@@ -103,10 +113,8 @@ class LegacySceneInstructionsMixin(
 
     @set_processing
     async def LSI_run_gamestate_instructions(self):
-        """
-        Run game state instructions, if they exist.
-        """
 
+        """Run game state instructions if they exist."""
         if not await self.scene_has_instructions(self.scene):
             return
 
@@ -114,11 +122,7 @@ class LegacySceneInstructionsMixin(
 
     @set_processing
     async def LSI_direct_scene(self):
-        """
-        LEGACY: Direct the scene based scoped api scene instructions.
-        This is being replaced by node based instructions, but kept for
-        backwards compatibility.
-        """
+        """Direct the scene based on scoped API scene instructions."""
         log.warning(
             "Direct python scene instructions are being DEPRECATED. Please use the new node based instructions. Support for this will be removed in the future."
         )
