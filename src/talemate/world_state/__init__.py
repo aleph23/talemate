@@ -43,6 +43,7 @@ class Reinforcement(BaseModel):
 
     @property
     def as_context_line(self) -> str:
+        """Return a formatted context line based on character and question."""
         if self.character:
             if self.question.strip().endswith("?"):
                 return f"{self.character}: {self.question} {self.answer}"
@@ -75,6 +76,7 @@ class Suggestion(BaseModel):
     proposals: list[focal_schema.Call] = Field(default_factory=list)
 
     def remove_proposal(self, uid: str):
+        """Remove a proposal by its unique identifier."""
         self.proposals = [
             proposal for proposal in self.proposals if proposal.uid != uid
         ]
@@ -118,6 +120,7 @@ class WorldState(BaseModel):
 
     @property
     def agent(self):
+        """Returns the agent from the world state."""
         return instance.get_agent("world_state")
 
     @property
@@ -126,21 +129,19 @@ class WorldState(BaseModel):
 
     @property
     def pretty_json(self):
+        """Return the JSON representation of the model with indentation."""
         return self.model_dump_json(indent=2)
 
     @property
     def as_list(self):
+        """Returns the rendered object as a list."""
         return self.render().as_list
 
     def add_character_name_mappings(self, *names):
         self.character_name_mappings.extend([name.lower() for name in names])
 
     def normalize_name(self, name: str):
-        """Normalizes item or character name away from variables style names
-
-        Args:
-            name (str): item or character name
-        """
+        """Normalizes the item or character name to title case."""
         return name.lower().replace("_", " ").strip().title()
 
     def filter_reinforcements(
@@ -174,33 +175,29 @@ class WorldState(BaseModel):
         return result
 
     def reset(self):
-        """
-        Resets the WorldState instance to its initial state by clearing characters, items, and location.
-
-        Arguments:
-        - None
-        """
+        """Resets the WorldState instance to its initial state."""
         self.characters = {}
         self.items = {}
         self.location = None
 
     def emit(self, status="update"):
-        """
-        Emits the current world state with the given status.
-
-        Arguments:
-        - status: The status of the world state to emit, which influences the handling of the update event.
-        """
+        """Emits the current world state with the given status."""
         emit("world_state", status=status, data=self.model_dump())
 
     async def request_update(self, initial_only: bool = False):
-        """
-        Requests an update of the world state from the WorldState agent. If initial_only is true, emits current state without requesting if characters exist.
 
-        Arguments:
-        - initial_only: A boolean flag to determine if only the initial state should be emitted without requesting a new one.
+        """Request an update of the world state from the WorldState agent.
+        
+        This function handles the retrieval and processing of the world state,
+        including characters and items.  If `initial_only` is true, it emits the
+        current state without requesting a new one if characters exist.  It also
+        manages character name normalization and emotion assignment based on previous
+        states,  while handling potential exceptions during the request process.
+        
+        Args:
+            initial_only (bool): A boolean flag to determine if only the initial state should be emitted without
+                requesting a new one.
         """
-
         if initial_only and self.characters:
             self.emit()
             return
@@ -317,18 +314,8 @@ class WorldState(BaseModel):
         self.emit()
 
     async def persist(self):
-        """
-        Persists the world state snapshots of characters and items into the memory agent.
 
-        TODO: neeeds re-thinking.
-
-        Its better to use state reinforcement to track states, persisting the small world
-        state snapshots most of the time does not have enough context to be useful.
-
-        Arguments:
-        - None
-        """
-
+        """Persists the world state snapshots of characters and items into memory."""
         memory = instance.get_agent("memory")
 
         # first we check if any of the characters were refered
@@ -379,20 +366,17 @@ class WorldState(BaseModel):
         answer: str = "",
         insert: str = "sequential",
     ) -> Reinforcement:
-        """
-        Adds or updates a reinforcement in the world state. If a reinforcement with the same question and character exists, it is updated.
-
-        Arguments:
-        - question: The question or prompt associated with the reinforcement.
-        - character: The character to whom the reinforcement is linked. If None, it applies globally.
-        - instructions: Instructions related to the reinforcement.
-        - interval: The interval for reinforcement repetition.
-        - answer: The answer to the reinforcement question.
-        - insert: The method of inserting the reinforcement into the context.
-        """
 
         # if reinforcement already exists, update it
 
+        """Adds or updates a reinforcement in the world state.
+        
+        This function checks if a reinforcement with the same question and character
+        exists.  If it does, the existing reinforcement is updated with new
+        instructions, interval,  and answer. If not, a new reinforcement is created and
+        added to the world state.  The function also manages the insertion method and
+        updates the scene history accordingly.
+        """
         idx, reinforcement = await self.find_reinforcement(question, character)
 
         if reinforcement:
@@ -458,13 +442,7 @@ class WorldState(BaseModel):
         return reinforcement
 
     async def find_reinforcement(self, question: str, character: str = None):
-        """
-        Finds a reinforcement based on the question and character provided. Returns the index in the list and the reinforcement object.
-
-        Arguments:
-        - question: The question associated with the reinforcement to find.
-        - character: The character to whom the reinforcement is linked. Use None for global reinforcements.
-        """
+        """Finds the index and reinforcement object based on the question and character."""
         for idx, reinforcement in enumerate(self.reinforce):
             if (
                 reinforcement.question == question
@@ -474,11 +452,10 @@ class WorldState(BaseModel):
         return None, None
 
     def reinforcements_for_character(self, character: str):
-        """
-        Returns a dictionary of reinforcements specifically for a given character.
-
-        Arguments:
-        - character: The name of the character for whom reinforcements should be retrieved.
+        """Returns a dictionary of reinforcements for a specified character.
+        
+        Args:
+            character (str): The name of the character for whom reinforcements are retrieved.
         """
         reinforcements = {}
 
@@ -489,12 +466,8 @@ class WorldState(BaseModel):
         return reinforcements
 
     def reinforcements_for_world(self):
-        """
-        Returns a dictionary of global reinforcements not linked to any specific character.
-
-        Arguments:
-        - None
-        """
+        """Returns a dictionary of global reinforcements not linked to any specific
+        character."""
         reinforcements = {}
 
         for reinforcement in self.reinforce:
@@ -543,6 +516,7 @@ class WorldState(BaseModel):
         )
 
     async def commit_to_memory(self, memory_agent):
+        """Commits manual context data to the specified memory agent."""
         await memory_agent.add_many(
             [
                 manual_context.model_dump()
@@ -551,10 +525,8 @@ class WorldState(BaseModel):
         )
 
     def manual_context_for_world(self) -> dict[str, ManualContext]:
-        """
-        Returns all manual context entries where meta["typ"] == "world_state"
-        """
 
+        """Return manual context entries with meta["typ"] == "world_state"."""
         return {
             manual_context.id: manual_context
             for manual_context in self.manual_context.values()
@@ -562,6 +534,7 @@ class WorldState(BaseModel):
         }
 
     def character_emotion(self, character_name: str) -> str:
+        """Retrieve the emotion of a specified character."""
         if character_name in self.characters:
             return self.characters[character_name].emotion
 

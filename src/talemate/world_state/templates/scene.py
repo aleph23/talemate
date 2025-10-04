@@ -23,7 +23,7 @@ class SceneType(Template):
     template_type: str = "scene_type"
 
     def to_scene_type_dict(self):
-        """Convert the template to a scene type dictionary format"""
+        """Convert the template to a scene type dictionary format."""
         scene_type_id = self.name.lower().replace(" ", "_")
 
         return {
@@ -34,11 +34,7 @@ class SceneType(Template):
         }
 
     def apply_to_scene(self, scene: "Scene") -> dict:
-        """
-        Apply this template to create a scene type in the scene
-
-        Returns the created scene type dict
-        """
+        """Apply the template to create a scene type in the scene."""
         scene_type = self.to_scene_type_dict()
 
         if scene and hasattr(scene, "scene_intent") and scene.scene_intent:
