@@ -8,6 +8,7 @@ __all__ = ["SceneType", "ScenePhase", "SceneIntent", "SceneState"]
 
 
 def make_default_types() -> list["SceneType"]:
+    """Create a default list of SceneType objects."""
     return {
         "roleplay": SceneType(
             id="roleplay",
@@ -18,6 +19,7 @@ def make_default_types() -> list["SceneType"]:
 
 
 def make_default_phase() -> "ScenePhase":
+    """Creates a default ScenePhase with a roleplay type."""
     default_type = make_default_types().get("roleplay")
     return ScenePhase(scene_type=default_type.id)
 
@@ -44,13 +46,16 @@ class SceneIntent(pydantic.BaseModel):
 
     @property
     def current_scene_type(self) -> SceneType:
+        """Returns the current scene type based on the phase."""
         return self.scene_types[self.phase.scene_type]
 
     @property
     def active(self) -> bool:
+        """Return True if either intent or phase is set."""
         return self.intent or self.phase
 
     def get_scene_type(self, scene_type_id: str) -> SceneType:
+        """Retrieve the SceneType associated with the given scene_type_id."""
         return self.scene_types[scene_type_id]
 
 
@@ -61,4 +66,5 @@ class SceneState(pydantic.BaseModel):
     intent_state: SceneIntent | None = None
 
     def model_dump(self, **kwargs):
+        """Return a model dump excluding None values."""
         return super().model_dump(exclude_none=True)
