@@ -24,4 +24,5 @@ def get_agent_class(name):
 
 
 def get_agent_types() -> list[str]:
+    """Return a list of agent types from AGENT_CLASSES."""
     return list(AGENT_CLASSES.keys())

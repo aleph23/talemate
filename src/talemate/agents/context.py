@@ -27,10 +27,13 @@ class ActiveAgentContext(pydantic.BaseModel):
 
     @property
     def first(self):
+        """Return the first element in the chain or self if none exists."""
+        """Return the first element in the chain of previous elements."""
         return self.previous.first if self.previous else self
 
     @property
     def action(self):
+        """Returns the name of the function or its first argument if it's 'delegate'."""
         name = self.fn.__name__
         if name == "delegate":
             return self.fn_args[0].__name__
@@ -38,6 +41,8 @@ class ActiveAgentContext(pydantic.BaseModel):
 
     @property
     def fingerprint(self) -> int:
+        """Compute and return the fingerprint of the object."""
+        """Compute and return the fingerprint of the object."""
         if hasattr(self, "_fingerprint"):
             return self._fingerprint
         self._fingerprint = hash(frozenset(self.state_params.items()))
