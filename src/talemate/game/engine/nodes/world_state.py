@@ -22,6 +22,7 @@ class WorldStateManagerNode(Node):
 
     @property
     def world_state_manager(self) -> WorldStateManager:
+        """Gets the world state manager from the active scene."""
         scene: "Scene" = active_scene.get()
         return scene.world_state_manager
 
@@ -81,6 +82,8 @@ class SaveWorldEntry(WorldStateManagerNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the component."""
+        """Sets up input and output properties for the component."""
         self.add_input("entry_id", socket_type="str", optional=True)
         self.add_input("text", socket_type="str", optional=True)
         self.add_input("meta", socket_type="dict", optional=True)
@@ -95,6 +98,7 @@ class SaveWorldEntry(WorldStateManagerNode):
         self.add_output("meta", socket_type="dict")
 
     async def run(self, state: GraphState):
+        """Saves a world entry and sets output values."""
         entry_id = self.require_input("entry_id")
         text = self.require_input("text")
         meta = self.get_input_value("meta")
@@ -136,6 +140,8 @@ class Spices(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for spice values."""
+        """Sets up input and output sockets for spice values."""
         self.add_input("spice_values", socket_type="list", optional=True)
 
         self.set_property("spice_values", [])
@@ -143,6 +149,8 @@ class Spices(Node):
         self.add_output("spices", socket_type="list")
 
     async def run(self, state: GraphState):
+        """Processes spice values and sets output."""
+        """Processes spice values and sets output."""
         spice_values = self.get_input_value("spice_values")
 
         spices = content.Spices(spices=spice_values)
@@ -176,6 +184,8 @@ class WritingStyle(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for instructions and writing style."""
+        """Sets up input and output sockets for instructions and writing style."""
         self.add_input("instructions", socket_type="str", optional=True)
 
         self.set_property("instructions", "")
@@ -183,6 +193,8 @@ class WritingStyle(Node):
         self.add_output("writing_style", socket_type="writing_style")
 
     async def run(self, state: GraphState):
+        """Processes input instructions and sets the writing style output."""
+        """Processes input instructions and sets the writing style output."""
         instructions = self.require_input("instructions")
 
         writing_style = content.WritingStyle(instructions=instructions)
@@ -240,6 +252,8 @@ class GenerationOptions(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the component."""
+        """Sets up inputs and outputs for the component."""
         self.add_input("spices", socket_type="generation_options", optional=True)
         self.add_input("spice_level", socket_type="number", optional=True)
         self.add_input("writing_style", socket_type="writing_style", optional=True)
@@ -250,6 +264,7 @@ class GenerationOptions(Node):
         self.add_output("generation_options", socket_type="generation_options")
 
     async def run(self, state: GraphState):
+        """Sets generation options based on normalized input values."""
         spices = self.normalized_input_value("spices")
         spice_level = self.normalized_input_value("spice_level")
         writing_style = self.normalized_input_value("writing_style")
