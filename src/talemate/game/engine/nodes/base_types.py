@@ -8,6 +8,7 @@ BASE_TYPES = {}
 
 
 def get_base_type(base_type: str):
+    """Retrieve the base type from BASE_TYPES using the provided key."""
     return BASE_TYPES.get(base_type)
 
 
