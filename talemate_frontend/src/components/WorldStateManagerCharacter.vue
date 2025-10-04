@@ -154,6 +154,10 @@
                                         <v-icon size="small">mdi-bullhorn</v-icon>
                                         Actor
                                     </v-tab>
+                                    <v-tab value="card">
+                                        <v-icon size="small">mdi-card-account-details-outline</v-icon>
+                                        Card
+                                    </v-tab>
                                     <!--
                                     <v-tab value="actor" :disabled="true">
                                         <v-icon size="small">mdi-image</v-icon>
@@ -205,6 +209,10 @@
                                             :generation-options="generationOptions"
                                             :templates="templates"
                                             :character="character" />
+                                        </v-tabs-window-item>
+                                        <v-tabs-window-item value="card">
+                                            <WorldStateManagerCharacterCard
+                                            :immutable-character="character" />
                                         </v-tabs-window-item>
                                     </v-tabs-window>
                                 </v-card-text>
@@ -282,6 +290,7 @@ import WorldStateManagerCharacterDetails from './WorldStateManagerCharacterDetai
 import WorldStateManagerCharacterReinforcements from './WorldStateManagerCharacterReinforcements.vue';
 import WorldStateManagerCharacterActor from './WorldStateManagerCharacterActor.vue';
 import WorldStateManagerCharacterCreator from './WorldStateManagerCharacterCreator.vue';
+import WorldStateManagerCharacterCard from './WorldStateManagerCharacterCard.vue';
 
 export default {
     name: 'WorldStateManagerCharacter',
@@ -294,6 +303,7 @@ export default {
         WorldStateManagerCharacterReinforcements,
         WorldStateManagerCharacterActor,
         WorldStateManagerCharacterCreator,
+        WorldStateManagerCharacterCard,
     },
     props: {
         scene: Object,

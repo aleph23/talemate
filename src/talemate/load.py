@@ -145,12 +145,105 @@ async def load_scene_from_character_card(scene, file_path):
 
     await handle_no_player_character(scene)
 
-    # If a json file is found, use Character.load_from_json instead
+    # fmt: off
+    # Parse character card data (supports images and JSON) and allow greeting selection
+    def _collect_greetings(ch_data: dict) -> list[str]:
+        seen = set()
+        greetings: list[str] = []
+        def _add(g):
+            if not g:
+                return
+            g = str(g).strip()
+            if not g or g in seen:
+                return
+            seen.add(g)
+            greetings.append(g)
+        _add(ch_data.get("first_mes"))
+        for key in ("alternate_greetings", "greetings", "first_messages", "alt_greetings"):
+            alts = ch_data.get(key)
+            if isinstance(alts, list):
+                for g in alts:
+                    _add(g)
+        return greetings
+
+    def _preview(text: str, limit: int = 96) -> str:
+        text = (text or "").replace("\n", " ").replace("\r", " ")
+        return (text[: limit - 3] + "...") if len(text) > limit else text
+
     if file_ext == ".json":
-        character = load_character_from_json(file_path)
+        with open(file_path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        spec = identify_import_spec(raw)
+        if spec in (ImportSpec.chara_card_v2, ImportSpec.chara_card_v3):
+            char_data = raw.get("data", {})
+        elif spec in (ImportSpec.chara_card_v1, ImportSpec.chara_card_v0):
+            char_data = raw
+        else:
+            raise UnknownDataSpec(raw)
+        image = False
+        original_card_data = raw
     else:
-        character = load_character_from_image(file_path, image_format)
+        metadata = extract_metadata(file_path, image_format)
+        spec = identify_import_spec(metadata)
+        if spec in (ImportSpec.chara_card_v2, ImportSpec.chara_card_v3):
+            char_data = metadata.get("data", {})
+        elif spec in (ImportSpec.chara_card_v1, ImportSpec.chara_card_v0):
+            char_data = metadata
+        else:
+            raise UnknownDataSpec(metadata)
         image = True
+        original_card_data = metadata
+
+    try:
+        all_greetings = _collect_greetings(char_data)
+        if len(all_greetings) > 1:
+            name = char_data.get("name", "this character")
+            lines = []
+            for i, g in enumerate(all_greetings, start=1):
+                preview = _preview(str(g).replace("{{char}}", str(name)))
+                lines.append(f"{i}) {preview}")
+            from talemate.emit import wait_for_input
+            prompt = (
+                f"Multiple greetings found for {name}.\n"
+                f"Select a greeting number to import:\n\n" + "\n".join(lines)
+            )
+            choice = await wait_for_input(
+                prompt,
+                data={
+                    "input_type": "select",
+                    "choices": [str(i) for i in range(1, len(all_greetings) + 1)],
+                    "default": "1",
+                    "multi_select": False,
+                },
+            )
+            try:
+                idx = int(str(choice).strip()) - 1
+            except Exception:
+                idx = 0
+            if idx < 0 or idx >= len(all_greetings):
+                idx = 0
+            char_data["first_mes"] = all_greetings[idx]
+        elif len(all_greetings) == 1 and not char_data.get("first_mes"):
+            char_data["first_mes"] = all_greetings[0]
+    except Exception as e:
+        log.warning("greeting_selection", error=e)
+
+    # Build character from the (possibly updated) char card data
+    character = character_from_chara_data(char_data)
+
+    # Persist unmodified card data alongside the scene for reference
+    try:
+        os.makedirs(scene.info_dir, exist_ok=True)
+        slug = (character.name or char_data.get("name", "character")).replace(" ", "-").replace("'", "").lower()
+        filename = os.path.join(scene.info_dir, f"chara_card.{slug}.json")
+        if os.path.exists(filename):
+            uid = str(uuid.uuid4())[:8]
+            filename = os.path.join(scene.info_dir, f"chara_card.{slug}-{uid}.json")
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(original_card_data, f, indent=2, ensure_ascii=False)
+        log.debug("saved original chara card", file=filename)
+    except Exception as e:
+        log.warning("save_original_chara_card_failed", error=e)
 
     conversation = instance.get_agent("conversation")
     creator = instance.get_agent("creator")
@@ -172,6 +265,7 @@ async def load_scene_from_character_card(scene, file_path):
         character=character,
         content_context=scene.context,
     )
+    # fmt: on
 
     loading_status("Determine character context...")
 

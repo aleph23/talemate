@@ -2,6 +2,8 @@ import asyncio
 import uuid
 from typing import Any, Union
 import base64
+import os
+import json
 
 import pydantic
 import structlog
@@ -259,6 +261,57 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
                 },
             }
         )
+
+    async def handle_get_character_card(self, data):
+        """Return the raw character card JSON stored in the scene's info/ directory.
+
+        Expected payload:
+            { "name": "<character name>" }
+        """
+        try:
+            name = data.get("name")
+            if not name:
+                raise ValueError("Missing character name")
+
+            # Build slug and locate file
+            slug = name.replace(" ", "-").replace("'", "").lower()
+            base = f"chara_card.{slug}"
+            info_dir = self.scene.info_dir
+            filename = None
+            if os.path.exists(os.path.join(info_dir, base + ".json")):
+                filename = os.path.join(info_dir, base + ".json")
+            else:
+                # find prefixed file variant (with uid suffix)
+                try:
+                    for f in os.listdir(info_dir):
+                        if f.startswith(base + "-") and f.endswith(".json"):
+                            filename = os.path.join(info_dir, f)
+                            break
+                except FileNotFoundError:
+                    filename = None
+
+            card = None
+            if filename and os.path.exists(filename):
+                with open(filename, "r", encoding="utf-8") as fh:
+                    card = json.load(fh)
+
+            self.websocket_handler.queue_put(
+                {
+                    "type": "world_state_manager",
+                    "action": "character_card",
+                    "data": {"name": name, "filename": filename, "card": card},
+                }
+            )
+        except Exception as e:
+            log.error("get_character_card", error=e)
+            self.websocket_handler.queue_put(
+                {
+                    "type": "world_state_manager",
+                    "action": "character_card",
+                    "error": str(e),
+                    "data": {"name": data.get("name"), "card": None},
+                }
+            )
 
     async def handle_update_character_color(self, data):
         payload = UpdateCharacterColorPayload(**data)

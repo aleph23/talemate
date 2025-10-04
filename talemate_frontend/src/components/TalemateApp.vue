@@ -302,6 +302,7 @@
   </v-app>
   <StatusNotification />
   <RateLimitAlert ref="rateLimitAlert" />
+  <SelectionPrompt ref="selectionPrompt" />
 </template>
   
 <script>
@@ -322,6 +323,7 @@ import VisualQueue from './VisualQueue.vue';
 import VoiceLibrary from './VoiceLibrary.vue';
 import WorldStateManager from './WorldStateManager.vue';
 import WorldStateManagerMenu from './WorldStateManagerMenu.vue';
+import SelectionPrompt from './SelectionPrompt.vue';
 import IntroView from './IntroView.vue';
 import NodeEditor from './NodeEditor.vue';
 import DirectorConsole from './DirectorConsole.vue';
@@ -356,6 +358,7 @@ export default {
     PackageManager,
     PackageManagerMenu,
     VoiceLibrary,
+    SelectionPrompt,
   },
   name: 'TalemateApp',
   data() {
@@ -800,8 +803,13 @@ export default {
         this.inputRequestInfo = data;
 
         if (data.data && data.data["input_type"] == "select") {
-          // If the input_type is 'choice', send the data to SceneMessages
-          this.$refs.sceneMessages.handleChoiceInput(data);
+          // If the input_type is 'select', show a modal before the scene is active
+          if (!this.sceneActive || !this.$refs.sceneMessages) {
+            if (this.$refs.selectionPrompt) this.$refs.selectionPrompt.openPrompt(data);
+          } else {
+            // When scene is active, render it in the message stream
+            this.$refs.sceneMessages.handleChoiceInput(data);
+          }
         } else {
           // Enable the input field when a request_input message comes in
           this.inputDisabled = false;

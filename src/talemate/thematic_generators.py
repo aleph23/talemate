@@ -863,10 +863,6 @@ class ThematicGenerator:
         self.seed = seed
         self.custom_lists = {}
 
-    def __init__(self, seed: int = None):
-        self.seed = seed
-        self.custom_lists = {}
-
     def _generate(self, prefixes: list[str], suffixes: list[str]):
         try:
             random.seed(self.seed)
