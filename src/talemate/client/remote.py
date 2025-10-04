@@ -71,6 +71,7 @@ class EndpointOverrideAPIKeyField(EndpointOverrideField):
 class EndpointOverrideMixin:
     @property
     def override_base_url(self) -> str | None:
+        """Return the override base URL from the client configuration."""
         return self.client_config.override_base_url
 
     @property
@@ -79,12 +80,14 @@ class EndpointOverrideMixin:
 
     @property
     def api_key(self) -> str | None:
+        """Return the API key based on the endpoint configuration."""
         if self.endpoint_override_base_url_configured:
             return self.override_api_key
         return getattr(self, f"{self.client_type}_api_key", None)
 
     @property
     def base_url(self) -> str | None:
+        """Return the overridden base URL if set, otherwise None."""
         if self.override_base_url and self.override_base_url.strip():
             return self.override_base_url
         return None
@@ -95,6 +98,7 @@ class EndpointOverrideMixin:
 
     @property
     def endpoint_override_api_key_configured(self) -> bool:
+        """Check if the API key is configured for endpoint override."""
         return self.override_api_key and self.override_api_key.strip()
 
     @property
@@ -107,4 +111,5 @@ class EndpointOverrideMixin:
 
 class RemoteServiceMixin:
     async def status(self):
+        """Emit the current status."""
         self.emit_status()
