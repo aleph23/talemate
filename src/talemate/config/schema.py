@@ -95,6 +95,7 @@ class Agent(pydantic.BaseModel):
     # serialized if they are not None
 
     def model_dump(self, **kwargs):
+        """Serialize the model, excluding None values."""
         return super().model_dump(exclude_none=True)
 
 
@@ -135,6 +136,7 @@ class WorldStateTemplates(pydantic.BaseModel):
     )
 
     def get_template(self, name: str) -> Union[StateReinforcementTemplate, None]:
+        """Retrieve a state reinforcement template by name."""
         return self.state_reinforcement.get(name)
 
 
@@ -228,10 +230,8 @@ class EmbeddingFunctionPreset(pydantic.BaseModel):
 
 
 def generate_chromadb_presets() -> dict[str, EmbeddingFunctionPreset]:
-    """
-    Returns a dict of default embedding presets
-    """
 
+    """Returns a dict of default embedding presets."""
     return {
         "default": EmbeddingFunctionPreset(),
         "Alibaba-NLP/gte-base-en-v1.5": EmbeddingFunctionPreset(
@@ -356,10 +356,8 @@ class Presets(pydantic.BaseModel):
 
 
 def gnerate_intro_scenes():
-    """
-    When there are no recent scenes, generate from a set of introdutory scenes
-    """
 
+    """Generate introductory scenes when there are no recent scenes."""
     scenes = [
         RecentScene(
             name="Simulation Suite V2",
@@ -406,11 +404,19 @@ class RecentScenes(pydantic.BaseModel):
     max_entries: int = 10
 
     def push(self, scene: "Scene"):
-        """
-        adds a scene to the recent scenes list
-        """
 
         # if scene has not been saved, don't add it
+        """Adds a scene to the recent scenes list.
+        
+        This method checks if the provided scene has a valid full_path. If it does,  it
+        removes any existing entries for that scene from the recent scenes list.  A new
+        entry is then created with the scene's details, including the current  date and
+        cover image, and added to the beginning of the list. Finally, the  list is
+        trimmed to ensure it does not exceed the maximum number of entries.
+        
+        Args:
+            scene (Scene): The scene to be added to the recent scenes list.
+        """
         if not scene.full_path:
             return
 
@@ -439,10 +445,8 @@ class RecentScenes(pydantic.BaseModel):
         self.scenes = self.scenes[: self.max_entries]
 
     def clean(self):
-        """
-        removes any entries that no longer exist
-        """
 
+        """Removes entries from scenes that no longer exist."""
         self.scenes = [s for s in self.scenes if os.path.exists(s.path)]
 
 
@@ -456,6 +460,19 @@ def validate_client_type(
     # client config to the correct model
 
     # v is dict
+    """Validate and convert the client type based on the provided input.
+    
+    This function checks if the input `v` is a dictionary or an instance of
+    `Client`. If it is a dictionary, it retrieves the client class based on the
+    "type" key and attempts to create a configuration model if available. If `v` is
+    a `Client` instance, it similarly retrieves the client class and attempts to
+    create a configuration model using the instance's data.
+    
+    Args:
+        v (Any): The input value to validate, which can be a dictionary or a Client instance.
+        handler (pydantic.ValidatorFunctionWrapHandler): The handler to process the value if no config_cls is found.
+        info (pydantic.ValidationInfo): Additional validation information.
+    """
     if isinstance(v, dict):
         client_cls = get_client_class(v.get("type"))
         if client_cls:
@@ -553,6 +570,7 @@ class Config(pydantic.BaseModel):
         extra = "ignore"
 
     async def set_dirty(self):
+        """Mark the instance as dirty and notify listeners of configuration changes."""
         self.dirty = True
         await async_signals.get("config.changed").send(self)
         await async_signals.get("config.changed.follow").send(self)
