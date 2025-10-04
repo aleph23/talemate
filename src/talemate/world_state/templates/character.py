@@ -39,6 +39,7 @@ class Attribute(Template):
         generation_options: GenerationOptions | None = None,
         **kwargs,
     ) -> GeneratedAttribute:
+        """Generates a character attribute based on the provided scene and options."""
         creator = get_agent("creator")
 
         character = scene.get_character(character_name)
@@ -103,6 +104,7 @@ class Detail(Template):
         generation_options: GenerationOptions | None = None,
         **kwargs,
     ) -> GeneratedDetail:
+        """Generates character details and applies them if specified."""
         creator = get_agent("creator")
 
         character = scene.get_character(character_name)
