@@ -53,6 +53,7 @@ DEFAULT_GROUP = Group(
 
 
 def create_defaults():
+    """Create and save a collection with default groups."""
     collection = Collection()
     collection.groups = [DEFAULT_GROUP]
     collection.save()
@@ -61,6 +62,7 @@ def create_defaults():
 
 
 def create_defaults_if_empty_collection(collection: Collection):
+    """Create default groups in the collection if it is empty."""
     print("CREATING DEFAULTS")
     if not collection.groups or True:
         collection.groups = [DEFAULT_GROUP]
