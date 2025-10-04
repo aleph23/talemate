@@ -43,10 +43,12 @@ class ActedAsCharacter(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input parameters for the state and character name."""
         self.add_input("state")
         self.add_input("character_name", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Raises an ActedAsCharacter exception with the character name."""
         character_name = self.get_input_value("character_name")
 
         raise exceptions.ActedAsCharacter(character_name)
@@ -71,6 +73,7 @@ class Stop(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node as a NodeStyle object."""
         return NodeStyle(
             node_color="#401a1a",
             title_color="#111",
@@ -99,6 +102,8 @@ class Stop(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up inputs and outputs for the graph execution."""
+        """Sets up inputs and outputs for the graph execution."""
         self.add_input("state")
         self.add_input("exception", type="str", optional=True)
 
@@ -107,6 +112,24 @@ class Stop(Node):
         self.add_output("state")
 
     async def run(self, state: GraphState):
+        """async def run(self, state: GraphState):
+        Handles various exceptions during graph execution.  This method checks the
+        provided exception input and raises the corresponding exception if it matches
+        predefined types. It also sets the output values for the state, ensuring that
+        Stage nodes can connect to this node. If the exception is unknown, it raises an
+        InputValueError to indicate the issue.
+        
+        Args:
+            state (GraphState): The current state of the graph."""
+        """async def run(self, state: GraphState):
+        Handles various exceptions during graph execution.  This method checks the
+        input value for "exception" and raises  the corresponding exception based on
+        its value. It also sets the  output values to ensure that Stage nodes can
+        connect to this node.  If the exception is not recognized, it raises an
+        InputValueError  indicating an unknown exception.
+        
+        Args:
+            state (GraphState): The current state of the graph."""
         exception = self.require_input("exception")
 
         # this will never be reached, but it's here to make sure the
@@ -148,6 +171,7 @@ class InputValueErrorNode(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node as a NodeStyle object."""
         return NodeStyle(
             node_color="#401a1a",
             title_color="#111",
@@ -173,6 +197,8 @@ class InputValueErrorNode(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initialize inputs and outputs for the component."""
+        """Initializes inputs and outputs for the component."""
         self.add_input("state")
         self.add_input("message", socket_type="str")
         self.add_input("field", socket_type="str")
@@ -183,6 +209,8 @@ class InputValueErrorNode(Node):
         self.add_output("state")
 
     async def run(self, state: GraphState):
+        """Handles input requirements and sets output values."""
+        """Handles input requirements and sets output values."""
         message = self.require_input("message")
         field = self.require_input("field")
 

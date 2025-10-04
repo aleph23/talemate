@@ -20,16 +20,18 @@ log = structlog.get_logger("talemate.game.engine.nodes.event")
 
 
 def collect_listeners(graph: Graph) -> dict[str, list["Listen"]]:
-    """
-    Does a deep search of the graph to find all Listen nodes
 
+    """def collect_listeners(graph: Graph) -> dict[str, list["Listen"]]:
+    Collects all Listen nodes from the given graph.  This function performs a deep
+    search through the provided graph to identify  all nodes of type Listen. For
+    each Listen node found, it retrieves the  associated event name and organizes
+    the nodes into a dictionary, where  the keys are event names and the values are
+    lists of corresponding Listen  nodes. If a Listen node lacks an event name, a
+    warning is logged. The  function also recursively searches any nested Graph
+    nodes.
+    
     Args:
-        graph: Graph to search
-
-    Returns:
-        dict[str, list["Listen"]]: A dictionary of event names to Listen nodes
-    """
-
+        graph: Graph to search."""
     event_listeners = {}
     for node in graph.nodes.values():
         if isinstance(node, Listen):
@@ -47,13 +49,15 @@ def collect_listeners(graph: Graph) -> dict[str, list["Listen"]]:
 
 
 def connect_listeners(graph: Graph, state: GraphState, disconnect: bool = False):
-    """
-    Connects all Listen nodes in the graph to the event bus
 
-    Args:
-        graph: Graph to search
+    """Connects all Listen nodes in the graph to the event bus.
+    
+    This function collects event listeners from the provided graph and connects
+    them to the corresponding signals in the event bus. It handles both connecting
+    and disconnecting listeners based on the `disconnect` flag. If a signal for  an
+    event is not found, a warning is logged. The verbosity level from the  `state`
+    parameter determines the logging detail during the connection process.
     """
-
     event_listeners = collect_listeners(graph)
 
     for event_name, listeners in event_listeners.items():
@@ -112,9 +116,11 @@ class State(Graph):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up the event output."""
         self.add_output("event", socket_type="event")
 
     async def run(self, state: GraphState):
+        """Sets output values based on the provided GraphState."""
         self.set_output_values(
             {
                 "event": state.data.get("event"),
@@ -166,6 +172,7 @@ class EmitStatus(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the component."""
         self.add_input("message", socket_type="str", optional=True)
         self.add_input("status", socket_type="str", optional=True)
         self.add_input("as_scene_message", socket_type="bool", optional=True)
@@ -177,6 +184,7 @@ class EmitStatus(Node):
         self.add_output("emitted", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Runs the process to emit a status message."""
         message_text = self.require_input("message")
         status = self.require_input("status")
         as_scene_message = self.get_input_value("as_scene_message")
@@ -256,6 +264,7 @@ class EmitSystemMessage(EmitStatus):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output properties for the component."""
         self.add_input("state")
         self.add_input("message", socket_type="str", optional=True)
         self.add_input("message_title", socket_type="str", optional=True)
@@ -268,6 +277,7 @@ class EmitSystemMessage(EmitStatus):
         self.add_output("state")
 
     async def run(self, state: GraphState):
+        """Processes input values and emits a system message."""
         state = self.get_input_value("state")
         message = self.require_input("message")
         message_title = self.get_input_value("message_title")
@@ -315,11 +325,13 @@ class EmitStatusConditional(EmitStatus):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Set up input and output for the state."""
         self.add_input("state")
         self.add_output("state")
         super().setup()
 
     async def run(self, state: GraphState):
+        """Executes the run method and sets the output state."""
         _state = self.get_input_value("state")
         await super().run(state)
         self.set_output_values(
@@ -347,6 +359,7 @@ class EmitSceneStatus(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initialize input and output for the state."""
         self.add_input("state")
         self.add_output("state")
 
@@ -443,6 +456,8 @@ class EmitAgentMessage(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output sockets for the component."""
+        """Initializes input and output properties for the component."""
         self.add_input("state")
 
         self.add_input("message", socket_type="str", optional=True)
