@@ -35,6 +35,7 @@ class CharacterManagementMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Add character management actions to the given actions dictionary."""
         actions["character_management"] = AgentAction(
             enabled=True,
             container=True,
@@ -57,10 +58,12 @@ class CharacterManagementMixin:
 
     @property
     def cm_assign_voice(self) -> bool:
+        """Gets the value of the assign_voice configuration."""
         return self.actions["character_management"].config["assign_voice"].value
 
     @property
     def cm_should_assign_voice(self) -> bool:
+        """Determine if a voice should be assigned for TTS."""
         if not self.cm_assign_voice:
             return False
 
@@ -79,6 +82,17 @@ class CharacterManagementMixin:
     async def persist_characters_from_worldstate(
         self, exclude: list[str] = None
     ) -> list["Character"]:
+        """Persist characters from the world state to the scene.
+        
+        This asynchronous function iterates over the character names in the  world
+        state, excluding any specified in the `exclude` list. For each  character not
+        already present in the scene, it calls the  `persist_character` method to
+        create the character and appends it to  the `created_characters` list. Finally,
+        it emits the current status  of the scene.
+        
+        Args:
+            exclude (list[str]?): A list of character names to exclude
+        """
         created_characters = []
 
         for character_name in self.scene.world_state.characters.keys():
@@ -113,6 +127,37 @@ class CharacterManagementMixin:
         assign_voice: bool = True,
         is_player: bool = False,
     ) -> "Character":
+        """Persist a character in the scene with various attributes and configurations.
+        
+        This asynchronous function handles the creation and persistence of a character
+        within a scene. It determines the character's name, applies templates,
+        generates  attributes and descriptions, and manages the character's entry
+        narration. The  function also ensures that the character's details are
+        committed to memory and  handles any potential errors during the process.
+        
+        Args:
+            name (str): The name of the character to be created.
+            content (str?): Additional content for character generation.
+            attributes (str?): Predefined attributes for the character.
+            determine_name (bool?): Flag to determine the character's name.
+            templates (list[str]?): List of templates to apply for character generation.
+            active (bool?): Flag to indicate if the character is active.
+            narrate_entry (bool?): Flag to enable narration of character entry.
+            narrate_entry_direction (str?): Direction for the entry narration.
+            augment_attributes (str?): Instructions for augmenting character attributes.
+            generate_attributes (bool?): Flag to generate attributes if not provided.
+            description (str?): Predefined description for the character.
+            assign_voice (bool?): Flag to assign a voice to the character.
+            is_player (bool?): Flag to indicate if the character is a player.
+        
+        Returns:
+            Character: The created character instance.
+        
+        Raises:
+            ValueError: If the character name already exists.
+            GenerationCancelled: If the character creation process is cancelled.
+            Exception: For any other errors that occur during character persistence.
+        """
         world_state = instance.get_agent("world_state")
         creator = instance.get_agent("creator")
         narrator = instance.get_agent("narrator")
@@ -295,6 +340,7 @@ class CharacterManagementMixin:
                 voice_candidates[scene_character.voice.id].used = True
 
         async def assign_voice(voice_id: str):
+            """Assigns a voice to a character based on the provided voice_id."""
             voice = vl.get_voice(voice_id) or self.scene.voice_library.get_voice(
                 voice_id
             )

@@ -51,6 +51,7 @@ class PersistCharacter(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up inputs and outputs for the character context."""
         self.add_input("state")
         self.add_input("character_name", socket_type="str")
         self.add_input("context", socket_type="str", optional=True)
@@ -62,6 +63,7 @@ class PersistCharacter(AgentNode):
         self.add_output("character", socket_type="character")
 
     async def run(self, state: GraphState):
+        """Processes input values and persists a character."""
         character_name = self.get_input_value("character_name")
         context = self.normalized_input_value("context")
         attributes = self.normalized_input_value("attributes")
@@ -91,6 +93,7 @@ class AssignVoice(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for state, character, and voice."""
         self.add_input("state")
         self.add_input("character", socket_type="character")
 
@@ -99,6 +102,7 @@ class AssignVoice(AgentNode):
         self.add_output("voice", socket_type="tts/voice")
 
     async def run(self, state: GraphState):
+        """Assigns a voice to a character and sets output values."""
         character: "Character" = self.require_input("character")
 
         await self.agent.assign_voice_to_character(character)
@@ -140,6 +144,8 @@ class LogAction(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the component."""
+        """Sets up input and output properties for the component."""
         self.add_input("state")
         self.add_input("action", socket_type="str")
         self.add_input("action_description", socket_type="str")
@@ -152,6 +158,8 @@ class LogAction(AgentNode):
         self.add_output("state")
 
     async def run(self, state: GraphState):
+        """Logs an action and sets output values based on the provided state."""
+        """Logs an action and sets output values based on the provided state."""
         state = self.require_input("state")
         action = self.require_input("action")
         action_description = self.require_input("action_description")
