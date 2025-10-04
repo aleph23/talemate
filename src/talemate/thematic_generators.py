@@ -868,6 +868,18 @@ class ThematicGenerator:
         self.custom_lists = {}
 
     def _generate(self, prefixes: list[str], suffixes: list[str]):
+        """Generate a random string from given prefixes and suffixes.
+        
+        This function selects a random prefix and suffix from the provided  lists and
+        concatenates them into a single string. If both lists  are non-empty, it
+        combines a random choice from each. If one list  is empty, it returns a random
+        choice from the non-empty list. The  random seed is set at the beginning and
+        reset at the end to ensure  consistent behavior.
+        
+        Args:
+            prefixes (list[str]): A list of prefix strings to choose from.
+            suffixes (list[str]): A list of suffix strings to choose from.
+        """
         try:
             random.seed(self.seed)
             if prefixes and suffixes:
@@ -879,9 +891,7 @@ class ThematicGenerator:
             random.seed()
 
     def generate(self, *list_names) -> str:
-        """
-        Generates a name from a list of lists
-        """
+        """Generates a name from a list of lists."""
         tags = []
         delimiter = ", "
         try:
@@ -899,27 +909,29 @@ class ThematicGenerator:
             random.seed()
 
     def add(self, list_name: str, words: list[str]):
-        """
-        Adds a custom list
-        """
+        """Adds a custom list to the instance."""
         if hasattr(self, list_name):
             raise ValueError(f"List name {list_name} is already in use")
         self.custom_lists[list_name] = words
         setattr(self, list_name, lambda: random.choice(self.custom_lists[list_name]))
 
     def abstract_artistic(self):
+        """Generate abstract artistic content using predefined prefixes and suffixes."""
         return self._generate(abstract_artistic_prefixes, abstract_artistic_suffixes)
 
     def berry_dessert(self):
+        """Generate a dessert name using berry prefixes and dessert suffixes."""
         return self._generate(berry_prefixes, dessert_suffixes)
 
     def personality(self):
+        """Return a random personality from the list."""
         return random.choice(personality)
 
     def ethnicity(self):
         return random.choice(ethnicities)
 
     def actor_name_color(self):
+        """Return a random actor name color."""
         return random.choice(actor_name_colors)
 
     def color(self):
@@ -929,15 +941,18 @@ class ThematicGenerator:
         return random.choice(states_of_matter)
 
     def scifi_trope(self):
+        """Return a random sci-fi trope."""
         return random.choice(scifi_tropes)
 
     def human_name_female(self, ethnicity: str = None):
+        """Generate a female human name based on ethnicity."""
         if not ethnicity:
             ethnicity = self.ethnicity()
 
         return self._generate(human_names_female[ethnicity], [])
 
     def human_name_male(self, ethnicity: str = None):
+        """Generate a male human name based on ethnicity."""
         if not ethnicity:
             ethnicity = self.ethnicity()
 
