@@ -27,9 +27,11 @@ class SimilarityMatch(pydantic.BaseModel):
     right_neighbor: str | None = None
 
     def ln_startswith(self, marker: str) -> bool:
+        """Check if the left neighbor starts with the given marker."""
         return self.left_neighbor and self.left_neighbor.startswith(marker)
 
     def rn_startswith(self, marker: str) -> bool:
+        """Check if the right neighbor starts with the given marker."""
         return self.right_neighbor and self.right_neighbor.startswith(marker)
 
     def __hash__(self) -> int:
@@ -88,9 +90,7 @@ def compile_text_to_sentences(text: str) -> list[tuple[str, str]]:
 
 
 def split_sentences_on_comma(sentences: list[str]) -> list[str]:
-    """
-    Split sentences on commas.
-    """
+    """Split sentences into parts based on commas."""
     results = []
     for sentence in sentences:
         for part in sentence.split(","):
@@ -185,26 +185,9 @@ def dedupe_sentences(
     min_length: int | None = None,
     split_on_comma: bool = False,
 ) -> str:
-    """
-    Will split both texts into sentences and then compare each sentence in text_a
-    against similar sentences in text_b. If a similar sentence is found, it will be
-    removed from text_a.
-
-    The similarity threshold is used to determine if two sentences are similar.
-
-    Arguments:
-        text_a (str): The first text.
-        text_b (str): The second text.
-        similarity_threshold (int): The similarity threshold to use when comparing sentences.
-        debug (bool): Whether to log debug messages.
-        on_dedupe (Callable): A callback function that is called when a duplicate is found.
-        split_on_comma (bool): Whether to split text_b sentences on commas as well.
-        min_length (int): The minimum length of a sentence to be considered for deduplication. Shorter sentences are skipped. If None, all sentences are considered.
-    Returns:
-        str: the cleaned text_a.
-    """
 
     # find similarity matches
+    """Remove similar sentences from text_a based on comparisons with text_b."""
     matches = similarity_matches(
         text_a, text_b, similarity_threshold, min_length, split_on_comma
     )
