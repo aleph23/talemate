@@ -858,11 +858,6 @@ class ThematicGenerator:
 
     The generator supports custom lists and can be seeded for reproducible results.
     """
-
-    def __init__(self, seed: int = None):
-        self.seed = seed
-        self.custom_lists = {}
-
     def __init__(self, seed: int = None):
         self.seed = seed
         self.custom_lists = {}
