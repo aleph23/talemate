@@ -20,6 +20,18 @@ log = structlog.get_logger("talemate.game.engine.nodes.state")
 
 
 def coerce_to_type(value: Any, type_name: str):
+    """Coerce a value to a specified type.
+    
+    This function takes a value and attempts to convert it to the type specified by
+    type_name. It supports coercion to "str", "number", and "bool". If the
+    type_name is not recognized, a ValueError is raised. The function handles
+    specific string representations for boolean values to ensure accurate
+    conversion.
+    
+    Args:
+        value (Any): The value to be coerced.
+        type_name (str): The target type to coerce the value into.
+    """
     if type_name == "str":
         return str(value)
     elif type_name == "number":
@@ -54,6 +66,8 @@ class StateManipulation(Node):
         )
 
     def setup(self):
+        """Sets up input and output properties for the component."""
+        """Sets up input and output properties for the component."""
         self.add_input("name", socket_type="str", optional=True)
 
         self.set_property("name", UNRESOLVED)
@@ -64,6 +78,27 @@ class StateManipulation(Node):
         self.add_output("scope", socket_type="str")
 
     def get_state_container(self, state: GraphState):
+        """Retrieve the appropriate state container based on the scope.
+        
+        This function checks the current scope and returns the corresponding  state
+        data from the provided GraphState object. It handles various  scopes such as
+        "local", "parent", "shared", "scene loop", and "game".  If the scope is "scene
+        loop" and no container is found, it logs a  warning and returns an empty
+        dictionary. An exception is raised for  any unknown scope.
+        
+        Args:
+            state (GraphState): The state object containing data for different scopes.
+        """
+        """def get_state_container(self, state: GraphState):
+        Retrieve the appropriate state container based on the scope.  This function
+        checks the value of the scope property and returns the corresponding state
+        container from the provided GraphState object. It handles various scope types,
+        including "local", "parent", "shared", "scene loop", and "game". If the scope
+        is "scene loop" and no container is found, it logs a warning and returns an
+        empty dictionary. An InputValueError is raised for unknown scope values.
+        
+        Args:
+            state (GraphState): The state object containing data for retrieval."""
         scope = self.get_property("scope")
 
         if scope == "local":
@@ -116,10 +151,12 @@ class SetState(StateManipulation):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Set up the input for the component."""
         super().setup()
         self.add_input("value")
 
     async def run(self, state: GraphState):
+        """Sets a state variable with the given name, value, and scope."""
         name = self.require_input("name")
         value = self.require_input("value", none_is_set=True)
         scope = self.require_input("scope")
@@ -154,6 +191,7 @@ class GetState(StateManipulation):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
         return NodeStyle(
             title_color="#44552f",
             icon="F0552",  # download
@@ -168,6 +206,7 @@ class GetState(StateManipulation):
         self.add_input("default", optional=True)
 
     async def run(self, state: GraphState):
+        """Runs the process to retrieve and set output values based on the state."""
         name = self.require_input("name")
         scope = self.require_input("scope")
 
@@ -203,6 +242,7 @@ class UnsetState(StateManipulation):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the NodeStyle for the node."""
         return NodeStyle(
             title_color="#7f2e2e",
             icon="F0683",  # delete-circle
@@ -244,6 +284,7 @@ class HasState(StateManipulation):
         super().__init__(title=title, **kwargs)
 
     async def run(self, state: GraphState):
+        """Run the process to check if a name exists in the state container."""
         name = self.require_input("name")
         scope = self.require_input("scope")
 
@@ -296,6 +337,8 @@ class CounterState(StateManipulation):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
+        """Return the style of the node."""
         return NodeStyle(
             title_color="#2e4657",
             icon="F0199",  # counter
@@ -306,6 +349,8 @@ class CounterState(StateManipulation):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up the input and output properties for the component."""
+        """Sets up the input and output properties for the component."""
         self.add_input("state")
         self.add_output("state")
         super().setup()
@@ -317,6 +362,7 @@ class CounterState(StateManipulation):
         self.add_output("value")
 
     async def run(self, state: GraphState):
+        """Run the state update process based on input values."""
         name = self.require_input("name")
         scope = self.require_input("scope")
         reset = self.normalized_input_value("reset", bool)
@@ -346,11 +392,13 @@ class ConditionalSetState(SetState):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output for the state."""
         self.add_input("state")
         self.add_output("state")
         super().setup()
 
     async def run(self, state: GraphState):
+        """Executes the run method and sets output values."""
         await super().run(state)
         self.set_output_values({"state": self.get_input_value("state")})
 
@@ -367,6 +415,7 @@ class ConditionalUnsetState(UnsetState):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Set up input and output for the state."""
         self.add_input("state")
         self.add_output("state")
         super().setup()
@@ -388,10 +437,12 @@ class ConditionalCounterState(CounterState):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Set up input and output for the state."""
         self.add_input("state")
         self.add_output("state")
         super().setup()
 
     async def run(self, state: GraphState):
+        """Executes the run method and sets output values based on input state."""
         await super().run(state)
         self.set_output_values({"state": self.get_input_value("state")})
