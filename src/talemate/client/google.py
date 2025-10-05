@@ -240,7 +240,7 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def requires_reasoning_pattern(self) -> bool:
-        """Indicates whether reasoning pattern is required."""
+        """Indicates if a reasoning pattern is required."""
         return False
 
     def emit_status(self, processing: bool = None):
