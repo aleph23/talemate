@@ -68,7 +68,6 @@ class RunPodVLLMClient(ClientBase):
         self.runpod_id = kwargs.get("runpod_id", self.runpod_id)
 
     def tune_prompt_parameters(self, parameters: dict, kind: str):
-        """Filter the prompt parameters to keep only valid keys."""
         """Filter parameters to keep only valid prompt tuning keys."""
         super().tune_prompt_parameters(parameters, kind)
 
@@ -81,7 +80,6 @@ class RunPodVLLMClient(ClientBase):
                 del parameters[key]
 
     async def get_model_name(self):
-        """Return the model name."""
         """Return the model name."""
         return self.model_name
 
@@ -131,7 +129,6 @@ class RunPodVLLMClient(ClientBase):
             return ""
 
     def reconfigure(self, **kwargs):
-        """Reconfigure the model and API authentication settings."""
         """Reconfigure the model and API authentication settings."""
         if kwargs.get("model"):
             self.model_name = kwargs["model"]
