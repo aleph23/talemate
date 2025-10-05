@@ -44,7 +44,6 @@ class DetermineContentContext(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
-        """Sets up the input and output sockets for the component."""
         self.add_input("state")
         self.add_input("description", socket_type="str", optional=True)
 
