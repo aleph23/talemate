@@ -72,7 +72,6 @@ class CohereClient(EndpointOverrideMixin, ClientBase):
     @property
     def supported_parameters(self):
         """Return a list of supported parameters."""
-        """Return a list of supported parameters."""
         return [
             "temperature",
             ParameterReroute(talemate_parameter="top_p", client_parameter="p"),
@@ -153,17 +152,14 @@ class CohereClient(EndpointOverrideMixin, ClientBase):
         )
 
     def response_tokens(self, response: str):
-        """Returns the token count of the given response."""
         """Count the tokens in the given response string."""
         return count_tokens(response)
 
     def prompt_tokens(self, prompt: str):
         """Returns the token count for the given prompt."""
-        """Returns the token count for the given prompt."""
         return count_tokens(prompt)
 
     async def status(self):
-        """Emit the current status."""
         """Emit the current status."""
         self.emit_status()
 
