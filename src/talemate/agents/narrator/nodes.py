@@ -34,7 +34,6 @@ class GenerateNarrationBase(AgentNode):
 
     def setup(self):
         """Sets up input and output sockets for the component."""
-        """Sets up input and output sockets for the component."""
         self.add_input("state")
         self.add_input("narrative_direction", socket_type="str", optional=True)
 
@@ -43,13 +42,11 @@ class GenerateNarrationBase(AgentNode):
 
     async def prepare_input_values(self) -> dict:
         """Prepare and return input values without the 'state' key."""
-        """Prepare and return input values without the 'state' key."""
         input_values = self.get_input_values()
         input_values.pop("state", None)
         return input_values
 
     async def run(self, state: GraphState):
-        """Executes an action using the agent and prepares output values."""
         """Executes an action using the agent and prepares output values."""
         input_values = await self.prepare_input_values()
         try:
