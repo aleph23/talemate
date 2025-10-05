@@ -28,7 +28,6 @@ class ActiveAgentContext(pydantic.BaseModel):
     @property
     def first(self):
         """Return the first element in the chain or self if none exists."""
-        """Return the first element in the chain of previous elements."""
         return self.previous.first if self.previous else self
 
     @property
@@ -41,7 +40,6 @@ class ActiveAgentContext(pydantic.BaseModel):
 
     @property
     def fingerprint(self) -> int:
-        """Compute and return the fingerprint of the object."""
         """Compute and return the fingerprint of the object."""
         if hasattr(self, "_fingerprint"):
             return self._fingerprint
