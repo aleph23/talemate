@@ -112,22 +112,27 @@ class AutoDirectMixin:
 
     @property
     def auto_direct_enabled(self) -> bool:
+        """Returns whether auto_direct is enabled."""
         return self.actions["auto_direct"].enabled
 
     @property
     def auto_direct_max_auto_turns(self) -> int:
+        """Gets the maximum number of automatic turns allowed."""
         return self.actions["auto_direct"].config["max_auto_turns"].value
 
     @property
     def auto_direct_max_idle_turns(self) -> int:
+        """Gets the maximum idle turns for auto direct actions."""
         return self.actions["auto_direct"].config["max_idle_turns"].value
 
     @property
     def auto_direct_max_repeat_turns(self) -> int:
+        """Gets the maximum number of repeat turns for auto direct actions."""
         return self.actions["auto_direct"].config["max_repeat_turns"].value
 
     @property
     def auto_direct_instruct_actors(self) -> bool:
+        """Gets the value of instruct_actors from the auto_direct configuration."""
         return self.actions["auto_direct"].config["instruct_actors"].value
 
     @property
@@ -136,10 +141,13 @@ class AutoDirectMixin:
 
     @property
     def auto_direct_instruct_frequency(self) -> int:
+        """Gets the instruct frequency for auto direct actions."""
         return self.actions["auto_direct"].config["instruct_frequency"].value
 
     @property
     def auto_direct_evaluate_scene_intention(self) -> int:
+        """Gets the evaluate_scene_intention value from the auto_direct action
+        configuration."""
         return self.actions["auto_direct"].config["evaluate_scene_intention"].value
 
     @property
@@ -152,16 +160,17 @@ class AutoDirectMixin:
         Returns:
             bool: True if either actor or narrator instructions are enabled.
         """
-
         return self.auto_direct_instruct_actors or self.auto_direct_instruct_narrator
 
     # signal connect
 
     def connect(self, scene):
+        """Connects the scene to the game loop signal."""
         super().connect(scene)
         async_signals.get("game_loop").connect(self.on_game_loop)
 
     async def on_game_loop(self, event):
+        """Handles the game loop logic for auto-direct functionality."""
         if not self.auto_direct_enabled:
             return
 
@@ -188,6 +197,7 @@ class AutoDirectMixin:
         messages_since_last_instruction = 0
 
         def count_messages(message):
+            """Increments the count of messages since the last instruction."""
             nonlocal messages_since_last_instruction
             if message.typ in ["character", "narrator"]:
                 messages_since_last_instruction += 1
@@ -211,11 +221,21 @@ class AutoDirectMixin:
         return messages_since_last_instruction >= self.auto_direct_instruct_frequency
 
     def auto_direct_candidates(self) -> list["Character"]:
-        """
-        Returns a list of characters who are valid candidates to speak next.
-        based on the max_idle_turns, max_repeat_turns, and the most recent character.
-        """
 
+        """Determine valid candidates for the next speaking turn in a scene.
+        
+        This function analyzes the recent speaking history of characters in the scene,
+        considering factors such as the maximum idle turns, maximum repeat turns,  and
+        the most recent character to determine which characters are eligible to  speak
+        next. It maintains a list of candidates based on their speaking frequency  and
+        the player's activity, ensuring that the narrative flow remains engaging.
+        
+        Args:
+            self: The instance of the class containing the scene and its characters.
+        
+        Returns:
+            list["Character"]: A list of characters who are valid candidates to speak next.
+        """
         scene: "Scene" = self.scene
 
         most_recent_character = None
@@ -353,12 +373,14 @@ class AutoDirectMixin:
     async def auto_direct_set_scene_intent(
         self, require: bool = False
     ) -> ScenePhase | None:
+        """Sets the scene intent based on the provided requirements."""
         async def set_scene_intention(type: str, intention: str) -> ScenePhase:
             await set_scene_phase(self.scene, type, intention)
             self.scene.emit_status()
             return self.scene.intent_state.phase
 
         async def do_nothing(*args, **kwargs) -> None:
+            """A placeholder function that does nothing."""
             return None
 
         focal_handler = focal.Focal(
@@ -424,6 +446,7 @@ class AutoDirectMixin:
             description: str = None,
             instructions: str = None,
         ) -> SceneType:
+            """Generate a SceneType object and store it in the intent state."""
             if not id or not name:
                 return None
 

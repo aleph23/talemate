@@ -21,6 +21,7 @@ class CmdVisualizeTestGenerate(TalemateCommand):
     label = "Visualize test"
 
     async def run(self):
+        """Generates a visual based on the provided prompt."""
         visual = get_agent("visual")
         prompt = self.args[0]
         with VisualContext(vis_type=VIS_TYPES.UNSPECIFIED):
@@ -41,6 +42,7 @@ class CmdVisualizeEnvironment(TalemateCommand):
     label = "Visualize environment"
 
     async def run(self):
+        """Run the asynchronous environment background generation."""
         visual = get_agent("visual")
         await visual.generate_environment_background(
             instructions=self.args[0] if len(self.args) > 0 else None
@@ -61,6 +63,7 @@ class CmdVisualizeCharacter(TalemateCommand):
     label = "Visualize character"
 
     async def run(self):
+        """Run the character portrait generation process."""
         visual = get_agent("visual")
         character_name = self.args[0]
         instructions = self.args[1] if len(self.args) > 1 else None

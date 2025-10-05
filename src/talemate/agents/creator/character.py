@@ -21,6 +21,7 @@ class CharacterCreatorMixin:
         self,
         character: Character,
     ):
+        """Determines the content context for a given character."""
         content_context = await Prompt.request(
             "creator.determine-content-context",
             self.client,
@@ -38,6 +39,7 @@ class CharacterCreatorMixin:
         instructions: str = "",
         information: str = "",
     ):
+        """Determines the dialogue instructions for a given character."""
         instructions = await Prompt.request(
             "creator.determine-character-dialogue-instructions",
             self.client,
@@ -59,6 +61,7 @@ class CharacterCreatorMixin:
         self,
         character: Character,
     ):
+        """Determines the attributes of a given character."""
         attributes = await Prompt.request(
             "creator.determine-character-attributes",
             self.client,
@@ -77,6 +80,7 @@ class CharacterCreatorMixin:
         group: bool = False,
         instructions: str = "",
     ) -> str:
+        """Determine the character name based on provided parameters."""
         name = await Prompt.request(
             "creator.determine-character-name",
             self.client,
@@ -100,6 +104,7 @@ class CharacterCreatorMixin:
         instructions: str = "",
         information: str = "",
     ):
+        """Determines a character's description based on provided parameters."""
         description = await Prompt.request(
             "creator.determine-character-description",
             self.client,
@@ -121,6 +126,7 @@ class CharacterCreatorMixin:
         character: Character,
         goal_instructions: str,
     ):
+        """Determines and sets character goals based on provided instructions."""
         goals = await Prompt.request(
             "creator.determine-character-goals",
             self.client,

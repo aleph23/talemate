@@ -34,6 +34,8 @@ class ScopedAPIFunction(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node as a NodeStyle object."""
+        """Return the style of the node as a NodeStyle object."""
         return NodeStyle(
             title_color="#306c51",
             icon="F10D6",  # code-braces-box
@@ -43,6 +45,8 @@ class ScopedAPIFunction(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up inputs, outputs, and properties for the component."""
+        """Sets up inputs, outputs, and properties for the component."""
         self.add_input("state")
         self.add_input("agent", socket_type="agent")
         self.add_input("arguments", socket_type="dict", optional=True)
@@ -63,6 +67,8 @@ class ScopedAPIFunction(Node):
         result = {}
 
         def exec_scoped_api(scope):
+            """Execute restricted code within a given scope."""
+            """Execute restricted code within a given scope."""
             nonlocal result
             exec_restricted(
                 code, f"<{self.title}>", arguments=arguments, result=result, TM=scope

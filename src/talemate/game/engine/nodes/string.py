@@ -15,6 +15,7 @@ class AsString(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("value", socket_type="any")
         self.add_output("value", socket_type="str")
 
@@ -50,10 +51,12 @@ class MakeString(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initialize properties and outputs for the instance."""
         self.set_property("value", "")
         self.add_output("value", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Executes the run process and sets output values."""
         value = self.get_property("value")
         self.set_output_values({"value": value})
 
@@ -120,6 +123,8 @@ class Split(Node):
         )
 
     def setup(self):
+        """Sets up input and output sockets for string processing."""
+        """Sets up input and output sockets for string processing."""
         self.add_input("string", socket_type="str")
         self.add_input("delimiter", socket_type="str", optional=True)
         self.add_output("parts", socket_type="list")
@@ -128,6 +133,8 @@ class Split(Node):
         self.set_property("max_splits", -1)
 
     async def run(self, state: GraphState):
+        """Splits a string into parts based on a specified delimiter."""
+        """Splits a string into parts based on a specified delimiter."""
         string: str = self.get_input_value("string")
         delimiter = self.get_input_value("delimiter")
         max_splits = self.get_property("max_splits")
@@ -169,6 +176,8 @@ class Join(Node):
         )
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
+        """Sets up input and output sockets for the component."""
         self.add_input("strings", socket_type="list")
         self.add_input("delimiter", socket_type="str", optional=True)
         self.add_output("result", socket_type="str")
@@ -176,6 +185,7 @@ class Join(Node):
         self.set_property("delimiter", " ")
 
     async def run(self, state: GraphState):
+        """Processes input strings and joins them with a specified delimiter."""
         strings = self.get_input_value("strings")
         delimiter = self.get_input_value("delimiter")
 
@@ -220,6 +230,8 @@ class Replace(Node):
         )
 
     def setup(self):
+        """Sets up input and output sockets for string replacement."""
+        """Sets up input and output sockets for string replacement."""
         self.add_input("string", socket_type="str")
         self.add_input("old", socket_type="str")
         self.add_input("new", socket_type="str")
@@ -228,6 +240,8 @@ class Replace(Node):
         self.set_property("count", -1)  # -1 means replace all
 
     async def run(self, state: GraphState):
+        """Replace occurrences of a substring in a string."""
+        """Replaces occurrences of a substring in a string."""
         string = self.get_input_value("string")
         old = self.get_input_value("old")
         new = self.get_input_value("new")
@@ -255,11 +269,13 @@ class Format(Node):
     """
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("template", socket_type="str")
         self.add_input("variables", socket_type="dict")
         self.add_output("result", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Formats a template string using provided variables and sets the output result."""
         template = self.get_input_value("template")
         variables = self.get_input_value("variables")
 
@@ -300,12 +316,27 @@ class Case(Node):
         )
 
     def setup(self):
+        """Sets up input and output for string processing."""
         self.add_input("string", socket_type="str")
         self.add_output("result", socket_type="str")
 
         self.set_property("operation", "lower")
 
     async def run(self, state: GraphState):
+        """Processes a string based on the specified operation.
+        
+        This asynchronous function retrieves a string input and an operation type  from
+        the GraphState. It then applies the corresponding string transformation
+        (upper, lower, title, or capitalize) based on the operation specified.
+        Finally, it sets the transformed string as the output value in the GraphState.
+        """
+        """Processes a string based on the specified operation.
+        
+        This asynchronous function retrieves a string input and an operation type  from
+        the GraphState. It then applies the specified string operation, which  can be
+        "upper", "lower", "title", or "capitalize". The result of the  operation is
+        subsequently set as an output value in the GraphState.
+        """
         string = self.get_input_value("string")
         operation = self.get_property("operation")
 
@@ -357,6 +388,8 @@ class Trim(Node):
         )
 
     def setup(self):
+        """Sets up input and output sockets and properties."""
+        """Sets up input and output sockets and properties."""
         self.add_input("string", socket_type="str")
         self.add_input("chars", socket_type="str", optional=True)
         self.add_output("result", socket_type="str")
@@ -365,6 +398,21 @@ class Trim(Node):
         self.set_property("chars", None)  # None means whitespace
 
     async def run(self, state: GraphState):
+        """Processes a string by trimming specified characters.
+        
+        This asynchronous method retrieves a string and a set of characters to trim
+        from the input. It also checks the mode of trimming, which can be 'left',
+        'right', or 'both'. Depending on the mode, it applies the appropriate  trimming
+        operation and handles escaped newline characters before setting  the output
+        result.
+        """
+        """Run the string trimming operation based on the specified mode.
+        
+        This asynchronous method retrieves input values for a string and characters to
+        trim.  It also checks the mode to determine whether to trim characters from the
+        left, right,  or both sides of the string. Additionally, it handles escaped
+        newline characters in  the input. The result is then set as an output value.
+        """
         string = self.get_input_value("string")
         chars = self.get_input_value("chars")
         mode = self.get_property("mode")
@@ -425,6 +473,7 @@ class Substring(Node):
         )
 
     def setup(self):
+        """Sets up input and output parameters for the component."""
         self.add_input("string", socket_type="str")
         self.add_input("start", socket_type="int", optional=True)
         self.add_input("end", socket_type="int", optional=True)
@@ -434,6 +483,8 @@ class Substring(Node):
         self.set_property("end", None)
 
     async def run(self, state: GraphState):
+        """Extract a substring from the input string based on start and end indices."""
+        """Extract a substring from the input string based on start and end indices."""
         string = self.get_input_value("string")
         start = self.get_input_value("start")
         end = self.get_input_value("end")
@@ -486,6 +537,7 @@ class Extract(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the component."""
         self.add_input("string", socket_type="str")
         self.add_input("left_anchor", socket_type="str", optional=True)
         self.add_input("right_anchor", socket_type="str", optional=True)
@@ -497,6 +549,14 @@ class Extract(Node):
         self.add_output("result", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Run the processing of input values and generate output.
+        
+        This asynchronous function retrieves input values for `string`, `left_anchor`,
+        `right_anchor`, and `trim` from the state. It splits the `string` based on the
+        `left_anchor` and extracts the portion before the `right_anchor`. If the `trim`
+        flag is set, it removes any leading or trailing whitespace from the result.
+        Finally, it sets the output values with the processed result.
+        """
         string = self.get_input_value("string")
         left_anchor = self.normalized_input_value("left_anchor") or ""
         right_anchor = self.normalized_input_value("right_anchor") or ""
@@ -562,6 +622,7 @@ class StringCheck(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output properties for the setup."""
         self.add_input("string", socket_type="str")
         self.add_input("substring", socket_type="str")
         self.add_output("result", socket_type="bool")
@@ -571,6 +632,23 @@ class StringCheck(Node):
         self.set_property("case_sensitive", True)
 
     async def run(self, state: GraphState):
+        """Processes string comparison based on specified mode and case sensitivity.
+        
+        This asynchronous function retrieves input values for a string and a substring,
+        along with properties for mode and case sensitivity. It performs the specified
+        comparison (startswith, endswith, exact, or contains) and sets the output
+        result  accordingly. If the string is empty, it sets the result to False
+        without further  processing.
+        """
+        """Processes string comparison based on specified mode and case sensitivity.
+        
+        This asynchronous function retrieves input values for a string and a substring,
+        along with properties for mode and case sensitivity. It performs the specified
+        comparison (startswith, endswith, exact, or contains) and sets the output
+        result  accordingly. If the string is empty, it sets the result to False
+        without further  processing. The function ensures case sensitivity is respected
+        based on the  provided property.
+        """
         string = self.get_input_value("string")
         substring = self.get_input_value("substring")
         mode = self.get_property("mode")

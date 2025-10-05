@@ -63,6 +63,7 @@ class ExtractCharacterSheet(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the character sheet."""
         self.add_input("state")
         self.add_input("character_name", socket_type="str")
         self.add_input("context", socket_type="str")
@@ -71,6 +72,7 @@ class ExtractCharacterSheet(AgentNode):
         self.add_output("character_sheet", socket_type="dict")
 
     async def run(self, state: GraphState):
+        """Processes input to extract a character sheet."""
         context = self.require_input("context")
         character_name = self.require_input("character_name")
         alteration_instructions = self.get_input_value("alteration_instructions")
@@ -150,6 +152,8 @@ class StateReinforcement(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output sockets and sets default properties."""
+        """Initializes input and output properties for the component."""
         self.add_input("state")
         self.add_input("query_or_detail", socket_type="str")
         self.add_input("character", socket_type="character", optional=True)
@@ -166,6 +170,8 @@ class StateReinforcement(AgentNode):
         self.add_output("reinforcement", socket_type="world_state/reinforcement")
 
     async def run(self, state: GraphState):
+        """Processes reinforcement learning updates for a given state."""
+        """Processes reinforcement learning updates for a scene."""
         scene: "Scene" = active_scene.get()
         query_or_detail = self.require_input("query_or_detail")
         character = self.normalized_input_value("character")
@@ -210,12 +216,14 @@ class DeactivateCharacter(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output for the state and character."""
         self.add_input("state")
         self.add_input("character", socket_type="character")
 
         self.add_output("state")
 
     async def run(self, state: GraphState):
+        """Deactivates a character in the current scene."""
         character: "Character" = self.require_input("character")
         scene: "Scene" = active_scene.get()
 
@@ -257,6 +265,7 @@ class EvaluateQuery(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output sockets for the component."""
         self.add_input("state")
         self.add_input("query", socket_type="str")
         self.add_input("context", socket_type="str")
@@ -267,6 +276,8 @@ class EvaluateQuery(AgentNode):
         self.add_output("result", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Processes a query and sets the output values."""
+        """Processes a query and sets the output values."""
         query = self.require_input("query")
         context = self.require_input("context")
 
@@ -296,6 +307,7 @@ class RequestWorldState(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for state and world state."""
         self.add_input("state")
 
         self.add_output("state")

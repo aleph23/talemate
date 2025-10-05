@@ -37,19 +37,18 @@ class VoiceProvider(pydantic.BaseModel):
 
     @property
     def default_parameters(self) -> dict[str, str | float | int | bool]:
+        """Return default parameters as a dictionary."""
         return {param.name: param.value for param in self.voice_parameters}
 
     @property
     def default_voice_dir(self) -> Path:
+        """Return the default voice directory path for the instance."""
         return DEFAULT_VOICE_DIR / self.name
 
     def voice_parameter(
         self, voice: "Voice", name: str
     ) -> str | float | int | bool | None:
-        """
-        Get a parameter from the voice.
-        If the parameter is not set, return the default parameter from the provider.
-        """
+        """Get a parameter from the voice or return the default if not set."""
         if name in voice.parameters:
             return voice.parameters[name]
         return self.default_parameters.get(name)
@@ -90,7 +89,7 @@ class Voice(pydantic.BaseModel):
     @pydantic.field_validator("tags")
     @classmethod
     def _validate_tags(cls, v: list[str]):
-        """Validate tag list length and individual tag length."""
+        """Validate the length of tags in the list."""
         if len(v) > MAX_TAGS_PER_VOICE:
             raise ValueError(
                 f"Too many tags – maximum {MAX_TAGS_PER_VOICE} tags are allowed per voice"
@@ -107,6 +106,7 @@ class Voice(pydantic.BaseModel):
     @pydantic.computed_field(description="The unique identifier for the voice")
     @property
     def id(self) -> str:
+        """Return the unique identifier for the voice."""
         return f"{self.provider}:{self.provider_id}"
 
 
@@ -131,6 +131,8 @@ class Chunk(pydantic.BaseModel):
 
     @property
     def cleaned_text(self) -> str:
+        """Cleans and formats the text by removing unwanted characters and adjusting
+        whitespace."""
         cleaned: str = self.text[0].replace("*", "").replace('"', "").replace("`", "")
 
         # troublemakers

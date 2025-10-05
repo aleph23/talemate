@@ -41,12 +41,11 @@ class NodeNotFoundError(ValueError):
 
 
 def normalize_registry_name(name: str) -> str:
-    """
-    Will normalize a registry name to a consistent format of
-    camel case with no spaces or special characters.
-
-    Arguments:
-        name (str): Name to normalize
+     """
+    Normalize a registry name to camel case with no spaces or special characters.
+    
+    Args:
+        name (str): Name to normalize.
 
     Examples:
 
@@ -54,7 +53,6 @@ def normalize_registry_name(name: str) -> str:
     - "My-Node" -> "myNode"
     - "My Other Node" -> "myOtherNode"
     """
-
     name = name.title()
 
     # first letter lowercase
@@ -130,17 +128,16 @@ class register:
 def validate_registry_path(path: str, node_definitions: dict | None = None):
     """
     Validates a registry path to ensure it is a valid path.
-
-    Arguments:
-
-    - path (str): The registry path to validate
-    - node_definitions (dict): The node definitions to validate against
-
-    Raises:
-
-    - ValueError: if the path is invalid
+    
+    This function checks if the provided registry path is valid by ensuring  it is
+    not empty, contains at least two parts separated by '/', and does  not collide
+    with existing paths in the node definitions. If no  node_definitions are
+    provided, it retrieves them using the  export_node_definitions function.
+    
+    Args:
+        path (str): The registry path to validate.
+        node_definitions (dict | None): The node definitions to validate against.
     """
-
     if not node_definitions:
         node_definitions = export_node_definitions()
 
@@ -211,6 +208,7 @@ def export_node_definitions() -> dict:
 
 
 def import_initial_node_definitions():
+    """Imports initial node definitions if not already done."""
     global INITIAL_IMPORT_DONE
     if INITIAL_IMPORT_DONE:
         return
@@ -220,6 +218,14 @@ def import_initial_node_definitions():
 
 
 def import_talemate_node_definitions():
+    """Import Talemate node definitions from JSON files.
+    
+    This function searches for JSON files in the specified SEARCH_PATHS, loading
+    each file's content to import node definitions. If an import fails, it retries
+    the operation for any failed definitions until all have been processed or no
+    further retries are possible. The function also logs errors encountered during
+    the import process.
+    """
     retry = []
     files = []
 
@@ -258,6 +264,18 @@ def import_talemate_node_definitions():
 
 
 def import_scene_node_definitions(scene: "Scene"):
+    """Import scene node definitions from JSON files in a specified directory.
+    
+    This function populates the scene's _NODE_DEFINITIONS attribute by iterating
+    through JSON files in the scene.nodes_dir. It checks for a 'registry' key at
+    the root level of each JSON file and attempts to import the node definitions
+    using the import_node_definition function. If any imports fail, it retries the
+    failed definitions until all possible attempts are exhausted.
+    
+    Args:
+        scene (Scene): The scene object containing the directory of node definitions and the filename
+            to skip.
+    """
     scene._NODE_DEFINITIONS = {}
 
     # loop files in scene.nodes_dir
@@ -318,6 +336,7 @@ def import_scene_node_definitions(scene: "Scene"):
 
 
 def import_node_definitions(data: dict):
+    """Import node definitions from the provided data dictionary."""
     for node_data in data["nodes"]:
         import_node_definition(node_data)
 
@@ -325,17 +344,22 @@ def import_node_definitions(data: dict):
 def import_node_definition(
     node_data: dict, registry=None, reimport: bool = False
 ) -> "NodeBase":
+
+    """Imports a node definition from a dictionary and registers it in the NODES
+    registry.
+    
+    This function retrieves a node class from the provided `node_data` dictionary
+    and registers it in the specified `registry`. If `reimport` is set to True, it
+    will remove any existing class in the registry before importing the new one.
+    The function also validates the properties of the node against the provided
+    data, ensuring that the node conforms to the expected structure.
+    
+    Args:
+        node_data (dict): The node definition data.
+        registry (dict): The registry to register the node class in - defaults to NODES.
+        reimport (bool): If True, will reimport the node class if it already exists in
+            the registry, removing the old one first.
     """
-    Imports a node definition from a dictionary and registers it in the NODES registry as
-    a class.
-
-    Arguments:
-
-    - node_data (dict): The node definition data
-    - registry (dict): The registry to register the node class in - defaults to NODES
-    - reimport (bool): If True, will reimport the node class if it already exists in the registry, removing the old one first.
-    """
-
     from .core import dynamic_node_import
 
     if registry is None:

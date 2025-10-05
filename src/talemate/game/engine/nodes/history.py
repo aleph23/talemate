@@ -52,6 +52,7 @@ class PushHistory(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output for message handling."""
         self.add_input("message", socket_type="message_object")
 
         self.set_property("emit_message", True)
@@ -59,6 +60,23 @@ class PushHistory(Node):
         self.add_output("message", socket_type="message_object")
 
     async def run(self, state: GraphState):
+        """Executes the main logic for processing a scene message.
+        
+        This asynchronous function retrieves the current active scene and the input
+        message. It validates the message type, pushing it to the scene's history.
+        Depending on the type of message, it may emit different events, such as
+        character or narrator messages. Finally, it sets the output values with the
+        processed message.
+        """
+        """Executes the run process for the given GraphState.
+        
+        This asynchronous function retrieves the active scene and the input message.
+        It validates that the message is an instance of SceneMessage and pushes it  to
+        the scene's history. Depending on the type of message, it emits the
+        appropriate event, including character, narrator, context investigation,  or
+        director messages. Finally, it sets the output values with the processed
+        message.
+        """
         scene: "Scene" = active_scene.get()
         message = self.get_input_value("message")
         emit_message = self.get_property("emit_message")
@@ -123,6 +141,8 @@ class PopHistory(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output for message handling."""
+        """Sets up input and output for message handling."""
         self.add_input("message", socket_type="message_object")
 
         self.set_property("emit_removal", True)
@@ -157,9 +177,11 @@ class HasHistory(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up the output for history status."""
         self.add_output("has_history", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Processes the current scene and sets output values based on message history."""
         scene: "Scene" = active_scene.get()
 
         messages: scene_message.SceneMessage | None = scene.last_message_of_type(
@@ -227,6 +249,8 @@ class LastMessageOfType(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output properties for the setup."""
+        """Initializes input and output properties for the setup."""
         self.add_input("message_type", socket_type="str,list")
         self.add_input("filters", socket_type="dict", optional=True)
 
@@ -238,6 +262,24 @@ class LastMessageOfType(Node):
         self.add_output("message", socket_type="message_object")
 
     async def run(self, state: GraphState):
+        """Executes the main logic for processing messages in the current scene.
+        
+        This function retrieves the active scene and the input value for
+        "message_type". It validates the message types against predefined  MESSAGE keys
+        and retrieves various properties such as  "max_iterations" and
+        "stop_on_time_passage". It then fetches the  last message of the specified type
+        from the scene, applying any  filters if necessary, and sets the output values
+        accordingly.
+        """
+        """Executes the main logic for processing messages in the current scene.
+        
+        This asynchronous function retrieves the active scene and the input value for
+        "message_type". It validates the message types against predefined MESSAGE keys
+        and retrieves various properties such as "max_iterations" and
+        "stop_on_time_passage".  It then fetches the last message of the specified
+        type, applying any filters if  necessary, and sets the output values
+        accordingly.
+        """
         scene: "Scene" = active_scene.get()
         message_type = self.get_input_value("message_type")
 
@@ -350,6 +392,7 @@ class ContextHistory(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output properties for the setup."""
         self.add_input("budget", socket_type="int", optional=True)
 
         self.set_property("budget", 8192)
@@ -364,6 +407,8 @@ class ContextHistory(Node):
         self.add_output("compiled", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Executes the run process and sets output values based on scene context."""
+        """Executes the run process and sets output values based on scene context."""
         scene: "Scene" = active_scene.get()
         budget = self.require_number_input("budget", types=(int,))
 
@@ -418,11 +463,13 @@ class ActiveCharacterActivity(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes properties and outputs for the setup."""
         self.set_property("since_time_passage", False)
         self.add_output("none_have_acted", socket_type="bool")
         self.add_output("characters", socket_type="list")
 
     async def run(self, state: GraphState):
+        """Executes the main logic for processing character activity."""
         scene: "Scene" = active_scene.get()
 
         since_time_passage = self.normalized_input_value("since_time_passage")

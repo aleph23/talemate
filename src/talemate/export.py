@@ -47,10 +47,8 @@ class ExportOptions(pydantic.BaseModel):
 
 
 async def export(scene: Scene, options: ExportOptions) -> Union[str, bytes]:
-    """
-    Export a scene
-    """
 
+    """Export a scene in the specified format."""
     if options.format == ExportFormat.talemate:
         return await export_talemate(scene, options)
     elif options.format == ExportFormat.talemate_complete:
@@ -60,10 +58,8 @@ async def export(scene: Scene, options: ExportOptions) -> Union[str, bytes]:
 
 
 async def export_talemate(scene: Scene, options: ExportOptions) -> str:
-    """
-    Export a scene in talemate format (JSON only, legacy format)
-    """
     # Reset progress
+    """Export a scene in talemate format as a base64-encoded JSON string."""
     if options.reset_progress:
         scene.reset()
 
@@ -79,10 +75,24 @@ async def export_talemate(scene: Scene, options: ExportOptions) -> str:
 
 
 async def export_talemate_complete(scene: Scene, options: ExportOptions) -> bytes:
-    """
-    Export a complete scene in ZIP format including all assets, nodes, info, and templates
-    """
     # Reset progress
+    """Export a complete scene in ZIP format including all assets, nodes, info, and
+    templates.
+    
+    This function handles the export of a scene by first resetting the progress if
+    specified. It then creates a temporary directory to store the exported files,
+    including the main scene JSON, assets, nodes, info, templates, and a restore
+    file if applicable. Each component is copied based on the provided options, and
+    any errors during the copying process are logged. Finally, all files are
+    compressed into a ZIP file, which is read into memory and returned.
+    
+    Args:
+        scene (Scene): The scene object containing the data to be exported.
+        options (ExportOptions): Options that dictate what components to include in the export.
+    
+    Returns:
+        bytes: The contents of the exported ZIP file.
+    """
     if options.reset_progress:
         scene.reset()
 

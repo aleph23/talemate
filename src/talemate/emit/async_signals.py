@@ -13,6 +13,7 @@ class AsyncSignal:
         self.name = name
 
     def connect(self, handler):
+        """Add a handler to the receivers if not already present."""
         if handler in self.receivers:
             return
         self.receivers.append(handler)
@@ -24,19 +25,13 @@ class AsyncSignal:
             pass
 
     async def send(self, emission):
+        """Sends an emission to all registered receivers."""
         for receiver in self.receivers:
             await receiver(emission)
 
 
 def _register(name: str):
-    """
-    Registers a signal handler
-
-    Arguments:
-        name (str): The name of the signal
-        handler (signal): The signal handler
-    """
-
+    """Registers a signal handler for the given signal name."""
     if name in handlers:
         raise ValueError(f"Signal {name} already registered")
 
@@ -57,9 +52,9 @@ def register(*names):
 
 def get(name: str):
     """
-    Gets a signal handler
-
-    Arguments:
-        name (str): The name of the signal handler
+    Gets a signal handler by name.
+    
+    Args:
+        name (str): The name of the signal handler.
     """
     return handlers.get(name)

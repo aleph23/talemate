@@ -129,6 +129,7 @@ class KokoroMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Add actions to the provided actions dictionary."""
         actions["_config"].config["apis"].choices.append(
             {
                 "value": "kokoro",
@@ -159,37 +160,41 @@ class KokoroMixin:
 
     @property
     def kokoro_configured(self) -> bool:
+        """Indicates if Kokoro is configured."""
         return True
 
     @property
     def kokoro_chunk_size(self) -> int:
+        """Get the chunk size from the kokoro configuration."""
         return self.actions["kokoro"].config["chunk_size"].value
 
     @property
     def kokoro_max_generation_length(self) -> int:
+        """Return the maximum generation length for Kokoro."""
         return 256
 
     @property
     def kokoro_agent_details(self) -> dict:
+        """Return an empty dictionary for kokoro agent details."""
         return {}
 
     @property
     def kokoro_supports_mixing(self) -> bool:
+        """Indicates if kokoro supports mixing."""
         return True
 
     @property
     def kokoro_info(self) -> str:
+        """Return the KOKORO_INFO string."""
         return KOKORO_INFO
 
     def kokoro_delete_voice(self, voice_id: str) -> None:
-        """
-        If the voice_id is a file in the CUSTOM_VOICE_STORAGE directory, delete it.
-        """
 
         # if voice id is a deletable file it'll be a relative or absolute path
         # to a file in the CUSTOM_VOICE_STORAGE directory
 
         # we must verify that it is in the CUSTOM_VOICE_STORAGE directory
+        """Delete the voice file if it exists in the CUSTOM_VOICE_STORAGE directory."""
         voice_path = Path(voice_id).resolve()
         log.debug(
             "Kokoro - Checking if voice id is deletable",
@@ -206,6 +211,7 @@ class KokoroMixin:
                 pass
 
     def _kokoro_mix(self, mixer: VoiceMixer) -> "torch.Tensor":
+        """Mixes voice tensors based on their weights from the given mixer."""
         pipeline = KPipeline(lang_code="a")
 
         packs = [
@@ -255,8 +261,8 @@ class KokoroMixin:
                 self.play_audio(audio_data)
 
     async def kokoro_save_mix(self, voice_id: str, mixer: VoiceMixer) -> Path:
-        """Save a voice tensor to disk."""
         # Ensure the directory exists
+        """Save a voice tensor to disk."""
         CUSTOM_VOICE_STORAGE.mkdir(parents=True, exist_ok=True)
 
         save_to_path = CUSTOM_VOICE_STORAGE / f"{voice_id}.pt"
@@ -271,7 +277,7 @@ class KokoroMixin:
         voice: "str | torch.Tensor",
         file_path: str,
     ) -> None:
-        """Generate audio from text using the given voice."""
+        """Generate audio from text using the specified voice."""
         try:
             generator = pipeline(text, voice=voice)
             for i, (gs, ps, audio) in enumerate(generator):
@@ -283,6 +289,7 @@ class KokoroMixin:
     async def kokoro_generate(
         self, chunk: Chunk, context: GenerationContext
     ) -> bytes | None:
+        """Generates audio from text using the Kokoro TTS instance."""
         kokoro_instance = getattr(self, "kokoro_instance", None)
 
         reload: bool = False

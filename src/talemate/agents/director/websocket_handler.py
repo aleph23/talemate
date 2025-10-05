@@ -62,6 +62,7 @@ class DirectorWebsocketHandler(Plugin):
 
     @property
     def director(self):
+        """Returns the director agent."""
         return get_agent("director")
 
     @set_loading("Generating dynamic actions", cancellable=True, as_async=True)
@@ -73,6 +74,16 @@ class DirectorWebsocketHandler(Plugin):
         await self.director.generate_choices(**payload.model_dump())
 
     async def handle_select_choice(self, data: dict):
+        """async def handle_select_choice(self, data: dict):
+        Handles the selection of a choice in the interaction state.  This function
+        processes the provided data to create a SelectChoicePayload  and retrieves the
+        corresponding character from the scene. If a character is  found, it updates
+        the interaction state with the selected choice and the  character's name. If no
+        character or interaction state is found, it logs  an error message accordingly.
+        
+        Args:
+            data (dict): The data containing information about the selected choice
+                and character."""
         payload = SelectChoicePayload(**data)
 
         log.debug("selecting choice", payload=payload)
@@ -99,6 +110,7 @@ class DirectorWebsocketHandler(Plugin):
         interaction_state.input = f"@{payload.choice}"
 
     async def handle_persist_character(self, data: dict):
+        """Handles the persistence of a character based on the provided data."""
         payload = PersistCharacterPayload(**data)
         scene: "Scene" = self.scene
 
@@ -111,6 +123,7 @@ class DirectorWebsocketHandler(Plugin):
         )
 
         async def handle_task_done(task):
+            """Handles the completion of a task and processes any exceptions."""
             if task.exception():
                 exc = task.exception()
                 log.error("Error persisting character", error=exc)
@@ -160,6 +173,7 @@ class DirectorWebsocketHandler(Plugin):
         task = asyncio.create_task(self.director.assign_voice_to_character(character))
 
         async def handle_task_done(task):
+            """Handles the completion of a task and processes any exceptions."""
             if task.exception():
                 exc = task.exception()
                 log.error("Error assigning voice to character", error=exc)

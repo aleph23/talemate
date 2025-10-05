@@ -17,6 +17,7 @@ __all__ = [
 
 
 def fix_unquoted_keys(s):
+    """Fix unquoted keys in a JSON-like string."""
     unquoted_key_pattern = r"(?<!\\)(?:(?<=\{)|(?<=,))\s*(\w+)\s*:"
     fixed_string = re.sub(
         unquoted_key_pattern, lambda match: f' "{match.group(1)}":', s
@@ -25,15 +26,14 @@ def fix_unquoted_keys(s):
 
 
 def extract_metadata(img_path, img_format):
+    """Extract metadata from an image."""
     return chara_read(img_path)
 
 
 def read_metadata_from_png_text(image_path: str) -> dict:
-    """
-    Reads the character metadata from the tEXt chunk of a PNG image.
-    """
 
     # Read the image
+    """Reads character metadata from the tEXt chunk of a PNG image."""
     with open(image_path, "rb") as f:
         png_data = f.read()
 
@@ -53,6 +53,26 @@ def read_metadata_from_png_text(image_path: str) -> dict:
 
 
 def chara_read(img_url, input_format=None):
+    """Read character data from an image file.
+    
+    This function determines the format of the image based on the file extension or
+    a provided input format. It reads the image data and extracts character-related
+    information from the EXIF data for webp images or from the metadata for png
+    images. If character data is not found, it attempts to read from PNG text. The
+    function handles various exceptions and logs warnings when character data is
+    absent.
+    
+    Args:
+        img_url (str): The URL or path to the image file.
+        input_format (str?): The format of the image, either 'webp' or 'png'. Defaults to None.
+    
+    Returns:
+        dict or str or bool: Returns character data as a dictionary or string, or False
+            if no data is found.
+    
+    Raises:
+        Exception: Propagates exceptions encountered during image processing.
+    """
     if input_format is None:
         if ".webp" in img_url:
             format = "webp"

@@ -45,10 +45,12 @@ class GameState(pydantic.BaseModel):
 
     @property
     def scene(self) -> "Scene":
+        """Returns the current scene from the director."""
         return self.director.scene
 
     @property
     def game_won(self) -> bool:
+        """Check if the game has been won."""
         return self.variables.get("__game_won__") is True
 
     def __getitem__(self, key: str) -> Any:
@@ -67,6 +69,7 @@ class GameState(pydantic.BaseModel):
         return self.get_var(key, default=default)
 
     def pop(self, key: str, default: Any = None) -> Any:
+        """Remove and return the value associated with the given key."""
         value = self.get_var(key, default=default)
         self.unset_var(key)
         return value
@@ -78,12 +81,15 @@ class GameState(pydantic.BaseModel):
             loop.run_until_complete(self.memory.add(value, uid=f"game_state.{key}"))
 
     def has_var(self, key: str) -> bool:
+        """Check if a variable exists in the variables dictionary."""
         return key in self.variables
 
     def get_var(self, key: str, default: Any = None) -> Any:
+        """Retrieve a variable by key, returning a default value if not found."""
         return self.variables.get(key, default)
 
     def get_or_set_var(self, key: str, value: Any, commit: bool = False) -> Any:
+        """Get the value of a variable or set it if it does not exist."""
         if not self.has_var(key):
             self.set_var(key, value, commit=commit)
         return self.get_var(key)

@@ -34,6 +34,7 @@ class MemoryRequestState(pydantic.BaseModel):
     max_distance: float | None = None
 
     def add_result(self, doc: str, distance: float, meta: dict):
+        """Adds a result to the memory with the given document, distance, and metadata."""
         if doc is None:
             return
 
@@ -59,6 +60,7 @@ class MemoryRequestState(pydantic.BaseModel):
 
     @property
     def closest_text(self):
+        """Return the closest text from results or None if empty."""
         return str(self.results[0].doc) if self.results else None
 
 
@@ -126,8 +128,11 @@ class MemoryRequest:
 
 # decorator that opens a memory request context
 async def start_memory_request(query):
+    """Decorator that opens a memory request context."""
     async def decorator(fn):
+        """A decorator that wraps an asynchronous function with a memory request context."""
         async def wrapper(*args, **kwargs):
+            """Wraps a function call with MemoryRequest context."""
             with MemoryRequest(query):
                 return await fn(*args, **kwargs)
 

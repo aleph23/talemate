@@ -10,7 +10,6 @@ def replace_special_tokens(prompt: str):
     <|TRAILING_NEW_LINE|> -> \n
     <|TRAILING_SPACE|> -> " "
     """
-
     return prompt.replace("<|TRAILING_NEW_LINE|>", "\n").replace(
         "<|TRAILING_SPACE|>", " "
     )

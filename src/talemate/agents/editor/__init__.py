@@ -44,6 +44,7 @@ class EditorAgent(
 
     @classmethod
     def init_actions(cls) -> dict[str, AgentAction]:
+        """Initialize and return a dictionary of agent actions."""
         actions = {
             "fix_exposition": AgentAction(
                 enabled=True,
@@ -94,14 +95,17 @@ class EditorAgent(
 
     @property
     def enabled(self):
+        """Returns the status of the is_enabled property."""
         return self.is_enabled
 
     @property
     def has_toggle(self):
+        """Indicates if the toggle is available."""
         return True
 
     @property
     def experimental(self):
+        """Indicates if the feature is experimental."""
         return True
 
     @property
@@ -110,17 +114,21 @@ class EditorAgent(
 
     @property
     def fix_exposition_formatting(self):
+        """Get the formatting value for the fix_exposition action."""
         return self.actions["fix_exposition"].config["formatting"].value
 
     @property
     def fix_exposition_narrator(self):
+        """Get the narrator value from the fix_exposition action configuration."""
         return self.actions["fix_exposition"].config["narrator"].value
 
     @property
     def fix_exposition_user_input(self):
+        """Gets the user input value from the fix exposition action configuration."""
         return self.actions["fix_exposition"].config["user_input"].value
 
     def connect(self, scene):
+        """Connects the scene to conversation and narrator signals."""
         super().connect(scene)
         talemate.emit.async_signals.get("agent.conversation.generated").connect(
             self.on_conversation_generated
@@ -130,6 +138,20 @@ class EditorAgent(
         )
 
     def fix_exposition_in_text(self, text: str, character: Character | None = None):
+        """def fix_exposition_in_text(self, text: str, character: Character | None =
+        None):
+        Fixes exposition formatting in the provided text.  This function modifies the
+        input `text` based on the specified  `fix_exposition_formatting` attribute. If
+        the formatting is set to  "chat", it converts certain markdown symbols to a
+        single asterisk,  while if it is set to "novel", it removes those symbols
+        entirely.  Finally, it ensures the dialog format is correct by calling the
+        `util.ensure_dialog_format` function, passing the cleaned text and  the
+        character's name if provided.
+        
+        Args:
+            text (str): The text to be formatted.
+            character (Character | None): An optional character object
+                whose name will be used in the dialog format."""
         if self.fix_exposition_formatting == "chat":
             formatting = "md"
         else:
@@ -168,10 +190,8 @@ class EditorAgent(
         emission.response = edit
 
     async def on_narrator_generated(self, emission: NarratorAgentEmission):
-        """
-        Called when a narrator message is generated
-        """
 
+        """Handles the generation of a narrator message."""
         if not self.enabled:
             return
 
@@ -183,11 +203,26 @@ class EditorAgent(
     async def cleanup_character_message(
         self, content: str, character: Character, force: bool = False
     ):
-        """
-        Edits a text to make sure all narrative exposition and emotes is encased in *
-        """
 
         # if not content was generated, return it as is
+        """Edit a character's message to ensure proper formatting and exposition.
+        
+        This function processes the input `content` based on the character's attributes
+        and the current settings. It checks if the content is empty and returns it as
+        is. If exposition fixing is enabled or forced, it modifies the content
+        accordingly. The function also handles dialogue formatting, ensuring that
+        quotation marks are balanced and that the narrative exposition is correctly
+        encased. Finally, it utilizes helper functions from the `util` module to clean
+        and strip the content as needed.
+        
+        Args:
+            content (str): The message content to be cleaned up.
+            character (Character): The character associated with the message.
+            force (bool?): Whether to force exposition fixing. Defaults to False.
+        
+        Returns:
+            str: The cleaned and formatted message content.
+        """
         if not content:
             return content
 
@@ -225,6 +260,14 @@ class EditorAgent(
 
     @set_processing
     async def clean_up_narration(self, content: str, force: bool = False):
+        """Cleans up narration content based on specific conditions.
+        
+        This asynchronous function processes the given `content` by first stripping
+        partial sentences. If exposition fixing is enabled and applicable, it applies
+        the `fix_exposition_in_text` method to modify the content. Additionally, if the
+        formatting is set to "chat" and the content does not contain quotes or
+        asterisks, it wraps the content in asterisks for emphasis.
+        """
         content = util.strip_partial_sentences(content)
         if self.fix_exposition_enabled and self.fix_exposition_narrator or force:
             content = self.fix_exposition_in_text(content, None)
@@ -239,6 +282,15 @@ class EditorAgent(
         self, text: str, as_narration: bool = False, force: bool = False
     ):
         # special prefix characters - when found, never edit
+        """Cleans up user input based on specific conditions.
+        
+        The function checks for special prefix characters that, if found, prevent any
+        modifications to the input text.  It also evaluates whether to apply formatting
+        fixes based on the object's attributes and the provided flags.  If the input is
+        not intended as narration, it may wrap the text in quotes based on the
+        specified formatting style.  For narration inputs, it delegates the cleanup
+        process to the `clean_up_narration` method.
+        """
         PREFIX_CHARACTERS = ("!", "@", "/")
         if text.startswith(PREFIX_CHARACTERS):
             return text
@@ -259,10 +311,8 @@ class EditorAgent(
 
     @set_processing
     async def add_detail(self, content: str, character: Character):
-        """
-        Edits a text to increase its length and add extra detail and exposition
-        """
 
+        """Edits the content to increase its length and add detail."""
         if not self.actions["add_detail"].enabled:
             return content
 

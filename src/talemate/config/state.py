@@ -19,6 +19,7 @@ async_signals.register(
 
 
 def _load_config() -> Config:
+    """Load and validate the configuration from a YAML file."""
     log.debug("loading config", file_path=CONFIG_FILE)
     with open(CONFIG_FILE, "r") as file:
         yaml_data = yaml.safe_load(file)
@@ -26,6 +27,7 @@ def _load_config() -> Config:
 
 
 def get_config() -> Config:
+    """Retrieve the application configuration."""
     global CONFIG
     if CONFIG is None:
         CONFIG = _load_config()
@@ -33,6 +35,18 @@ def get_config() -> Config:
 
 
 async def update_config(other_config: Config | dict):
+    """Update the configuration with values from another config or dictionary.
+    
+    This function takes an `other_config` which can be either a `Config` object  or
+    a dictionary. If a dictionary is provided, it is validated and converted  into
+    a `Config` object. The function then updates the current configuration  based
+    on the provided keys or performs a full update if no keys are specified.
+    Finally, it marks the configuration as dirty to indicate that changes have
+    been made.
+    
+    Args:
+        other_config (Config | dict): The configuration to update from.
+    """
     if isinstance(other_config, dict):
         keys = list(other_config.keys())
         other_config = Config.model_validate(other_config)
@@ -53,10 +67,15 @@ async def update_config(other_config: Config | dict):
 
 
 def save_config():
-    """
-    Save the config file to the given path.
-    """
 
+    """Save the config file to the specified path.
+    
+    This function retrieves the current configuration using `get_config()` and
+    prepares it for saving by excluding certain keys and removing unchanged
+    presets. It ensures that only relevant data is persisted, such as non-empty
+    preset groups and system prompts. Finally, it writes the modified configuration
+    to the `CONFIG_FILE`.
+    """
     log.debug("Saving config", file_path=CONFIG_FILE)
 
     config = get_config().model_dump(exclude_none=True)
@@ -107,10 +126,8 @@ def save_config():
 
 
 def cleanup_removed_clients(config: Config):
-    """
-    Will remove any clients that are no longer present
-    """
 
+    """Remove clients that are no longer present in the configuration."""
     if not config:
         return
 
@@ -122,10 +139,8 @@ def cleanup_removed_clients(config: Config):
 
 
 def cleanup_removed_agents(config: Config):
-    """
-    Will remove any agents that are no longer present
-    """
 
+    """Remove agents that are no longer present in the configuration."""
     if not config:
         return
 
@@ -149,10 +164,8 @@ def cleanup() -> Config:
 
 
 async def commit_config():
-    """
-    Will commit the config to the file
-    """
 
+    """Commits the config to the file if it is dirty."""
     config = get_config()
     if not config.dirty:
         return

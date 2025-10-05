@@ -43,10 +43,7 @@ v{VERSION}
 
 
 async def install_punkt():
-    """
-    Downloads the NLTK punkt tokenizer data required for text processing.
-    This asynchronous function ensures the necessary NLTK resources are available for the application.
-    """
+    """Downloads the NLTK punkt tokenizer data for text processing."""
     import nltk
 
     log.info("Downloading NLTK punkt tokenizer")
@@ -72,6 +69,19 @@ async def log_stream(stream, log_func):
 
 
 async def run_frontend(host: str = "localhost", port: int = 8080):
+    """Start the frontend server using uvicorn.
+    
+    This function constructs and executes a command to start the  frontend server
+    with uvicorn, depending on the operating system.  It handles the activation of
+    the virtual environment and sets up  the necessary subprocess to run the
+    server. The function also  manages logging for both standard output and error
+    streams,  ensuring that the server process is properly terminated upon
+    completion or error.
+    
+    Args:
+        host (str): The host address for the server. Defaults to "localhost".
+        port (int): The port number for the server. Defaults to 8080.
+    """
     if sys.platform == "win32":
         activate_cmd = ".\\.venv\\Scripts\\activate.bat"
         frontend_cmd = f"{activate_cmd} && uvicorn --host {host} --port {port} frontend_wsgi:application"
@@ -112,18 +122,19 @@ async def run_frontend(host: str = "localhost", port: int = 8080):
 
 
 async def cancel_all_tasks(loop):
+    """Cancel all tasks in the given event loop."""
     tasks = [t for t in asyncio.all_tasks(loop) if t is not asyncio.current_task()]
     [task.cancel() for task in tasks]
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
 def run_server(args):
-    """
-    Run the talemate web server using the provided arguments.
 
-    :param args: command line arguments parsed by argparse
+    """Run the talemate web server using the provided arguments.
+    
+    Args:
+        args: Command line arguments parsed by argparse.
     """
-
     import talemate.client.registry
     import talemate.agents.custom
     import talemate.client.custom
@@ -177,6 +188,7 @@ def run_server(args):
     # ``serve`` is invoked.
 
     async def _start_websocket_server():
+        """Starts the WebSocket server."""
         return await websockets.serve(
             websocket_endpoint,
             args.host,
@@ -231,6 +243,7 @@ def run_server(args):
 
 
 def main():
+    """Parse command-line arguments and run the talemate server."""
     parser = argparse.ArgumentParser(description="talemate server")
     subparser = parser.add_subparsers(dest="command")
 

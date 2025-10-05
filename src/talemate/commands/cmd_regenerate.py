@@ -22,6 +22,7 @@ class CmdRegenerate(TalemateCommand):
     aliases = ["rr"]
 
     async def run(self):
+        """Run the regeneration process with specified nuke repetition."""
         nuke_repetition = self.args[0] if self.args else 0.0
         with ClientContext(nuke_repetition=nuke_repetition):
             await regenerate(self.scene, -1)
@@ -40,6 +41,14 @@ class CmdRegenerateWithDirection(TalemateCommand):
     label = "Directed Regenerate"
 
     async def run(self):
+        """Run the regeneration process based on user input.
+        
+        This asynchronous function retrieves parameters for the regeneration process,
+        including the number of repetitions and the method to use. It validates the
+        method and prompts the user for instructions. Depending on the chosen method,
+        it sets up the appropriate context for regeneration and calls the `regenerate`
+        function to perform the operation on the scene.
+        """
         nuke_repetition = self.args[0] if self.args else 0.0
         method = self.args[1] if len(self.args) > 1 else "replace"
 

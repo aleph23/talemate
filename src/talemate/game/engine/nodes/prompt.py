@@ -76,6 +76,7 @@ class PromptFromTemplate(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the component."""
         self.add_input("template_file", socket_type="str", optional=True)
         self.add_input("template_text", socket_type="str", optional=True)
         self.add_input("variables", socket_type="dict", optional=True)
@@ -87,6 +88,16 @@ class PromptFromTemplate(Node):
         self.add_output("prompt", socket_type="prompt")
 
     async def run(self, graph_state: GraphState):
+        """async def run(self, graph_state: GraphState):
+        Run the prompt generation process based on input values.  This function
+        retrieves the template file and template text from the  normalized input
+        values. It checks for conflicts between the two inputs  and raises an error if
+        both are provided. Depending on the input, it  generates a prompt using either
+        a template file or template text,  while also considering the scope. Finally,
+        it sets the generated prompt  as an output value.
+        
+        Args:
+            graph_state (GraphState): The current state of the graph."""
         template_file = self.normalized_input_value("template_file")
         template_text = self.normalized_input_value("template_text")
         variables = self.normalized_input_value("variables") or {}
@@ -136,11 +147,13 @@ class RenderPrompt(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("prompt", socket_type="prompt")
 
         self.add_output("rendered", socket_type="str")
 
     async def run(self, graph_state: GraphState):
+        """Processes the input prompt and sets the output values."""
         prompt: Prompt = self.require_input("prompt")
         rendered = prompt.render()
 
@@ -177,12 +190,14 @@ class TemplateVariables(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the agent."""
         self.add_input("agent", socket_type="agent")
         self.add_input("merge_with", socket_type="dict", optional=True)
         self.add_output("variables", socket_type="dict")
         self.add_output("agent", socket_type="agent")
 
     async def run(self, graph_state: GraphState):
+        """Executes the run process with the given graph state."""
         agent: Agent = self.require_input("agent")
         merge_with: dict = self.normalized_input_value("merge_with") or {}
         if not hasattr(agent, "client"):
@@ -228,6 +243,7 @@ class GenerateResponse(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
         return NodeStyle(
             node_color="#392c34",
             title_color="#572e44",
@@ -279,6 +295,8 @@ class GenerateResponse(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up the input and output properties for the component."""
+        """Sets up the input and output properties for the component."""
         self.add_input("state")
         self.add_input("agent", socket_type="agent")
         self.add_input("prompt", socket_type="prompt")
@@ -295,6 +313,8 @@ class GenerateResponse(Node):
         self.add_output("agent", socket_type="agent")
 
     async def run(self, state: GraphState):
+        """Executes the prompt sending process to the specified agent."""
+        """Run the agent with the specified prompt and state."""
         scene: "Scene" = active_scene.get()
         agent: Agent = self.require_input("agent")
         prompt: Prompt = self.require_input("prompt")
@@ -316,6 +336,7 @@ class GenerateResponse(Node):
             log.info(f"Sending prompt to agent {agent.agent_type} with kind {kind}")
 
         async def send_prompt(*args, **kwargs):
+            """Sends a prompt with updated response length."""
             prompt.vars.update(
                 {
                     "response_length": response_length,
@@ -376,6 +397,7 @@ class CleanResponse(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the component."""
         self.add_input("response", socket_type="str")
 
         self.set_property("partial_sentences", True)
@@ -383,6 +405,8 @@ class CleanResponse(Node):
         self.add_output("cleaned", socket_type="str")
 
     async def run(self, graph_state: GraphState):
+        """Processes the response and sets cleaned output values."""
+        """Processes the response and sets cleaned output values."""
         response = self.require_input("response")
         partial_sentences = self.get_property("partial_sentences")
 

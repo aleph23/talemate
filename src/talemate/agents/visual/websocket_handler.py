@@ -32,10 +32,8 @@ class VisualWebsocketHandler(Plugin):
     router = "visual"
 
     async def handle_regenerate(self, data: dict):
-        """
-        Regenerate the image based on the context.
-        """
 
+        """Regenerate the image based on the provided data."""
         payload = RegeneratePayload(**data)
 
         context = payload.context
@@ -96,6 +94,7 @@ class VisualWebsocketHandler(Plugin):
         )
 
     async def handle_visualize_environment(self, data: dict):
+        """Handles the visualization of the environment using provided data."""
         payload = GeneratePayload(**data)
         visual = get_agent("visual")
         await visual.generate_environment_background(

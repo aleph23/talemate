@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 
 def create(scene: "Scene", client: "ClientBase") -> "ScopedAPI":
+    """Creates an API instance for the given scene and client."""
     class API(ScopedAPI):
         def request(
             self,
@@ -20,11 +21,9 @@ def create(scene: "Scene", client: "ClientBase") -> "ScopedAPI":
             **kwargs,
         ) -> str:
             """
-            Renders a prompt template and sends it to the LLM for
-            generation
-
+            Renders a prompt template and sends it to the LLM for generation.
+            
             Arguments:
-
             - template_name: str - The name of the template to render
               This should be the name of a template file without the extension
             - dedupe_enabled: bool - Whether to dedupe the prompt
@@ -35,7 +34,6 @@ def create(scene: "Scene", client: "ClientBase") -> "ScopedAPI":
 
             - str - The generated response
             """
-
             class Arguments(pydantic.BaseModel):
                 template_name: str
                 dedupe_enabled: bool

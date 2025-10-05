@@ -3,11 +3,12 @@ import os
 
 
 def list_scenes_directory(path: str = ".") -> list:
+
     """
     List all the scene files in the given directory.
     :param directory: Directory to list scene files from.
     :return: List of scene files in the given directory.
-    """
+    """ 
     current_dir = os.getcwd()
 
     scenes = _list_files_and_directories(os.path.join(current_dir, "scenes"), path)
@@ -16,13 +17,19 @@ def list_scenes_directory(path: str = ".") -> list:
 
 
 def _list_files_and_directories(root: str, path: str) -> list:
-    """
-    List all the files and directories in the given root directory.
-    :param root: Root directory to list files and directories from.
-    :param path: Relative path to list files and directories from.
-    :return: List of files and directories in the given root directory.
-    """
     # Define the file patterns to match
+    """List all the files and directories in the given root directory.
+    
+    This function traverses the directory tree starting from the specified  root
+    directory. It collects files that match predefined patterns while  excluding
+    JSON files located in 'nodes' directories. The function uses  `os.walk` to
+    navigate through the directory structure and applies  `fnmatch` to filter the
+    relevant files based on the specified patterns.
+    
+    Args:
+        root (str): Root directory to list files and directories from.
+        path (str): Relative path to list files and directories from.
+    """
     patterns = ["characters/*.png", "characters/*.webp", "*/*.json"]
 
     items = []

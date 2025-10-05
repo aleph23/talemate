@@ -69,13 +69,12 @@ class HistoryMixin:
         )
 
     async def handle_regenerate_history(self, data):
-        """
-        Regenerate the history for the scene.
-        """
 
+        """Regenerate the history for the scene."""
         payload = RegenerateHistoryPayload(**data)
 
         async def callback():
+            """Handles the callback for scene status and request history."""
             self.scene.emit_status()
             await self.handle_request_scene_history(data)
 
@@ -88,6 +87,7 @@ class HistoryMixin:
         )
 
         async def done():
+            """Handles the completion of a task by updating the websocket and signaling."""
             self.websocket_handler.queue_put(
                 {
                     "type": "world_state_manager",
@@ -103,6 +103,7 @@ class HistoryMixin:
         task.add_done_callback(lambda _: asyncio.create_task(done()))
 
     async def handle_update_history_entry(self, data):
+        """Handles the update of a history entry."""
         payload = HistoryEntryPayload(**data)
 
         entry = await update_history_entry(self.scene, payload.entry)
@@ -118,10 +119,8 @@ class HistoryMixin:
         await self.signal_operation_done()
 
     async def handle_regenerate_history_entry(self, data):
-        """
-        Regenerate a single history entry.
-        """
 
+        """Regenerate a single history entry."""
         payload = HistoryEntryPayload(**data)
 
         log.debug("regenerate_history_entry", payload=payload)
@@ -146,10 +145,8 @@ class HistoryMixin:
         await self.signal_operation_done()
 
     async def handle_inspect_history_entry(self, data):
-        """
-        Inspect a single history entry.
-        """
 
+        """Inspect a single history entry and queue its source entries."""
         payload = HistoryEntryPayload(**data)
 
         entries = collect_source_entries(self.scene, payload.entry)
@@ -166,10 +163,8 @@ class HistoryMixin:
         )
 
     async def handle_add_history_entry(self, data):
-        """
-        Add a new manual history entry to the base (archived) layer.
-        """
 
+        """Add a new manual history entry to the base layer."""
         payload = AddHistoryEntryPayload(**data)
 
         try:
@@ -193,9 +188,7 @@ class HistoryMixin:
         await self.signal_operation_done()
 
     async def handle_delete_history_entry(self, data):
-        """
-        Delete a manual base-layer history entry (no start/end indices).
-        """
+        """Delete a manual base-layer history entry."""
         payload = HistoryEntryPayload(**data)
 
         try:

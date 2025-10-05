@@ -121,6 +121,7 @@ class MemoryAgent(Agent):
 
     @property
     def readonly(self):
+        """Indicates if the scene is in a loading state and not persisted in memory."""
         if scene_is_loading.get() and not getattr(
             self.scene, "_memory_never_persisted", False
         ):
@@ -130,10 +131,12 @@ class MemoryAgent(Agent):
 
     @property
     def db_name(self):
+        """Get the database name."""
         raise NotImplementedError()
 
     @property
     def get_presets(self):
+        """Retrieve a list of presets with their corresponding labels."""
         def _label(embedding: EmbeddingFunctionPreset):
             prefix = embedding.client if embedding.client else embedding.embeddings
             if embedding.model:
@@ -148,11 +151,13 @@ class MemoryAgent(Agent):
 
     @property
     def embeddings_config(self):
+        """Retrieve the embeddings configuration based on the current actions."""
         _embeddings = self.actions["_config"].config["embeddings"].value
         return self.config.presets.embeddings.get(_embeddings)
 
     @property
     def embeddings(self):
+        """Returns the embeddings from the embeddings_config or None if not available."""
         try:
             return self.embeddings_config.embeddings
         except AttributeError:
@@ -160,10 +165,12 @@ class MemoryAgent(Agent):
 
     @property
     def using_openai_embeddings(self):
+        """Check if the embeddings are set to 'openai'."""
         return self.embeddings == "openai"
 
     @property
     def using_instructor_embeddings(self):
+        """Check if the embeddings type is 'instructor'."""
         return self.embeddings == "instructor"
 
     @property
@@ -180,6 +187,7 @@ class MemoryAgent(Agent):
 
     @property
     def embeddings_client(self):
+        """Return the embeddings client from the embeddings configuration."""
         try:
             return self.embeddings_config.client
         except AttributeError:
@@ -187,6 +195,7 @@ class MemoryAgent(Agent):
 
     @property
     def max_distance(self) -> float:
+        """Calculate the maximum distance based on embeddings configuration."""
         distance = float(self.embeddings_config.distance)
         distance_mod = float(self.embeddings_config.distance_mod)
 
@@ -194,6 +203,7 @@ class MemoryAgent(Agent):
 
     @property
     def model(self):
+        """Returns the model from embeddings_config or None if not available."""
         try:
             return self.embeddings_config.model
         except AttributeError:
@@ -201,6 +211,7 @@ class MemoryAgent(Agent):
 
     @property
     def distance_function(self):
+        """Return the distance function from embeddings_config or None if not set."""
         try:
             return self.embeddings_config.distance_function
         except AttributeError:
@@ -208,10 +219,12 @@ class MemoryAgent(Agent):
 
     @property
     def device(self) -> str:
+        """Get the device configuration value."""
         return self.actions["_config"].config["device"].value
 
     @property
     def trust_remote_code(self) -> bool:
+        """Returns whether remote code execution is trusted."""
         try:
             return self.embeddings_config.trust_remote_code
         except AttributeError:
@@ -219,15 +232,14 @@ class MemoryAgent(Agent):
 
     @property
     def fingerprint(self) -> str:
-        """
-        Returns a unique fingerprint for the current configuration
-        """
 
+        """Returns a unique fingerprint for the current configuration."""
         model_name = self.model.replace("/", "-") if self.model else "none"
 
         return f"{self.embeddings}-{model_name}-{self.distance_function}-{self.device}-{self.trust_remote_code}".lower()
 
     async def apply_config(self, *args, **kwargs):
+        """Apply configuration and handle changes in embeddings or device."""
         _fingerprint = self.fingerprint
 
         await super().apply_config(*args, **kwargs)
@@ -267,6 +279,7 @@ class MemoryAgent(Agent):
         return self.actions["_config"].config["embeddings"].choices
 
     async def fix_broken_embeddings(self):
+        """Fixes broken embeddings by setting a default value if not configured."""
         if not self.embeddings_config:
             self.actions["_config"].config["embeddings"].value = "default"
             await self.emit_status()
@@ -274,6 +287,17 @@ class MemoryAgent(Agent):
             await self.save_config()
 
     async def on_config_changed(self, event):
+        """Handle changes in configuration settings.
+        
+        This method is triggered when the configuration changes. It checks for
+        modifications in the OpenAI API key and the presets used for embeddings.  If
+        any changes are detected, it logs the changes, handles the embedding  function
+        updates, and emits the new status. Additionally, it ensures  that any broken
+        embeddings are fixed after the updates.
+        
+        Args:
+            event: The event that triggered the configuration change.
+        """
         loop = asyncio.get_running_loop()
         openai_key = self.openai_api_key
 
@@ -305,6 +329,7 @@ class MemoryAgent(Agent):
         await self.fix_broken_embeddings()
 
     async def on_client_embeddings_available(self, event: "ClientEmbeddingsStatus"):
+        """Handles the availability of client embeddings and updates the configuration."""
         current_embeddings = self.actions["_config"].config["embeddings"].value
 
         if current_embeddings == event.client.embeddings_identifier:
@@ -328,6 +353,7 @@ class MemoryAgent(Agent):
 
     @set_processing
     async def set_db(self):
+        """Asynchronously sets the database using a background executor."""
         loop = asyncio.get_running_loop()
         try:
             await loop.run_in_executor(None, self._set_db)
@@ -346,13 +372,24 @@ class MemoryAgent(Agent):
             raise SetDBError(str(e))
 
     def close_db(self):
+        """Close the database connection."""
         raise NotImplementedError()
 
     async def count(self):
+        """Raises NotImplementedError for the count method."""
         raise NotImplementedError()
 
     @set_processing
     async def add(self, text, character=None, uid=None, ts: str = None, **kwargs):
+        """Asynchronously adds text to the memory agent.
+        
+        This function checks if the memory agent is in a readonly state or if the text
+        to be added is empty. It waits until the agent is ready to add new entries,
+        then attempts to add the provided text using a separate executor. If an
+        AttributeError occurs during the addition, it logs the error and retries once
+        after a brief pause. Additional parameters such as character, uid, and ts can
+        be provided for context.
+        """
         if not text:
             return
         if self.readonly:
@@ -414,10 +451,12 @@ class MemoryAgent(Agent):
                 )
 
     def _add(self, text, character=None, ts: str = None, **kwargs):
+        """Raises NotImplementedError for the _add method."""
         raise NotImplementedError()
 
     @set_processing
     async def add_many(self, objects: list[dict]):
+        """Adds multiple objects asynchronously if not in readonly mode."""
         if self.readonly:
             log.debug("memory agent", status="readonly")
             return
@@ -431,9 +470,7 @@ class MemoryAgent(Agent):
         await loop.run_in_executor(None, self._add_many, objects)
 
     def _add_many(self, objects: list[dict]):
-        """
-        Add multiple objects to the memory
-        """
+        """Add multiple objects to the memory."""
         raise NotImplementedError()
 
     @set_processing
@@ -467,10 +504,12 @@ class MemoryAgent(Agent):
             # )
 
     def _get(self, text, character=None, **query):
+        """Not implemented method for retrieving data based on text and query."""
         raise NotImplementedError()
 
     @set_processing
     async def get_document(self, id):
+        """Retrieve a document by its ID asynchronously."""
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._get_document, id)
 
@@ -478,6 +517,7 @@ class MemoryAgent(Agent):
         raise NotImplementedError()
 
     async def on_archive_add(self, event: events.ArchiveEvent):
+        """Handles the addition of an archive event."""
         await self.add(event.text, uid=event.memory_id, ts=event.ts, typ="history")
 
     def connect(self, scene):
@@ -521,10 +561,8 @@ class MemoryAgent(Agent):
         filter: Callable = lambda x: True,
         **where,
     ) -> str | None:
-        """
-        Get the character memory context for a given character
-        """
 
+        """Get the character memory context for a given character."""
         try:
             return (
                 await self.multi_query(
@@ -545,15 +583,36 @@ class MemoryAgent(Agent):
         limit: int = 10,
         **where,
     ):
-        """
-        Get the character memory context for a given character
-        """
 
         # First, collect results for each individual query (respecting the
         # per-query `iterate` limit) so that we have them available before we
         # start filling the final context. This prevents early queries from
         # monopolising the token budget.
 
+        """Execute multiple queries and aggregate their results into a character memory
+        context.
+        
+        This function processes a list of queries asynchronously, collecting results
+        for each query while respecting the specified `iterate` limit. It filters the
+        results based on the provided filter function and interleaves the accepted
+        results in a round-robin manner to ensure a balanced contribution from each
+        query. The process continues until the token budget defined by `max_tokens` is
+        reached.
+        
+        Args:
+            queries (list[str]): A list of queries to be processed.
+            iterate (int?): The number of results to accept per query. Defaults to 1.
+            max_tokens (int?): The maximum number of tokens allowed in the final context. Defaults to 1000.
+            filter (Callable?): A function to filter results. Defaults to a function that returns True for all
+                inputs.
+            formatter (Callable?): A function to format the query before processing. Defaults to the identity
+                function.
+            limit (int?): The maximum number of results to fetch for each query. Defaults to 10.
+            **where: Additional keyword arguments for the query fetching.
+        
+        Returns:
+            list[str]: A list of unique memory contexts aggregated from the queries.
+        """
         per_query_results: list[list[str]] = []
 
         for query in queries:
@@ -617,15 +676,15 @@ class MemoryAgent(Agent):
 
     @property
     def embedding_function(self) -> Callable:
+        """Abstract property that must be implemented to return an embedding function."""
         raise NotImplementedError()
 
     async def compare_strings(self, string1: str, string2: str) -> dict:
-        """
-        Compare two strings using the current embedding function without touching the database.
 
+        """Compare two strings using the current embedding function.
+        
         Returns a dictionary with 'cosine_similarity' and 'euclidean_distance'.
         """
-
         embed_fn = self.embedding_function
 
         # Embed the two strings
@@ -730,6 +789,7 @@ class ChromaDBMemoryAgent(MemoryAgent):
 
     @property
     def ready(self):
+        """Check if the object is ready based on embeddings and API key."""
         if self.embeddings == "openai" and not self.openai_api_key:
             return False
 
@@ -739,6 +799,17 @@ class ChromaDBMemoryAgent(MemoryAgent):
 
     @property
     def client_api_ready(self) -> bool:
+        """Check if the client API is ready for use.
+        
+        This property evaluates the readiness of the client API by checking  several
+        conditions. It first verifies if client API embeddings are  being used. If so,
+        it retrieves the embeddings client and checks  whether it exists, supports
+        embeddings, has an active embeddings  status, and is in either "idle" or "busy"
+        state. If all conditions  are met, the API is considered ready.
+        
+        Returns:
+            bool: True if the client API is ready, False otherwise.
+        """
         if self.using_client_api_embeddings:
             embeddings_client: ClientBase | None = instance.get_client(
                 self.embeddings_client
@@ -774,6 +845,18 @@ class ChromaDBMemoryAgent(MemoryAgent):
 
     @property
     def agent_details(self):
+        """Retrieve detailed information about the agent's configuration.
+        
+        This property constructs a dictionary containing various details about the
+        agent, including backend, embeddings, model, client, and device information. It
+        checks for the presence of an OpenAI API key and validates the status of the
+        embeddings client, adding error messages to the details if necessary. The
+        function utilizes the `AgentDetail` class to format the information
+        consistently.
+        
+        Returns:
+            dict: A dictionary containing the agent's details and any relevant error messages.
+        """
         details = {
             "backend": AgentDetail(
                 icon="mdi-server-outline",
@@ -854,14 +937,17 @@ class ChromaDBMemoryAgent(MemoryAgent):
 
     @property
     def db_name(self):
+        """Return the database collection name or '<unnamed>' if not set."""
         return getattr(self, "collection_name", "<unnamed>")
 
     @property
     def openai_api_key(self):
+        """Get the OpenAI API key from the configuration."""
         return self.config.openai.api_key
 
     @property
     def embedding_function(self) -> Callable:
+        """Returns the embedding function from the database if initialized."""
         if (
             not self.db
             or not hasattr(self.db, "_embedding_function")
@@ -876,6 +962,8 @@ class ChromaDBMemoryAgent(MemoryAgent):
 
     def make_collection_name(self, scene) -> str:
         # generate plain text collection name
+        """Generate a collection name based on the scene's memory ID and a hashed
+        fingerprint."""
         collection_name = f"{self.fingerprint}"
 
         # chromadb collection names have the following rules:
@@ -1015,6 +1103,7 @@ class ChromaDBMemoryAgent(MemoryAgent):
         self._ready_to_add = True
 
     def clear_db(self):
+        """Clears the database by deleting entries with source 'talemate'."""
         if not self.db:
             return
 
@@ -1108,6 +1197,17 @@ class ChromaDBMemoryAgent(MemoryAgent):
         self.db.upsert(documents=[text], metadatas=metadatas, ids=ids)
 
     def _add_many(self, objects: list[dict]):
+        """Add multiple objects to the database.
+        
+        This function processes a list of objects, ensuring that each object has a
+        unique  identifier. It tracks seen identifiers to avoid duplicates and collects
+        the text  and metadata for each object. The metadata is enriched with source
+        and session  information before being stored in the database along with the
+        corresponding  documents.
+        
+        Args:
+            objects (list[dict]): A list of dictionaries, each containing an 'id', 'text',
+        """
         documents = []
         metadatas = []
         ids = []
@@ -1143,6 +1243,7 @@ class ChromaDBMemoryAgent(MemoryAgent):
         self.db.upsert(documents=documents, metadatas=metadatas, ids=ids)
 
     def _delete(self, meta: dict):
+        """Deletes entries from the database based on the provided metadata."""
         if "ids" in meta:
             log.debug("chromadb agent delete", ids=meta["ids"])
             self.db.delete(ids=meta["ids"])
@@ -1158,6 +1259,23 @@ class ChromaDBMemoryAgent(MemoryAgent):
         log.debug("chromadb agent delete", meta=meta, where=where)
 
     def _get(self, text, character=None, limit: int = 15, **kwargs):
+        """Retrieve documents from the database based on specified criteria.
+        
+        This function constructs a query to fetch documents from the database, applying
+        filters based on the provided `kwargs` and an optional `character`. It handles
+        the case where no filters are applied and manages the results by checking
+        distances and metadata. The function also logs the query process and handles
+        exceptions that may arise during the database query.
+        
+        Args:
+            text (str): The query text to search for in the database.
+            character (str?): An optional character filter to apply to the query.
+            limit (int?): The maximum number of results to return. Defaults to 15.
+            **kwargs: Additional filters to apply to the query.
+        
+        Returns:
+            list: A list of MemoryDocument objects that match the query criteria.
+        """
         where = {}
 
         # this doesn't work because chromadb currently doesn't match
@@ -1250,6 +1368,7 @@ class ChromaDBMemoryAgent(MemoryAgent):
         return results
 
     def convert_ts_to_date_prefix(self, ts):
+        """Convert a timestamp to a human-readable date prefix."""
         if not ts:
             return None
         try:
@@ -1265,6 +1384,14 @@ class ChromaDBMemoryAgent(MemoryAgent):
             return None
 
     def _get_document(self, id) -> dict:
+        """Retrieve a document by its ID.
+        
+        This function fetches a document from the database using the provided  ID. If
+        the ID is a string, it is wrapped in a list; otherwise, it is  used directly.
+        The function processes the retrieved documents,  converting timestamps to date
+        prefixes and creating MemoryDocument  instances for each document, which are
+        then returned in a dictionary  keyed by their IDs.
+        """
         if not id:
             return {}
 
@@ -1285,6 +1412,7 @@ class ChromaDBMemoryAgent(MemoryAgent):
 
     @set_processing
     async def remove_unsaved_memory(self):
+        """Remove unsaved memory asynchronously."""
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._remove_unsaved_memory)
 

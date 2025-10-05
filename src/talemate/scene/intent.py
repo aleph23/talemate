@@ -34,10 +34,8 @@ __all__ = [
 async def set_scene_phase(
     scene: "Scene", scene_type_id: str, intent: str
 ) -> ScenePhase:
-    """
-    Set the scene phase.
-    """
 
+    """Set the scene phase based on the provided scene type and intent."""
     scene_intent: SceneIntent = scene.intent_state
 
     if scene_type_id not in scene_intent.scene_types:

@@ -74,13 +74,12 @@ class WebsocketHandler(Receiver):
 
     @property
     def config(self) -> Config:
+        """Return the current configuration."""
         return get_config()
 
     def set_agent_routers(self):
-        """
-        Sets up websocket handler routes for all agents that provide a websocket handler.
-        This method dynamically adds agent-specific websocket handlers to the routes dictionary.
-        """
+        """Sets up websocket handler routes for agents with a websocket handler.
+        This method dynamically adds agent-specific websocket handlers to the routes dictionary."""
         for agent_type, agent in instance.AGENTS.items():
             handler_cls = getattr(agent, "websocket_handler", None)
             if not handler_cls or handler_cls.router in self.routes:
@@ -104,11 +103,13 @@ class WebsocketHandler(Receiver):
                 plugin.disconnect()
 
     def connect(self):
+        """Establishes a connection and sets up a config change listener."""
         super().connect()
         async_signals.get("config.changed").connect(self.on_config_changed)
 
     def init_scene(self):
         # Setup scene
+        """Initialize the scene and connect helper agents."""
         scene = Scene()
 
         # Init helper agents
@@ -125,6 +126,14 @@ class WebsocketHandler(Receiver):
     async def load_scene(
         self, path_or_data, reset=False, callback=None, file_name=None
     ):
+        """Load a scene from the specified path or data.
+        
+        This asynchronous function initializes a scene and manages its lifecycle,
+        including  disconnecting the previous scene if it exists. It handles potential
+        errors during  the loading process, logging any issues encountered. If a
+        callback is provided,  it will be executed after the scene is successfully
+        loaded and activated.
+        """
         try:
             if self.scene:
                 instance.get_agent("memory").close_db(self.scene)
@@ -165,6 +174,7 @@ class WebsocketHandler(Receiver):
 
     def queue_put(self, data):
         # Get the current event loop
+        """Schedules data to be put into the output queue."""
         loop = asyncio.get_event_loop()
         # Schedule the put coroutine to run as soon as possible
         loop.call_soon_threadsafe(lambda: self.out_queue.put_nowait(data))
@@ -326,6 +336,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_prompt_sent(self, emission: Emission):
+        """Handles the prompt sent event by queuing the emission data."""
         self.queue_put(
             {
                 "type": "prompt_sent",
@@ -334,6 +345,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_clear_screen(self, emission: Emission):
+        """Clears the screen by adding a clear_screen command to the queue."""
         self.queue_put(
             {
                 "type": "clear_screen",
@@ -341,6 +353,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_remove_message(self, emission: Emission):
+        """Handles the removal of a message from the queue."""
         self.queue_put(
             {
                 "type": "remove_message",
@@ -349,6 +362,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_scene_status(self, emission: Emission):
+        """Handles the scene status by putting it in the queue."""
         self.queue_put(
             {
                 "type": "scene_status",
@@ -368,6 +382,7 @@ class WebsocketHandler(Receiver):
         )
 
     async def on_config_changed(self, config: Config):
+        """Handles changes to the application configuration."""
         data = config.model_dump()
 
         data.update(system_prompt_defaults=SYSTEM_PROMPTS_CACHE)
@@ -380,6 +395,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_archived_history(self, emission: Emission):
+        """Handles archived history by putting it in the queue."""
         self.queue_put(
             {
                 "type": "scene_history",
@@ -388,6 +404,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_command_status(self, emission: Emission):
+        """Handles the command status by queuing the emission data."""
         self.queue_put(
             {
                 "type": "command_status",
@@ -421,6 +438,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_agent_status(self, emission: Emission):
+        """Handles the status of an agent by queuing the emission details."""
         self.queue_put(
             {
                 "type": "agent_status",
@@ -434,6 +452,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_client_bootstraps(self, emission: Emission):
+        """Handles client bootstraps by putting data in the queue."""
         self.queue_put(
             {
                 "type": "client_bootstraps",
@@ -442,6 +461,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_message_edited(self, emission: Emission):
+        """Handles the editing of a message and queues the update."""
         self.queue_put(
             {
                 "type": "message_edited",
@@ -452,6 +472,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_autocomplete_suggestion(self, emission: Emission):
+        """Handles the autocomplete suggestion by queuing the emission message."""
         self.queue_put(
             {
                 "type": "autocomplete_suggestion",
@@ -460,6 +481,7 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_audio_queue(self, emission: Emission):
+        """Handles the audio queue by adding an emission to it."""
         self.queue_put(
             {
                 "type": "audio_queue",
@@ -486,6 +508,17 @@ class WebsocketHandler(Receiver):
         )
 
     def send_input(self, message):
+        """Send input message if waiting for input.
+        
+        This function checks if the instance is currently waiting for input.  If it is,
+        it emits a message of type "receive_input" and processes  the input based on
+        the current scene state and message content.  If the message is empty, starts
+        with "!", or if the environment is  set to "creative", it queues a processing
+        input command.
+        
+        Args:
+            message: The input message to be sent.
+        """
         if not self.waiting_for_input:
             return
         self.waiting_for_input = False
@@ -510,6 +543,7 @@ class WebsocketHandler(Receiver):
         )
 
     async def handle_base64(self, b64data):
+        # Decode the base64 string back into bytes        """
         """
         Handle file upload from the client.
 
@@ -517,13 +551,24 @@ class WebsocketHandler(Receiver):
 
         :param file_data: base64 encoded string representing the file data
         """
-        # Decode the base64 string back into bytes
         file_bytes = base64.b64decode(b64data)
         await asyncio.sleep(0.1)
 
         return file_bytes
 
     def request_scenes_list(self, query: str = ""):
+        """
+        Request and filter a list of scenes.
+        
+        This function retrieves a list of scenes from the directory using the
+        list_scenes_directory function. If a query is provided, it filters the  scenes
+        to include only those that match the query (case-insensitive).  The filtered
+        list is then processed to create a structured data format  that is queued for
+        further processing, excluding any directories.
+        
+        Args:
+            query (str): An optional string to filter the scenes by name.
+        """
         scenes_list = list_scenes_directory()
 
         if query:
@@ -558,6 +603,7 @@ class WebsocketHandler(Receiver):
         )
 
     async def request_client_status(self):
+        """Emit the clients' status asynchronously."""
         await instance.emit_clients_status()
 
     def request_scene_assets(self, asset_ids: list[str]):
@@ -587,6 +633,7 @@ class WebsocketHandler(Receiver):
         # path must be turned into absolute path
         # path must begin with Scene.scenes_dir()
 
+        """Requests scene assets without loading the scene."""
         _assets = {}
 
         for asset_dict in assets:
@@ -605,6 +652,13 @@ class WebsocketHandler(Receiver):
         )
 
     def _asset(self, path: str, **asset):
+        """
+        Retrieve asset information based on the given path.
+        
+        Args:
+            path (str): The path to the asset.
+            **asset: Additional asset parameters.
+        """
         absolute_path = os.path.abspath(path)
 
         if not absolute_path.startswith(Scene.scenes_dir()):
@@ -624,6 +678,18 @@ class WebsocketHandler(Receiver):
         }
 
     def add_scene_asset(self, data: dict):
+        """
+        def add_scene_asset(self, data: dict):
+        Add an asset to the scene and update cover images if necessary.  This function
+        creates a SceneAssetUpload instance from the provided  data and adds the asset
+        to the scene. If a scene cover image or  character cover image is specified, it
+        updates the corresponding  properties in the scene. The function also emits the
+        current status  of the scene and queues the character cover image for further
+        processing if applicable.
+        
+        Args:
+            data (dict): A dictionary containing the asset upload data.
+        """
         asset_upload = SceneAssetUpload(**data)
         asset = self.scene.assets.add_asset_from_image_data(asset_upload.content)
 
@@ -682,6 +748,7 @@ class WebsocketHandler(Receiver):
         return filepath
 
     async def route(self, data: dict):
+        """Handles routing of data to the appropriate plugin."""
         route = data["type"]
 
         if route not in self.routes:

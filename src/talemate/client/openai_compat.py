@@ -53,22 +53,24 @@ class OpenAICompatibleClient(ClientBase):
 
     @property
     def api_handles_prompt_template(self) -> bool:
+        """Returns whether the API handles the prompt template."""
         return self.client_config.api_handles_prompt_template
 
     @property
     def experimental(self):
+        """Returns the experimental description."""
         return EXPERIMENTAL_DESCRIPTION
+    
+
 
     @property
     def can_be_coerced(self):
-        """
-        Determines whether or not his client can pass LLM coercion. (e.g., is able
-        to predefine partial LLM output in the prompt)
-        """
+        """Check if the client can pass LLM coercion."""
         return not self.reason_enabled
 
     @property
     def supported_parameters(self):
+        """Return a list of supported parameters."""
         return [
             "temperature",
             "top_p",
@@ -82,6 +84,7 @@ class OpenAICompatibleClient(ClientBase):
         return prompt
 
     async def get_model_name(self):
+        """Return the model associated with the instance."""
         return self.model
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
@@ -156,11 +159,7 @@ class OpenAICompatibleClient(ClientBase):
             return ""
 
     def jiggle_randomness(self, prompt_config: dict, offset: float = 0.3) -> dict:
-        """
-        adjusts temperature and presence penalty
-        by random values using the base value as a center
-        """
-
+        """Adjusts temperature and presence penalty in prompt_config by random values."""
         temp = prompt_config["temperature"]
 
         min_offset = offset * 0.3

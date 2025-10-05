@@ -5,7 +5,17 @@ import argparse
 
 
 def find_image_references(md_file):
-    """Find all image references in a markdown file."""
+    """Find all image references in a markdown file.
+    
+    This function reads a markdown file specified by `md_file` and extracts  image
+    references using a regular expression pattern. It cleans the paths  by removing
+    leading slashes and filters for paths that contain "img/".  Additionally, it
+    ensures that only versioned images are retained by  checking the structure of
+    the path.
+    
+    Args:
+        md_file (str): The path to the markdown file to be processed.
+    """
     with open(md_file, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -26,7 +36,7 @@ def find_image_references(md_file):
 
 
 def scan_markdown_files(docs_dir):
-    """Recursively scan all markdown files in the docs directory."""
+    """Recursively scan all markdown files in the specified directory."""
     md_files = []
     for root, _, files in os.walk(docs_dir):
         for file in files:
@@ -36,7 +46,14 @@ def scan_markdown_files(docs_dir):
 
 
 def find_all_images(img_dir):
-    """Find all image files in version subdirectories."""
+    """Find all image files in version subdirectories.
+    
+    This function traverses the directory tree starting from img_dir,  looking for
+    image files with specific extensions. It skips the root  directory and only
+    considers subdirectories that are named with  version numbers. For each valid
+    image file found, it appends the  relative path to the list of image files to
+    be returned.
+    """
     image_files = []
     for root, _, files in os.walk(img_dir):
         # Get the relative path from img_dir to current directory
@@ -59,10 +76,7 @@ def find_all_images(img_dir):
 
 
 def grep_check_image(docs_dir, image_path):
-    """
-    Check if versioned image is referenced anywhere using grep.
-    Returns True if any reference is found, False otherwise.
-    """
+    """Check if a versioned image is referenced in the specified directory."""
     try:
         # Split the image path to get version and filename
         parts = os.path.normpath(image_path).split(os.sep)
@@ -92,6 +106,16 @@ def grep_check_image(docs_dir, image_path):
 
 
 def main():
+    """Main function to find and optionally delete unused versioned images in a MkDocs
+    project.
+    
+    This function sets up an argument parser to handle command-line inputs for the
+    paths to the  docs and images directories, as well as options for deletion and
+    verbosity. It scans markdown  files for image references, compares them against
+    the actual images in the specified directory,  and performs additional
+    validation if required. Finally, it reports the findings and deletes  unused
+    images if the delete option is specified.
+    """
     parser = argparse.ArgumentParser(
         description="Find and optionally delete unused versioned images in MkDocs project"
     )

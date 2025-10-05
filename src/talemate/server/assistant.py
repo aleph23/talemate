@@ -22,6 +22,7 @@ class AssistantPlugin(Plugin):
         self.websocket_handler = websocket_handler
 
     async def handle_contextual_generate(self, data: dict):
+        """Handles contextual content generation based on provided data."""
         payload = ContentGenerationContext(**data)
         creator = get_agent("creator")
 
@@ -46,6 +47,17 @@ class AssistantPlugin(Plugin):
         )
 
     async def handle_autocomplete(self, data: dict):
+        """async def handle_autocomplete(self, data: dict):
+        Handles autocomplete suggestions based on the provided context.  This function
+        processes the input `data` to determine the context type  and generate
+        appropriate autocomplete suggestions. It distinguishes  between dialogue and
+        narrative contexts, invoking the respective  methods from the creator agent. If
+        the context is neither, it defaults  to contextual generation with a fixed
+        length. Errors during the  process are logged, and an empty suggestion is
+        emitted in case of  failure.
+        
+        Args:
+            data (dict): A dictionary containing context information and"""
         data = ContentGenerationContext(**data)
         try:
             creator = get_agent("creator")
@@ -90,6 +102,7 @@ class AssistantPlugin(Plugin):
             emit("autocomplete_suggestion", "")
 
     async def handle_fork_new_scene(self, data: dict):
+
         """
         Allows to fork a new scene from a specific message
         in the current scene.
@@ -100,7 +113,6 @@ class AssistantPlugin(Plugin):
         All state reinforcements will be reset to their most recent
         state before the message.
         """
-
         payload = ForkScenePayload(**data)
 
         creator = get_agent("creator")

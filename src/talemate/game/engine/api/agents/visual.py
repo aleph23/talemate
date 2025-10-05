@@ -16,6 +16,7 @@ __all__ = ["create"]
 
 
 def create(scene: "Scene") -> "ScopedAPI":
+    """Creates an instance of the API class for the given scene."""
     class API(ScopedAPI):
         def generate_character_portrait(
             self,

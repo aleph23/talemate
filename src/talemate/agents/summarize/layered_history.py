@@ -32,10 +32,12 @@ class LayeredHistoryFinalizeEmission(AgentEmission):
 
     @property
     def response(self) -> str | None:
+        """Return the text of the entry or None if it does not exist."""
         return self.entry.text if self.entry else None
 
     @response.setter
     def response(self, value: str):
+        """Sets the response text if an entry exists."""
         if self.entry:
             self.entry.text = value
 
@@ -127,30 +129,37 @@ class LayeredHistoryMixin:
 
     @property
     def layered_history_enabled(self):
+        """Returns whether layered history is enabled."""
         return self.actions["layered_history"].enabled
 
     @property
     def layered_history_threshold(self):
+        """Get the threshold value from the layered history configuration."""
         return self.actions["layered_history"].config["threshold"].value
 
     @property
     def layered_history_max_process_tokens(self):
+        """Get the maximum process tokens from the layered history configuration."""
         return self.actions["layered_history"].config["max_process_tokens"].value
 
     @property
     def layered_history_max_layers(self):
+        """Get the maximum number of layers from the layered history configuration."""
         return self.actions["layered_history"].config["max_layers"].value
 
     @property
     def layered_history_chunk_size(self) -> int:
+        """Get the chunk size from the layered history configuration."""
         return self.actions["layered_history"].config["chunk_size"].value
 
     @property
     def layered_history_analyze_chunks(self) -> bool:
+        """Returns the value of analyze_chunks from the layered_history config."""
         return self.actions["layered_history"].config["analyze_chunks"].value
 
     @property
     def layered_history_response_length(self) -> int:
+        """Return the response length from the layered history configuration."""
         return int(self.actions["layered_history"].config["response_length"].value)
 
     @property
@@ -164,16 +173,15 @@ class LayeredHistoryMixin:
     # signals
 
     def connect(self, scene):
+        """Connects the scene and sets up a signal for after building the archive."""
         super().connect(scene)
         talemate.emit.async_signals.get(
             "agent.summarization.after_build_archive"
         ).connect(self.on_after_build_archive)
 
     async def on_after_build_archive(self, emission: "BuildArchiveEmission"):
-        """
-        After the archive has been built, we will update the layered history.
-        """
 
+        """Update the layered history after the archive is built."""
         if self.layered_history_enabled:
             await self.summarize_to_layered_history(
                 generation_options=emission.generation_options
@@ -187,9 +195,14 @@ class LayeredHistoryMixin:
         extra_context: str,
         generation_options: GenerationOptions | None = None,
     ) -> list[str]:
-        """
-        Split chunks based on max_process_tokens and summarize each part.
-        Returns a list of summary texts.
+        """Split chunks based on max_process_tokens and summarize each part.
+        
+        This asynchronous function processes a list of chunks, creating summaries  for
+        each part while adhering to a specified maximum token limit. It iteratively
+        builds partial chunks from the input list, ensuring that the combined token
+        count does not exceed max_process_tokens. Each constructed text is then
+        summarized using the summarize_events method, incorporating any extra context
+        provided and accumulating the results in a list of summary texts.
         """
         summaries = []
         current_chunk = chunks.copy()
@@ -244,9 +257,7 @@ class LayeredHistoryMixin:
         )
 
     def _lh_build_extra_context(self, layer_index: int) -> str:
-        """
-        Builds extra context from compiled layered history for the given layer.
-        """
+        """Builds extra context from the compiled layered history for the given layer."""
         return "\n\n".join(self.compile_layered_history(layer_index))
 
     def _lh_extract_timestamps(self, chunk: list[dict]) -> tuple[str, str, str]:
@@ -268,10 +279,8 @@ class LayeredHistoryMixin:
         entry: LayeredArchiveEntry,
         summarization_history: list[str] | None = None,
     ) -> LayeredArchiveEntry:
-        """
-        Finalizes an archive entry by summarizing it and adding it to the layered history.
-        """
 
+        """Finalizes an archive entry and adds it to the layered history."""
         emission = LayeredHistoryFinalizeEmission(
             agent=self,
             entry=entry,
@@ -399,7 +408,15 @@ class LayeredHistoryMixin:
     async def summarize_to_layered_history(
         self, generation_options: GenerationOptions | None = None
     ):
-        """
+
+        """Summarizes the archived history into a layered history format.
+        
+        This function processes the `self.scene.archived_history` to create a
+        structured `self.scene.layered_history` with multiple layers of summaries.
+        Each layer is generated based on a token threshold, and the summarization  is
+        performed using the same function for all layers. The function handles  the
+        creation of new layers dynamically as needed and updates the status  during
+        processing.
         The layered history is a summarized archive with dynamic layers that
         will get less and less granular as the scene progresses.
 
@@ -417,7 +434,6 @@ class LayeredHistoryMixin:
                 },
                 ...
             ],
-
             # second layer
             [
                 {
@@ -428,7 +444,6 @@ class LayeredHistoryMixin:
                 },
                 ...
             ],
-
             # additional layers
             ...
         ]
@@ -441,7 +456,6 @@ class LayeredHistoryMixin:
         The next level layer will be generated automatically when the token
         threshold is reached.
         """
-
         if not self.scene.archived_history:
             return  # No base layer summaries to work with
 
@@ -595,6 +609,14 @@ class LayeredHistoryMixin:
 
         # process layers
         async def update_layers() -> bool:
+            """Update the layers based on the layered history.
+            
+            This asynchronous function processes each layer in the `layered_history` up to
+            a specified `max_layers`.  It checks for the existence of the next layer and
+            summarizes the current layer using the `summarize_layer` function.  If any
+            layer is successfully summarized, the function returns `True`, indicating that
+            updates were made; otherwise, it returns `False`.
+            """
             noop = True
             for index in range(0, len(layered_history)):
                 # check against max layers
@@ -649,26 +671,29 @@ class LayeredHistoryMixin:
         end_index: int,
         generation_options: GenerationOptions | None = None,
     ) -> list[LayeredArchiveEntry]:
-        """
-        Summarizes a list of entries into layered history entries.
 
-        This method is used for regenerating specific history entries by processing
-        their source entries. It chunks the entries based on the token threshold and
-        summarizes each chunk into a LayeredArchiveEntry.
-
+        """Summarizes a list of entries into layered history entries.
+        
+        This method processes a list of text entries, chunking them based on a token
+        threshold and summarizing each chunk into a LayeredArchiveEntry. It utilizes
+        helper methods for timestamp extraction, context building, and chunk
+        summarization. The function ensures that summaries do not exceed the original
+        text length and includes the last entry in the final chunk if it fits within
+        the token limit.
+        
         Args:
             entries: List of dictionaries containing the text entries to summarize.
-                    Each entry should have at least a 'text' field and optionally
-                    'ts', 'ts_start', and 'ts_end' fields.
+                Each entry should have at least a 'text' field and optionally
+                'ts', 'ts_start', and 'ts_end' fields.
             next_layer_index: The index of the layer where the summarized entries
-                            will be placed.
+                will be placed.
             start_index: The starting index in the source layer that these entries
-                        correspond to.
+                correspond to.
             end_index: The ending index in the source layer that these entries
-                      correspond to.
+                correspond to.
             generation_options: Optional generation options to pass to the summarization
-                              process.
-
+                process.
+            
         Returns:
             List of LayeredArchiveEntry objects containing the summarized text along
             with timestamp and index information. Currently returns a list with a
@@ -682,7 +707,6 @@ class LayeredHistoryMixin:
             - The last entry is always included in the final chunk if it doesn't
               exceed the token threshold
         """
-
         token_threshold = self.layered_history_threshold
 
         archive_entries = []

@@ -33,6 +33,7 @@ TEMPLATE_IDENTIFIERS = []
 
 
 def register_template_identifier(cls):
+    """Register a template identifier class."""
     TEMPLATE_IDENTIFIERS.append(cls)
     return cls
 
@@ -51,6 +52,7 @@ class ModelPrompt:
 
     @property
     def env(self):
+        """Get the environment instance, creating it if it doesn't exist."""
         if not hasattr(self, "_env"):
             log.info("modal prompt", base_template_path=BASE_TEMPLATE_PATH)
             self._env = Environment(
@@ -111,6 +113,21 @@ class ModelPrompt:
         )
 
     def set_response(self, prompt: str, response_str: str, double_coercion: str = None):
+        """Sets the response in the prompt based on the provided parameters.
+        
+        This function processes the given prompt by stripping unnecessary newline
+        characters and appending the response string. It checks for the presence  of
+        the "<|BOT|>" marker to determine how to integrate the response. If
+        double_coercion is provided and the marker is absent, it appends the  marker to
+        the prompt. The function handles cases where the marker is  present
+        differently, ensuring the response is correctly inserted.
+        
+        Args:
+            prompt (str): The initial prompt string to be modified.
+            response_str (str): The response string to be integrated into the prompt.
+            double_coercion (str?): An additional string to prepend to the
+                response if the marker is present.
+        """
         prompt = prompt.strip("\n").strip()
 
         if not double_coercion:
@@ -132,17 +149,22 @@ class ModelPrompt:
         return prompt
 
     def clean_model_name(self, model_name: str):
-        """
-        Clean the model name to be used in the template file name.
-        """
+        """Clean the model name for use in the template file name."""
         return model_name.replace("/", "__").replace(":", "_")
 
     def get_template(self, model_name: str):
-        """
-        Will attempt to load an LLM prompt template - this supports
-        partial filename matching on the template file name.
-        """
 
+        """Load an LLM prompt template based on the model name.
+        
+        This function attempts to find a matching template file by  performing a case-
+        insensitive partial filename match against  the provided model_name. It
+        iterates through all available  templates in the loader's directory, cleaning
+        the model name  for accurate matching. If multiple matches are found, the
+        template with the longest name is selected for retrieval.
+        
+        Args:
+            model_name (str): The name of the model to match against
+        """
         matches = []
 
         cleaned_model_name = self.clean_model_name(model_name)
@@ -168,10 +190,8 @@ class ModelPrompt:
         return self.env.get_template(sorted_matches[0]), sorted_matches[0]
 
     def create_user_override(self, template_name: str, model_name: str):
-        """
-        Will copy STD_TEMPLATE_PATH/template_name to USER_TEMPLATE_PATH/model_name.jinja2
-        """
 
+        """Will copy STD_TEMPLATE_PATH/template_name to USER_TEMPLATE_PATH/model_name.jinja2"""
         template_name = template_name.split(".jinja2")[0]
 
         cleaned_model_name = self.clean_model_name(model_name)

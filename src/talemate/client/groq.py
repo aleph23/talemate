@@ -63,14 +63,18 @@ class GroqClient(EndpointOverrideMixin, ClientBase):
 
     @property
     def can_be_coerced(self) -> bool:
+        """Indicates if coercion is possible based on reason_enabled."""
         return not self.reason_enabled
 
     @property
     def groq_api_key(self):
+        """Get the Groq API key from the configuration."""
         return self.config.groq.api_key
 
     @property
     def supported_parameters(self):
+        """Return a list of supported parameters."""
+        """Return a list of supported parameters."""
         return [
             "temperature",
             "top_p",
@@ -83,6 +87,29 @@ class GroqClient(EndpointOverrideMixin, ClientBase):
         ]
 
     def emit_status(self, processing: bool = None):
+        """Emit the current status of the client.
+        
+        This function updates the processing state and determines the current status
+        based on the presence of an API key and a loaded model. If the API key is
+        missing, it prepares an error action to prompt the user to set the key.
+        Additionally, it gathers common status data and emits the status to the client.
+        
+        Args:
+            processing (bool?): Indicates whether the client is currently
+                processing. If provided, it updates the internal processing state.
+        """
+        """Emit the current status of the client.
+        
+        This function updates the processing state and determines the current status
+        based on the presence of an API key and a loaded model. If the API key is
+        missing, it prepares an error action to prompt the user to set the key.
+        Additionally, if no model is loaded, it sets the status to an error. The final
+        status and relevant data are then emitted to the client.
+        
+        Args:
+            processing (bool?): Indicates whether the client is currently
+                processing. If provided, it updates the internal processing state.
+        """
         error_action = None
         error_message = None
         if processing is not None:
@@ -128,19 +155,56 @@ class GroqClient(EndpointOverrideMixin, ClientBase):
         )
 
     def response_tokens(self, response: str):
+        """Returns the completion tokens from the response."""
         return response.usage.completion_tokens
 
     def prompt_tokens(self, response: str):
+        """Returns the prompt tokens from the response."""
+        """Returns the prompt tokens from the response."""
         return response.usage.prompt_tokens
 
     async def status(self):
+        """Emit the current status."""
         self.emit_status()
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
 
+        """Generate text from a given prompt and parameters using the Groq API.
+        
+        This asynchronous function constructs a chat completion request by preparing
+        the system and user messages,  and optionally includes a coercion prompt if
+        applicable. It handles API key validation, manages streaming  responses, and
+        tracks token usage throughout the process. In case of errors, it logs the
+        relevant information  and raises exceptions as necessary.
+        
+        Args:
+            prompt (str): The input text prompt to generate a response for.
+            parameters (dict): Additional parameters for the API request.
+            kind (str): The type of message or context for the generation.
+        
+        Returns:
+            str: The generated text response from the API.
+        """
+        """Generate text from the given prompt and parameters.
+        
+        This asynchronous function constructs a chat completion request using the
+        provided prompt and parameters. It first checks for the necessary API key and
+        prepares the system message. If coercion is applicable, it modifies the prompt
+        accordingly. The function then streams the response from the chat completion
+        API, incrementally building the output while tracking token usage. Error
+        handling is implemented to manage permission issues and other exceptions.
+        
+        Args:
+            prompt (str): The input text prompt for generating a response.
+            parameters (dict): Additional parameters for the chat completion request.
+            kind (str): The type of system message to be used.
+        
+        Returns:
+            str: The generated text response from the chat completion.
+        
+        Raises:
+            Exception: If no API key is set or if an error occurs during the API call.
+        """
         if not self.groq_api_key and not self.endpoint_override_base_url_configured:
             raise Exception("No groq.ai API key set")
 

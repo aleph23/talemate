@@ -55,6 +55,7 @@ class CharacterSchema(pydantic.BaseModel):
 
     @classmethod
     def from_character(cls, character: "Character") -> "CharacterSchema":
+        """Creates a CharacterSchema from a Character instance."""
         from talemate.tale_mate import Character
 
         assert isinstance(character, Character), (
@@ -103,6 +104,7 @@ class CharacterMessageSchema(pydantic.BaseModel):
 
     @classmethod
     def from_message(cls, message: "CharacterMessage") -> "CharacterMessageSchema":
+        """Create a CharacterMessageSchema from a CharacterMessage."""
         assert isinstance(message, CharacterMessage), (
             f"Expected CharacterMessage, got {type(message)}"
         )
@@ -165,6 +167,7 @@ class DirectorMessageSchema(pydantic.BaseModel):
 
     @classmethod
     def from_message(cls, message: "DirectorMessage") -> "DirectorMessageSchema":
+        """Create a DirectorMessageSchema from a DirectorMessage."""
         assert isinstance(message, DirectorMessage), (
             f"Expected DirectorMessage, got {type(message)}"
         )
@@ -200,6 +203,7 @@ class TimePassageMessageSchema(pydantic.BaseModel):
 
     @classmethod
     def from_message(cls, message: "TimePassageMessage") -> "TimePassageMessageSchema":
+        """Creates a TimePassageMessageSchema from a TimePassageMessage."""
         assert isinstance(message, TimePassageMessage), (
             f"Expected TimePassageMessage, got {type(message)}"
         )
@@ -237,6 +241,7 @@ class ReinforcementMessageSchema(pydantic.BaseModel):
     def from_message(
         cls, message: "ReinforcementMessage"
     ) -> "ReinforcementMessageSchema":
+        """Creates a ReinforcementMessageSchema from a ReinforcementMessage."""
         assert isinstance(message, ReinforcementMessage), (
             f"Expected ReinforcementMessage, got {type(message)}"
         )

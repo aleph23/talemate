@@ -28,6 +28,16 @@ log = structlog.get_logger("talemate.regenerate")
 async def regenerate_character_message(
     message: CharacterMessage, scene: "Scene"
 ) -> CharacterMessage:
+    """Regenerates a character message based on the provided scene and message.
+    
+    This asynchronous function retrieves a character from the scene using the
+    character's name. If the character is not found, it logs an error and  returns
+    the original message. If the message is from the player and does  not originate
+    from a choice, a warning is logged, and the function exits  without making
+    changes. Otherwise, it uses an agent to generate new messages  based on the
+    character's actor and the instruction from the original message,  then pushes
+    these messages to the scene's history and emits them.
+    """
     character: "Character | None" = scene.get_character(message.character_name)
 
     if not character:

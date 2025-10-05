@@ -12,6 +12,7 @@ import torch
 
 # Lazy imports for heavy dependencies
 def _import_heavy_deps():
+    """Import heavy dependencies lazily."""
     global F5TTS
     from f5_tts.api import F5TTS
 
@@ -258,30 +259,37 @@ class F5TTSMixin:
     @property
     def f5tts_configured(self) -> bool:
         # Local backend – always available once the model weights are present.
+        """Indicates if the F5 TTS is configured."""
         return True
 
     @property
     def f5tts_device(self) -> str:
+        """Get the device configuration for f5tts."""
         return self.actions["f5tts"].config["device"].value
 
     @property
     def f5tts_chunk_size(self) -> int:
+        """Get the chunk size for f5tts."""
         return self.actions["f5tts"].config["chunk_size"].value
 
     @property
     def f5tts_replace_exclamation_marks(self) -> bool:
+        """Returns the value of replace_exclamation_marks from the f5tts config."""
         return self.actions["f5tts"].config["replace_exclamation_marks"].value
 
     @property
     def f5tts_model_name(self) -> str:
+        """Get the model name from the f5tts configuration."""
         return self.actions["f5tts"].config["model_name"].value
 
     @property
     def f5tts_nfe_step(self) -> int:
+        """Get the nfe_step value from the f5tts configuration."""
         return self.actions["f5tts"].config["nfe_step"].value
 
     @property
     def f5tts_max_generation_length(self) -> int:
+        """Returns the maximum generation length for f5tts."""
         return 1024
 
     @property
@@ -290,6 +298,7 @@ class F5TTSMixin:
 
     @property
     def f5tts_agent_details(self) -> dict:
+        """Return details of the F5-TTS agent as a dictionary."""
         if not self.f5tts_configured:
             return {}
         details = {}
@@ -310,8 +319,14 @@ class F5TTSMixin:
     # ------------------------------------------------------------------
 
     def f5tts_delete_voice(self, voice: Voice):
-        """Delete *voice* reference file if it is inside the Talemate workspace."""
 
+        """Delete voice reference file if it is inside the Talemate workspace.
+        
+        This function checks if the provided *voice* is a Talemate asset using the
+        voice_is_talemate_asset function. If it is, the function attempts to delete the
+        corresponding voice file if it exists and is a file.  Any errors encountered
+        during the deletion process are logged for  debugging purposes.
+        """
         is_talemate_asset, resolved = voice_is_talemate_asset(
             voice, provider(voice.provider)
         )
@@ -344,8 +359,8 @@ class F5TTSMixin:
         voice: Voice,
         output_path: str,
     ) -> str:
-        """Blocking generation helper executed in a thread-pool."""
 
+        """Generates a file using the F5TTS model."""
         wav, sr, _ = model.infer(
             ref_file=voice.provider_id,
             ref_text=voice.parameters.get("ref_text", ""),
@@ -365,9 +380,16 @@ class F5TTSMixin:
     async def f5tts_generate(
         self, chunk: Chunk, context: GenerationContext
     ) -> bytes | None:
-        """Asynchronously synthesise *chunk* using F5-TTS."""
 
         # Lazy initialisation & caching across invocations
+        """Asynchronously synthesise *chunk* using F5-TTS.
+        
+        This function initializes or reloads the F5-TTS backend as needed,  ensuring
+        that the correct model is used based on the current device  and model name. It
+        then generates a WAV file from the provided  chunk and reads the file to return
+        its byte content for playback  over a websocket. Temporary files are managed to
+        avoid cluttering  the filesystem.
+        """
         f5tts_instance: "F5TTSInstance | None" = getattr(self, "f5tts_instance", None)
 
         device = self.f5tts_device

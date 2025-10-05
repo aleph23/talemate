@@ -51,10 +51,14 @@ class DeepSeekClient(ClientBase):
 
     @property
     def deepseek_api_key(self):
+        """Returns the Deepseek API key from the configuration."""
+        """Returns the deepseek API key from the configuration."""
         return self.config.deepseek.api_key
 
     @property
     def supported_parameters(self):
+        """Return a list of supported parameters."""
+        """Return a list of supported parameters."""
         return [
             "temperature",
             "top_p",
@@ -63,6 +67,19 @@ class DeepSeekClient(ClientBase):
         ]
 
     def emit_status(self, processing: bool = None):
+        """Emit the current status of the processing state.
+        
+        This method updates the processing state based on the provided  argument and
+        checks for the presence of a deepseek API key. If  the API key is not set, it
+        prepares an error action to prompt  the user to configure it. Additionally, it
+        verifies if a model  is loaded and updates the current status accordingly.
+        Finally,  it emits the status to the client with relevant details.
+        
+        Args:
+            processing (bool?): Indicates whether processing is
+                currently active. If None, the current processing state
+                is not modified.
+        """
         error_action = None
         error_message = None
         if processing is not None:
@@ -106,26 +123,44 @@ class DeepSeekClient(ClientBase):
         )
 
     def count_tokens(self, content: str):
+        """Counts the tokens in the given content if a model name is set."""
         if not self.model_name:
             return 0
         return count_tokens(content)
 
     async def status(self):
+        """Emit the current status."""
         self.emit_status()
 
     def response_tokens(self, response: str):
         # Count tokens in a response string using the util.count_tokens helper
+        """Count tokens in a response string."""
+        """Count tokens in a response string."""
         return self.count_tokens(response)
 
     def prompt_tokens(self, prompt: str):
         # Count tokens in a prompt string using the util.count_tokens helper
+        """Count tokens in a prompt string."""
         return self.count_tokens(prompt)
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
 
+        """Generates text from the given prompt and parameters.
+        
+        This asynchronous function utilizes the DeepSeek API to generate a response
+        based on the provided prompt and parameters. It first checks for a valid API
+        key and prepares the necessary messages for the API call. The function then
+        """
+        """Generates text from the given prompt and parameters.
+        
+        This asynchronous function interacts with the DeepSeek API to generate text
+        based on the provided prompt and parameters. It first checks for a valid API
+        key and prepares the necessary messages for the API call. The function then
+        streams the response from the API, incrementally updating the token usage and
+        constructing the final response. Error handling is included to manage
+        permission issues and other exceptions that may arise during the API
+        interaction.
+        """
         if not self.deepseek_api_key:
             raise Exception("No DeepSeek API key set")
 

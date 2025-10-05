@@ -30,6 +30,7 @@ class CmdWorldState(TalemateCommand):
     aliases = ["ws"]
 
     async def run(self):
+        """Runs the update process, optionally resetting the world state."""
         reset = self.args[0] == "reset" if self.args else False
 
         if reset:
@@ -78,6 +79,7 @@ class CmdRemoveReinforcement(TalemateCommand):
     aliases = ["ws_rr"]
 
     async def run(self):
+        """Handles reinforcement question input and updates the world state."""
         scene = self.scene
 
         world_state = scene.world_state
@@ -109,6 +111,7 @@ class CmdUpdateReinforcements(TalemateCommand):
     aliases = ["ws_ur"]
 
     async def run(self):
+        """Update the world state reinforcements."""
         world_state = get_agent("world_state")
 
         await world_state.update_reinforcements(force=True)
@@ -128,6 +131,7 @@ class CmdCheckPinConditions(TalemateCommand):
     aliases = ["ws_cpc"]
 
     async def run(self):
+        """Run the agent to check pin conditions."""
         world_state = get_agent("world_state")
         await world_state.check_pin_conditions()
 
@@ -204,6 +208,7 @@ class CmdSummarizeAndPin(TalemateCommand):
     aliases = ["ws_sap"]
 
     async def run(self):
+        """Summarizes and pins the latest messages from the scene's history."""
         scene = self.scene
 
         world_state = get_agent("world_state")
@@ -229,6 +234,7 @@ class CmdDetermineCharacterDevelopment(TalemateCommand):
     aliases = ["ws_dcd"]
 
     async def run(self):
+        """Runs the character development process for a specified character."""
         scene = self.scene
 
         world_state = get_agent("world_state")

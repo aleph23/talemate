@@ -38,13 +38,12 @@ class NarratorWebsocketHandler(Plugin):
 
     @property
     def narrator(self):
+        """Returns the narrator agent."""
         return get_agent("narrator")
 
     @set_loading("Progressing the story", cancellable=True, as_async=True)
     async def handle_progress(self, data: dict):
-        """
-        Progress the story (optionally to a specific direction)
-        """
+        """Progress the story based on the provided data."""
         payload = NarrativeDirectionPayload(**data)
         await self.narrator.action_to_narration(
             "progress_story",
@@ -54,9 +53,7 @@ class NarratorWebsocketHandler(Plugin):
 
     @set_loading("Narrating the environment", cancellable=True, as_async=True)
     async def handle_narrate_environment(self, data: dict):
-        """
-        Narrate the environment (optionally to a specific direction)
-        """
+        """Narrate the environment based on the provided data."""
         payload = NarrativeDirectionPayload(**data)
         await self.narrator.action_to_narration(
             "narrate_environment",
@@ -66,10 +63,7 @@ class NarratorWebsocketHandler(Plugin):
 
     @set_loading("Working on a query", cancellable=True, as_async=True)
     async def handle_query(self, data: dict):
-        """
-        Give a query or instruction to the narrator that results in a context investigation
-        message.
-        """
+        """Handles a query and triggers a context investigation message."""
         payload = QueryPayload(**data)
 
         narration = await self.narrator.narrate_query(**payload.model_dump())
@@ -83,11 +77,7 @@ class NarratorWebsocketHandler(Plugin):
 
     @set_loading("Looking at the scene", cancellable=True, as_async=True)
     async def handle_look_at_scene(self, data: dict):
-        """
-        Look at the scene (optionally to a specific direction)
-
-        This will result in a context investigation message.
-        """
+        """Look at the scene and emit a context investigation message."""
         payload = NarrativeDirectionPayload(**data)
 
         narration = await self.narrator.narrate_scene(
@@ -104,11 +94,7 @@ class NarratorWebsocketHandler(Plugin):
 
     @set_loading("Looking at a character", cancellable=True, as_async=True)
     async def handle_look_at_character(self, data: dict):
-        """
-        Look at a character (optionally to a specific direction)
-
-        This will result in a context investigation message.
-        """
+        """Look at a character and emit a context investigation message."""
         payload = CharacterPayload(**data)
 
         narration = await self.narrator.narrate_character(

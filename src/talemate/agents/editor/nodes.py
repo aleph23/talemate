@@ -45,6 +45,7 @@ class CleanUpUserInput(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for user interaction."""
         self.add_input("user_input", socket_type="str")
         self.add_input("as_narration", socket_type="bool")
 
@@ -53,6 +54,7 @@ class CleanUpUserInput(AgentNode):
         self.add_output("cleaned_user_input", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Cleans up user input and sets output values."""
         editor: "EditorAgent" = self.agent
         user_input = self.get_input_value("user_input")
         force = self.get_property("force")
@@ -87,11 +89,13 @@ class CleanUpNarration(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output sockets for narration processing."""
         self.add_input("narration", socket_type="str")
         self.set_property("force", False)
         self.add_output("cleaned_narration", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Cleans up the narration input and sets the output values."""
         editor: "EditorAgent" = self.agent
         narration = self.get_input_value("narration")
         force = self.get_property("force")
@@ -123,12 +127,14 @@ class CleanUpCharacterMessage(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for text processing."""
         self.add_input("text", socket_type="str")
         self.add_input("character", socket_type="character")
         self.set_property("force", False)
         self.add_output("cleaned_character_message", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Processes input values and sets the cleaned character message."""
         editor: "EditorAgent" = self.agent
         text = self.get_input_value("text")
         force = self.get_property("force")

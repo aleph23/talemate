@@ -15,6 +15,15 @@ class CmdRebuildArchive(TalemateCommand):
     aliases = ["rebuild"]
 
     async def run(self):
+        """Rebuilds the historical archive using the summarizer agent.
+        
+        This function retrieves the summarizer and memory agents, ensuring that  a
+        summarizer is available before proceeding. It clears the archived history
+        while preserving pre-established entries, then iteratively rebuilds the
+        historical archive by calling the summarizer's build_archive method.  The
+        progress is emitted as status updates until the archive is fully rebuilt,
+        after which the scene's state is committed to memory.
+        """
         summarizer = get_agent("summarizer")
         memory = get_agent("memory")
 

@@ -85,6 +85,7 @@ class SummarizeAgent(
 
     @classmethod
     def init_actions(cls) -> dict[str, AgentAction]:
+        """Initialize and return a dictionary of agent actions."""
         actions = {
             "archive": AgentAction(
                 enabled=True,
@@ -138,6 +139,7 @@ class SummarizeAgent(
 
     @property
     def threshold(self):
+        """Get the threshold value from the archive action configuration."""
         return self.actions["archive"].config["threshold"].value
 
     @property
@@ -147,10 +149,12 @@ class SummarizeAgent(
 
     @property
     def archive_threshold(self):
+        """Gets the archive threshold value from the configuration."""
         return self.actions["archive"].config["threshold"].value
 
     @property
     def archive_method(self):
+        """Gets the archive method configuration value."""
         return self.actions["archive"].config["method"].value
 
     @property
@@ -158,17 +162,17 @@ class SummarizeAgent(
         return self.actions["archive"].config["include_previous"].value
 
     def connect(self, scene):
+        """Connects the scene and sets up the game loop signal."""
         super().connect(scene)
         talemate.emit.async_signals.get("game_loop").connect(self.on_game_loop)
 
     async def on_game_loop(self, emission: GameLoopEvent):
-        """
-        Called when a conversation is generated
-        """
 
+        """Handles the game loop event."""
         await self.build_archive(self.scene)
 
     def clean_result(self, result):
+        """Cleans the result by removing comments and partial sentences."""
         if "#" in result:
             result = result.split("#")[0]
 
@@ -182,6 +186,7 @@ class SummarizeAgent(
 
     async def rag_build_sub_instruction(self):
         # Fire event to get the sub instruction from mixins
+        """Builds and sends a sub instruction emission."""
         emission = RagBuildSubInstructionEmission(
             agent=self,
         )
@@ -194,6 +199,18 @@ class SummarizeAgent(
     # SUMMARIZATION HELPERS
 
     async def previous_summaries(self, entry: ArchiveEntry) -> list[str]:
+        """Retrieve previous summaries from the archived history.
+        
+        This asynchronous function searches for a specific entry in the  archived
+        history using its ID. If found, it compiles a list of  previous summaries based
+        on the specified number of entries to  include. The function checks if layered
+        history is available to  determine the method of compilation, either using the
+        compile_layered_history method or directly accessing the archived  history
+        list.
+        
+        Args:
+            entry (ArchiveEntry): The entry for which previous summaries
+        """
         num_previous = self.archive_include_previous
 
         # find entry by .id
@@ -430,12 +447,17 @@ class SummarizeAgent(
     async def find_natural_scene_termination(
         self, event_chunks: list[str]
     ) -> list[list[str]]:
-        """
-        Will analyze a list of events and return a list of events that
-        has been separated at a natural scene termination points.
-        """
 
         # scan through event chunks and split into paragraphs
+        """Analyzes a list of events and separates them at natural scene termination
+        points.
+        
+        This function processes the provided event_chunks by scanning through them and
+        splitting them into paragraphs. It then sends the cleaned event data to a
+        summarization service to identify natural scene termination events. The results
+        are parsed to extract unique and  sorted event indices, which are used to
+        segment the original event_chunks into separate  lists based on these indices.
+        """
         rebuilt_chunks = []
 
         for chunk in event_chunks:
@@ -501,10 +523,22 @@ class SummarizeAgent(
         extra_instructions: str = None,
         generation_options: GenerationOptions | None = None,
     ):
-        """
-        Summarize the given text
-        """
 
+        """Summarize the given text.
+        
+        This asynchronous function generates a summary of the provided text using a
+        specified summarization method.  It prepares the necessary template variables,
+        emits pre-summarization signals, and requests the summary  from a prompt. After
+        receiving the response, it processes the summary, ensuring proper formatting,
+        and  emits post-summarization signals before returning the cleaned result.
+        
+        Args:
+            text (str): The text to be summarized.
+            extra_context (str?): Additional context to enhance the summary.
+            method (str?): The method to be used for summarization.
+            extra_instructions (str?): Any extra instructions for the summarization process.
+            generation_options (GenerationOptions | None?): Options for the generation process.
+        """
         response_length = 1024
 
         template_vars = {
@@ -586,10 +620,26 @@ class SummarizeAgent(
         chunk_size: int = 1280,
         response_length: int = 2048,
     ):
-        """
-        Summarize the given text
-        """
 
+        """Summarize the given text.
+        
+        This asynchronous function processes the input text along with optional extra
+        context and instructions to generate a summarized version of the events
+        described. It first parses any mentioned characters from the text, constructs a
+        set of template variables, and emits a pre-summarization signal. After
+        receiving a response from the summarization prompt, it cleans up the response
+        by removing any analysis text and formatting it appropriately before emitting a
+        post-summarization signal.
+        
+        Args:
+            text (str): The text to be summarized.
+            extra_context (str?): Additional context to include in the summary. Defaults to None.
+            extra_instructions (str?): Specific instructions for the summarization process. Defaults to None.
+            generation_options (GenerationOptions | None?): Options for the generation process. Defaults to None.
+            analyze_chunks (bool?): Flag to indicate if the text should be analyzed in chunks. Defaults to False.
+            chunk_size (int?): The size of each chunk for analysis. Defaults to 1280.
+            response_length (int?): The desired length of the summary response. Defaults to 2048.
+        """
         if not extra_context:
             extra_context = ""
 

@@ -36,6 +36,7 @@ class GenerateConversation(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up inputs, outputs, and properties for the component."""
         self.add_input("state")
         self.add_input("character", socket_type="character")
         self.add_input("instruction", socket_type="str", optional=True)
@@ -46,6 +47,7 @@ class GenerateConversation(AgentNode):
         self.add_output("message", socket_type="message_object")
 
     async def run(self, state: GraphState):
+        """Runs a conversation with the specified character and instruction."""
         character: "Character" = self.get_input_value("character")
         scene: "Scene" = active_scene.get()
         instruction = self.get_input_value("instruction")

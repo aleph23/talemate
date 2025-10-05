@@ -91,23 +91,18 @@ class OllamaClient(ClientBase):
 
     @property
     def can_be_coerced(self):
-        """
-        Determines whether or not his client can pass LLM coercion. (e.g., is able
-        to predefine partial LLM output in the prompt)
-        """
+        """Determines if the client can pass LLM coercion."""
         return not self.api_handles_prompt_template and not self.reason_enabled
 
     @property
     def api_handles_prompt_template(self) -> bool:
+        """Returns whether the API handles the prompt template."""
+        """Returns whether the API handles the prompt template."""
         return self.client_config.api_handles_prompt_template
 
     async def status(self):
-        """
-        Send a request to the API to retrieve the loaded AI model name.
-        Raises an error if no model name is returned.
-        :return: None
-        """
 
+        """Check the status of the API and fetch available models if connected."""
         if self.processing:
             self.emit_status()
             return
@@ -136,9 +131,7 @@ class OllamaClient(ClientBase):
         await super().status()
 
     async def fetch_available_models(self):
-        """
-        Fetch list of available models from Ollama.
-        """
+        """Fetch a list of available models from Ollama."""
         if time.time() - self._models_last_fetched < FETCH_MODELS_INTERVAL:
             return self._available_models
 
@@ -150,18 +143,19 @@ class OllamaClient(ClientBase):
         self._available_models = sorted(model_names)
         self._models_last_fetched = time.time()
         return self._available_models
+    
 
     def finalize_status(self, data: dict):
-        """
-        Finalizes the status data for the client.
-        """
+        """Finalizes the status data for the client."""
         data["manual_model_choices"] = self._available_models
         return data
 
     async def get_model_name(self):
+        """Return the model associated with the instance."""
         return self.model
 
     def prompt_template(self, system_message: str, prompt: str):
+        """Return the prompt if api_handles_prompt_template is enabled."""
         if not self.api_handles_prompt_template:
             return super().prompt_template(system_message, prompt)
         return prompt
@@ -182,10 +176,14 @@ class OllamaClient(ClientBase):
             parameters["num_predict"] = parameters["max_tokens"]
 
     def clean_prompt_parameters(self, parameters: dict):
-        """
-        Clean and prepare parameters for Ollama API.
-        """
         # First let parent class handle parameter reroutes and cleanup
+        """Clean and prepare parameters for Ollama API.
+        
+        This method first invokes the parent class's implementation to handle
+        parameter reroutes and cleanup. It then removes specific internal  parameters
+        such as "extra_stopping_strings", "stopping_strings",  and "stream". Finally,
+        it deletes "max_tokens" since it has already  been converted to "num_predict".
+        """
         super().clean_prompt_parameters(parameters)
 
         # Remove our internal parameters
@@ -244,17 +242,16 @@ class OllamaClient(ClientBase):
             )
 
     async def abort_generation(self):
-        """
-        Ollama doesn't have a direct abort endpoint, but we can try to stop the model.
-        """
         # This is a no-op for now as Ollama doesn't expose an abort endpoint
         # in the Python client
+        """Attempt to abort the generation process.
+        Ollama doesn't have a direct abort endpoint, but we can try to stop the model.
+        """
         pass
 
+
     def jiggle_randomness(self, prompt_config: dict, offset: float = 0.3) -> dict:
-        """
-        Adjusts temperature and repetition_penalty by random values.
-        """
+        """Adjusts temperature and repetition_penalty in prompt_config by random values."""
         import random
 
         temp = prompt_config["temperature"]

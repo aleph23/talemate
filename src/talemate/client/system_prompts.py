@@ -43,6 +43,7 @@ PROMPT_TEMPLATE_MAP = {
 
 
 def cache_all() -> dict:
+    """Caches all rendered prompts and returns a copy of the render cache."""
     for key in PROMPT_TEMPLATE_MAP:
         render_prompt(key)
     return RENDER_CACHE.copy()
@@ -51,6 +52,18 @@ def cache_all() -> dict:
 def render_prompt(kind: str, decensor: bool = False):
     # work around circular import issue
     # TODO: refactor to avoid circular import
+    """Render a prompt based on the specified kind and decensor flag.
+    
+    This function retrieves a prompt template identified by the `kind`  parameter.
+    It checks if the kind is valid and whether decensoring  is required. If the
+    prompt has already been rendered and cached,  it returns the cached version.
+    Otherwise, it generates a new prompt  using the Prompt class and stores it in
+    the cache for future use.
+    
+    Args:
+        kind (str): The identifier for the prompt template.
+        decensor (bool?): Flag indicating whether to decensor the prompt. Defaults to False.
+    """
     from talemate.prompts import Prompt
 
     if kind not in PROMPT_TEMPLATE_MAP:
@@ -122,9 +135,39 @@ class SystemPrompts(pydantic.BaseModel):
 
     @property
     def defaults(self) -> dict:
+        """Return a copy of the RENDER_CACHE dictionary."""
+        """Return a copy of the RENDER_CACHE dictionary."""
         return RENDER_CACHE.copy()
 
     def alias(self, alias: str) -> str:
+        """Return a standardized alias based on the input string.
+        
+        This function checks the provided alias against a predefined mapping and
+        various keywords to return a corresponding standardized term. It evaluates the
+        alias for specific substrings and returns a relevant term such as "narrator",
+        "director", or "creator". If no matches are found, it returns the original
+        alias.
+        
+        Args:
+            alias (str): The input alias string to be standardized.
+        
+        Returns:
+            str: The standardized alias or the original alias if no matches are found.
+        """
+        """Return a standardized alias based on the input string.
+        
+        The function checks the input `alias` against a predefined mapping and various
+        keywords to return a corresponding standardized term. It evaluates multiple
+        conditions to determine the appropriate alias, ensuring that common variations
+        and synonyms are accounted for. If no match is found, the original alias is
+        returned.
+        
+        Args:
+            alias (str): The input alias string to be standardized.
+        
+        Returns:
+            str: The standardized alias corresponding to the input.
+        """
         if alias in PROMPT_TEMPLATE_MAP:
             return alias
 
@@ -164,6 +207,8 @@ class SystemPrompts(pydantic.BaseModel):
         return alias
 
     def get(self, kind: str, decensor: bool = False) -> str:
+        """Retrieve a value based on the specified kind and decensor flag."""
+        """Retrieve a value based on the specified kind and decensor flag."""
         kind = self.alias(kind)
 
         key = f"{kind}_decensor" if decensor else kind

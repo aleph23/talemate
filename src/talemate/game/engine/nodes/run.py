@@ -55,6 +55,7 @@ class FunctionWrapper:
         result = None
 
         async def handle_result(state: GraphState):
+            """Handles the result from the given GraphState."""
             nonlocal result
             result = state.data.get("__fn_result")
             if state.verbosity >= NodeVerbosity.VERBOSE:
@@ -102,6 +103,7 @@ class FunctionWrapper:
         return result
 
     async def get_argument_nodes(self):
+        """Retrieve argument nodes connected to the endpoint or from the graph."""
         if self.endpoint != self.containing_graph:
             return await self.containing_graph.get_nodes_connected_to(
                 self.endpoint, fn_filter=lambda node: isinstance(node, FunctionArgument)
@@ -151,6 +153,7 @@ class FunctionArgument(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Get the style of the node."""
         return NodeStyle(
             node_color="#2d2c39",
             title_color="#312e57",
@@ -162,11 +165,14 @@ class FunctionArgument(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes properties for the object."""
+        """Initializes properties for the object."""
         self.set_property("name", UNRESOLVED)
         self.set_property("typ", "str")
         self.add_output("value")
 
     async def run(self, state: GraphState):
+        """Executes the function and sets output values based on the state."""
         value = state.data.get(f"{self.id}__fn_arg_value", UNRESOLVED)
 
         self.set_output_values({"value": value})
@@ -190,10 +196,12 @@ class FunctionReturn(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initialize input and output for the setup."""
         self.add_input("value")
         self.add_output("value")
 
     async def run(self, state: GraphState):
+        """Executes the function and updates the state with the output value."""
         value = self.get_input_value("value")
 
         if value is UNRESOLVED:
@@ -234,6 +242,8 @@ class DefineFunction(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
+        """Return the style of the node."""
         return NodeStyle(
             node_color="#392f2c",
             title_color="#573a2e",
@@ -245,18 +255,22 @@ class DefineFunction(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input nodes and name properties."""
         self.add_input("nodes")
         self.add_input("name", socket_type="str")
         self.set_property("name", UNRESOLVED)
 
     @property
     def never_run(self) -> bool:
+        """Always returns True."""
         return True
 
     async def run(self, state: GraphState):
+        """Run the asynchronous process with the given state."""
         return
 
     async def get_function(self, state: GraphState) -> FunctionWrapper:
+        """Retrieve a FunctionWrapper from the input socket."""
         input_socket = self.get_input_socket("nodes")
 
         if not input_socket.source:
@@ -296,6 +310,8 @@ class GetFunction(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
+        """Return the style of the node."""
         return NodeStyle(
             node_color="#392f2c",
             title_color="#573a2e",
@@ -307,11 +323,15 @@ class GetFunction(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initialize properties and add output for the function."""
+        """Initialize properties and add output for the setup."""
         self.set_property("name", UNRESOLVED)
 
         self.add_output("fn", socket_type="function")
 
     async def run(self, state: GraphState):
+        """Executes a function defined in the graph based on the provided state."""
+        """Executes a function defined in the graph based on the provided state."""
         name = self.require_input("name")
         graph: Graph = state.graph
         define_function_node = await graph.get_node(
@@ -357,12 +377,15 @@ class CallFunction(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up inputs and outputs for the function."""
+        """Sets up inputs and outputs for the function."""
         self.add_input("fn", socket_type="function")
         self.add_input("args", optional=True)
         self.set_property("args", {})
         self.add_output("result")
 
     async def run(self, state: GraphState):
+        """Executes a function with provided arguments and sets the result."""
         fn = self.get_input_value("fn")
         args = self.get_input_value("args")
 
@@ -417,6 +440,7 @@ class CallForEach(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("state")
         self.add_input("fn", socket_type="function")
         self.add_input("items", socket_type="list")
@@ -427,6 +451,29 @@ class CallForEach(Node):
         self.add_output("results", socket_type="list")
 
     async def run(self, state: GraphState):
+        """Executes a function with provided items and stores the results.
+        
+        This method retrieves the function to execute and the list of items  from the
+        input values. It checks for the presence of the required  argument name and
+        validates the types of the inputs. If the  copy_items property is set, it
+        creates a copy of the items list.  The function is then called asynchronously
+        for each item, and the  results are collected and stored in the output values.
+        
+        Args:
+            state (GraphState): The current state of the graph.
+        """
+        """Executes a function with provided items and stores the results.
+        
+        This method retrieves the function to execute and the list of items  from the
+        input values. It checks for the presence of the required  argument name and
+        validates the types of the function and items.  If `copy_items` is set to True,
+        it creates a copy of the items  list before processing. The function is called
+        asynchronously for  each item, and the results are collected and set as output
+        values.
+        
+        Args:
+            state (GraphState): The current state of the graph.
+        """
         fn = self.get_input_value("fn")
         items = self.get_input_value("items")
         argument_name = self.get_property("argument_name")
@@ -467,18 +514,14 @@ class Function(Graph):
     @pydantic.computed_field(description="Inputs")
     @property
     def inputs(self) -> list[Socket]:
-        """
-        Function graphs never have any direct inputs
-        """
+        """Returns an empty list of Socket inputs."""
         return []
 
     @pydantic.computed_field(description="Outputs")
     @property
     def outputs(self) -> list[Socket]:
-        """
-        Function graphs only have one output which is the function wrapper
-        """
 
+        """Returns the function's output sockets."""
         if hasattr(self, "_outputs"):
             return self._outputs
 
@@ -496,6 +539,7 @@ class Function(Graph):
     @property
     def style(self) -> NodeStyle:
         # If a style is defined in the graph it overrides the default
+        """Return the node style, overriding the default if defined in the graph."""
         defined_style = super().style
         if defined_style:
             return defined_style
@@ -507,10 +551,7 @@ class Function(Graph):
         )
 
     async def run(self, state: GraphState):
-        """
-        Executing the graph will return a FunctionWrapper object where
-        the endpoint node is an OutputSocket node
-        """
+        """Executes the graph and sets output values."""
         wrapped = FunctionWrapper(self, self, state)
         self.set_output_values({"fn": wrapped})
 
@@ -533,6 +574,7 @@ class RunModule(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the module."""
         self.add_input("module")
         self.add_output("done", socket_type="bool")
         self.add_output("failed", socket_type="str")
@@ -615,6 +657,7 @@ class Breakpoint(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node as a NodeStyle object."""
         return NodeStyle(
             title_color="#461515",
             icon="F03C3",  # octagon
@@ -624,6 +667,8 @@ class Breakpoint(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes the input and output properties for the state."""
+        """Initializes the input and output properties for the state."""
         self.add_input("state")
 
         self.set_property("active", True)
@@ -631,6 +676,18 @@ class Breakpoint(Node):
         self.add_output("state")
 
     async def run(self, state: GraphState):
+        """Handles the execution of a breakpoint in the graph state.
+        
+        This function retrieves the current state and checks if the execution should
+        proceed based on the environment and active status. If the environment is not
+        "creative", the breakpoint is disabled. If active, it sends a BreakpointEvent
+        and enters a loop that waits for the breakpoint to be released or cancelled.
+        The function also logs relevant information based on the verbosity level of the
+        state.
+        
+        Args:
+            state (GraphState): The current state of the graph.
+        """
         incoming_state = self.get_input_value("state")
         active = self.get_property("active")
         scene = active_scene.get()
@@ -684,6 +741,7 @@ class ErrorHandler(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
         return NodeStyle(
             node_color="#2c0a0a",
             title_color="#461515",
@@ -692,15 +750,23 @@ class ErrorHandler(Node):
 
     @property
     def never_run(self) -> bool:
+        """Always returns True."""
         return True
 
     def __init__(self, title="Error Handler", **kwargs):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up the input function."""
         self.add_input("fn", socket_type="function")
 
     async def catch(self, state: GraphState, exc: Exception):
+        """Handles exceptions by invoking an error handler function.
+        
+        Args:
+            state (GraphState): The current state of the graph.
+            exc (Exception): The exception to be handled.
+        """
         log.info("Error caught", error=exc)
         fn_socket = self.get_input_socket("fn")
 
@@ -734,6 +800,7 @@ class UnpackException(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output for the component."""
         self.add_input("exc", socket_type="exception")
         self.add_output("name")
         self.add_output("message")

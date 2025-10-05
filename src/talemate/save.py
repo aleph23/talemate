@@ -16,6 +16,7 @@ log = structlog.get_logger("talemate.save")
 
 def combine_paths(absolute, relative):
     # Split paths into components
+    """Combine an absolute path with the last component of a relative path."""
     rel_parts = os.path.normpath(relative).split(os.sep)
 
     # Get just the filename/last component from relative path
@@ -35,6 +36,14 @@ class SceneEncoder(json.JSONEncoder):
 async def save_node_module(
     scene: "Scene", graph: "Graph", filename: str = None, set_as_main: bool = False
 ) -> str:
+    """Save the node module to a specified file.
+    
+    This function checks if the directory for the scene nodes exists and creates it
+    if not.  If the provided graph is an instance of SceneLoop and set_as_main is
+    True, it saves the  graph to a default or specified filename. For other graph
+    types, it requires a filename  to save the graph to the appropriate path,
+    combining the scene's node directory with the  filename before saving.
+    """
     if not os.path.exists(scene.nodes_dir):
         os.makedirs(scene.nodes_dir)
 

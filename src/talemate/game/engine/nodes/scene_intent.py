@@ -59,6 +59,7 @@ class GetSceneIntent(Node):
         self.add_output("start", socket_type="int")
 
     async def run(self, state: GraphState):
+        """Sets output values based on the current scene's intent state."""
         scene: "Scene" = active_scene.get()
 
         self.set_output_values(
@@ -116,6 +117,8 @@ class SetSceneIntent(Node):
         self.add_output("intent", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Updates the intent state based on user input."""
+        """Updates the intent state based on user input."""
         scene: "Scene" = active_scene.get()
 
         intent = self.get_input_value("intent")
@@ -166,6 +169,7 @@ class SetScenePhase(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output sockets for the component."""
         self.add_input("state")
         self.add_input("scene_type", socket_type="str", optional=True)
         self.add_input("intent", socket_type="str", optional=True)
@@ -178,6 +182,7 @@ class SetScenePhase(Node):
         self.add_output("scene_type", socket_type="scene_intent/scene_type")
 
     async def run(self, state: GraphState):
+        """Executes the scene setup and updates output values."""
         scene: "Scene" = active_scene.get()
 
         scene_type = self.get_input_value("scene_type")
@@ -216,6 +221,7 @@ class UnpackScenePhase(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the scene."""
         self.add_input("phase", socket_type="scene_intent/scene_phase")
 
         self.add_output("intent", socket_type="str")
@@ -226,6 +232,7 @@ class UnpackScenePhase(Node):
         self.add_output("scene_type_id", socket_type="str")
 
     async def run(self, state: GraphState):
+        """Sets output values based on the current scene and phase."""
         scene: "Scene" = active_scene.get()
         phase: ScenePhase = self.get_input_value("phase")
 
@@ -296,6 +303,7 @@ class MakeSceneType(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output properties for the scene."""
         self.add_input("scene_type_id", socket_type="str", optional=True)
         self.add_input("name", socket_type="str", optional=True)
         self.add_input("description", socket_type="text", optional=True)
@@ -310,6 +318,8 @@ class MakeSceneType(Node):
         self.add_output("scene_type", socket_type="scene_intent/scene_type")
 
     async def run(self, state: GraphState):
+        """Processes the scene type and updates the scene if auto_append is enabled."""
+        """Processes the scene type and updates the scene if auto_append is enabled."""
         auto_append = self.normalized_input_value("auto_append")
         scene: "Scene" = active_scene.get()
 
@@ -348,10 +358,12 @@ class GetSceneType(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the scene type."""
         self.add_input("scene_type_id", socket_type="str")
         self.add_output("scene_type", socket_type="scene_intent/scene_type")
 
     async def run(self, state: GraphState):
+        """Runs the scene processing based on the provided GraphState."""
         scene: "Scene" = active_scene.get()
         scene_type_id = self.require_input("scene_type_id")
 
@@ -385,6 +397,7 @@ class UnpackSceneType(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for scene configuration."""
         self.add_input("scene_type", socket_type="scene_intent/scene_type")
 
         self.add_output("scene_type_id", socket_type="str")
@@ -424,12 +437,14 @@ class RemoveSceneType(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for state and scene type."""
         self.add_input("state")
         self.add_input("scene_type_id", socket_type="str")
 
         self.add_output("state")
 
     async def run(self, state: GraphState):
+        """Processes the current scene and updates the output state."""
         scene: "Scene" = active_scene.get()
 
         scene_type_id = self.require_input("scene_type_id")

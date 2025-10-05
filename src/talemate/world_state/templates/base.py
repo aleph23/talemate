@@ -45,6 +45,7 @@ class register:
 
 
 def name_to_id(name: str) -> str:
+    """Convert a name to a standardized ID format."""
     return name.replace(" ", "_").lower()
 
 
@@ -82,14 +83,13 @@ class Template(pydantic.BaseModel):
     priority: int = 1
 
     async def generate(self, **kwargs):
+        """Raises NotImplementedError for the generate method."""
         raise NotImplementedError("generate method not implemented")
 
     def formatted(
         self, prop_name: str, scene: "Scene", character_name: str = None, **vars
     ) -> str:
-        """
-        Format instructions for a template.
-        """
+        """Format instructions for a template."""
         value = getattr(self, prop_name)
 
         if not value:
@@ -122,6 +122,7 @@ class Group(pydantic.BaseModel):
 
     @classmethod
     def load(cls, path: str) -> "Group":
+        """Load data from a YAML file and return a Group instance."""
         with open(path, "r") as f:
             data = yaml.safe_load(f)
             data = cls.sanitize_data(data)
@@ -129,10 +130,22 @@ class Group(pydantic.BaseModel):
 
     @classmethod
     def sanitize_data(cls, data: dict) -> dict:
-        """
-        Sanitizes the data for the group.
-        """
 
+        """Sanitizes the data for the group.
+        
+        This method processes the input dictionary `data` to ensure that required
+        fields are populated and invalid entries are removed. It generates a unique
+        identifier if none exists, assigns default values for missing fields, and
+        cleans up the `templates` section by removing null entries and ensuring valid
+        template types. Additionally, it logs warnings for any discrepancies found
+        during the sanitization process.
+        
+        Args:
+            data (dict): A dictionary containing group data, including templates.
+        
+        Returns:
+            dict: The sanitized group data.
+        """
         data.pop("path", None)
 
         # ensure uid is set
@@ -194,10 +207,12 @@ class Group(pydantic.BaseModel):
 
     @property
     def filename(self):
+        """Return the filename in a standardized format."""
         cleaned_name = self.name.replace(" ", "-").lower()
         return f"{cleaned_name}.yaml"
 
     def save(self, path: str = TEMPLATE_PATH):
+        """Saves the current state of the templates to a file."""
         if not self.path:
             path = os.path.join(path, self.filename)
         else:
@@ -257,6 +272,7 @@ class Group(pydantic.BaseModel):
             self.save()
 
     def update_template(self, template: Template, save: bool = True):
+        """Update the specified template and optionally save it."""
         self.templates[template.uid] = template
 
         if save:
@@ -272,6 +288,14 @@ class Group(pydantic.BaseModel):
             self.save()
 
     def find(self, uid: str) -> Template | None:
+        """Find a template by its unique identifier.
+        
+        Args:
+            uid (str): The unique identifier of the template.
+        
+        Returns:
+            Template | None: The template if found, otherwise None.
+        """
         for template in self.templates.values():
             if template.uid == uid:
                 return template
@@ -279,10 +303,12 @@ class Group(pydantic.BaseModel):
         return None
 
     def delete(self, path: str = TEMPLATE_PATH):
+        """Delete the file at the specified path if it exists."""
         if os.path.exists(self.path):
             os.remove(self.path)
 
     def update(self, group: "Group", save: bool = True, ignore_templates: bool = True):
+        """Update the object's attributes based on the provided group."""
         self.author = group.author
         self.name = group.name
         self.description = group.description
@@ -299,11 +325,8 @@ class Collection(pydantic.BaseModel):
 
     @classmethod
     def load(cls, path: str = TEMPLATE_PATH) -> "Collection":
-        """
-        Look for .yaml files in the given path and load them as groups
-        into a new collection
-        """
 
+        """Load .yaml files from the specified path into a new Collection."""
         groups = []
 
         for root, _, files in os.walk(path):
@@ -324,11 +347,16 @@ class Collection(pydantic.BaseModel):
         save: bool = True,
         check_if_exists: bool = True,
     ) -> "Collection":
-        """
-        templates used to be stored in the main tailmate config as
-        a dictionary of dictionaries. This method will convert those
-        """
 
+        """Converts legacy configuration templates into a structured collection.
+        
+        This method retrieves templates from a legacy configuration stored as a
+        dictionary of dictionaries. It checks for existing templates to avoid
+        duplication, converts each template into a model instance, and groups  them
+        accordingly. If specified, the new groups can be saved to the
+        TEMPLATE_PATH_TALEMATE directory. The function utilizes the  name_to_id
+        function to generate unique identifiers for each template.
+        """
         groups = []
 
         collection = cls.load(TEMPLATE_PATH_TALEMATE)
@@ -375,10 +403,18 @@ class Collection(pydantic.BaseModel):
         return collection
 
     def flat(self, types: list[str] = None) -> "FlatCollection":
-        """
-        merged templates from all groups
-        """
 
+        """Merge templates from all groups into a single collection.
+        
+        This method iterates through all groups and their associated templates.  If a
+        list of types is provided, it filters the templates based on their  type before
+        merging. Each template is uniquely identified by combining  the group's UID
+        with the template's ID, and the resulting templates are  collected into a
+        dictionary, which is then used to create a  FlatCollection.
+        
+        Args:
+            types (list[str]?): A list of template types to filter by.
+        """
         templates = {}
 
         for group in self.groups:
@@ -392,9 +428,7 @@ class Collection(pydantic.BaseModel):
         return FlatCollection(templates=templates)
 
     def flat_by_template_uid_only(self) -> "FlatCollection":
-        """
-        Returns a flat collection of templates by template uid only
-        """
+        """Returns a flat collection of templates by template uid only."""
         templates = {}
         for group in self.groups:
             for template_id, template in group.templates.items():
@@ -403,10 +437,20 @@ class Collection(pydantic.BaseModel):
         return FlatCollection(templates=templates)
 
     def typed(self, types: list[str] = None) -> "TypedCollection":
-        """
-        Returns a dictionary of templates grouped by their template type
-        """
 
+        """Returns a dictionary of templates grouped by their template type.
+        
+        This function iterates through the groups of templates and organizes them  into
+        a dictionary based on their template type. If a list of types is  provided,
+        only templates matching those types will be included. Each  template is
+        identified by a unique identifier composed of the group's  UID and the
+        template's ID, ensuring that templates are correctly  categorized and
+        accessible.
+        
+        Args:
+            types (list[str]?): A list of template types to filter the
+                templates. If None, all templates are included.
+        """
         templates = {}
 
         for group in self.groups:
@@ -422,30 +466,32 @@ class Collection(pydantic.BaseModel):
         return TypedCollection(templates=templates)
 
     def save(self, path: str = TEMPLATE_PATH):
+        """Saves all groups to the specified path."""
         for group in self.groups:
             group.save(path)
 
     def find(self, uid: str) -> Group | None:
+        """Find a group by its unique identifier (uid)."""
         for group in self.groups:
             if group.uid == uid:
                 return group
         return None
 
     def find_template(self, group_uid: str, template_uid: str) -> Template | None:
+        """Finds a template by its UID within a specified group."""
         group = self.find(group_uid)
         if group:
             return group.find(template_uid)
         return None
 
     def remove(self, group: Group, save: bool = True):
+        """Remove a group and optionally delete it."""
         self.groups.remove(group)
         if save:
             group.delete()
 
     def collect_all(self, uids: list[str]) -> dict[str, AnnotatedTemplate]:
-        """
-        Returns a dictionary of all templates in the collection
-        """
+        """Returns a dictionary of templates matching the given UIDs."""
         templates = {}
         for group in self.groups:
             for template in group.templates.values():
@@ -465,6 +511,7 @@ class TypedCollection(pydantic.BaseModel):
     )
 
     def find_by_name(self, name: str) -> AnnotatedTemplate | None:
+        """Find a template by its name."""
         for templates in self.templates.values():
             for template in templates.values():
                 if template.name == name:

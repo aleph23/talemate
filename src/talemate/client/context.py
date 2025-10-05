@@ -18,6 +18,16 @@ log = structlog.get_logger()
 
 
 def model_to_dict_without_defaults(model_instance):
+    """def model_to_dict_without_defaults(model_instance):
+    Convert a model instance to a dictionary without default values.  This function
+    takes a model instance and converts it to a dictionary representation.  It
+    removes any fields that have default values matching the values in the model
+    instance.  Additionally, it handles a special case for the "conversation"
+    field, ensuring that it  is not included in the dictionary if the
+    "talking_character" is None.
+    
+    Args:
+        model_instance: An instance of a model with defined fields."""
     model_dict = model_instance.dict()
     for field_name, field in model_instance.__class__.__fields__.items():
         if field.default == model_dict.get(field_name):
@@ -73,10 +83,8 @@ def set_client_context_attribute(name, value):
 
 
 def set_conversation_context_attribute(name, value):
-    """
-    Set the value of the context variable `context_data.conversation` for the given key.
-    """
     # Get the current context data
+    """Set a conversation context attribute."""
     data = context_data.get()
     # Set the value of the key
     data["conversation"][name] = value

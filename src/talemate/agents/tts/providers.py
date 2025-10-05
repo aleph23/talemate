@@ -20,5 +20,6 @@ def provider(name: str) -> VoiceProvider:
 
 
 def providers() -> Generator[VoiceProvider, None, None]:
+    """Yield instances of VoiceProvider from PROVIDERS."""
     for cls in PROVIDERS.values():
         yield cls()

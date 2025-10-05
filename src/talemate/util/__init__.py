@@ -19,6 +19,12 @@ TIKTOKEN_ENCODING = tiktoken.encoding_for_model("gpt-4-turbo")
 
 
 def count_tokens(source):
+    """
+    Count the number of tokens in the given source.
+    
+    Args:
+        source: A list, string, or SceneMessage to count tokens from.
+    """
     if isinstance(source, list):
         t = 0
         for s in source:
@@ -39,6 +45,8 @@ def count_tokens(source):
 
 
 def clean_id(name: str) -> str:
+    # Remove all characters that aren't a-zA-Z0-9_-
+
     """
     Cleans up a id name by removing all characters that aren't a-zA-Z0-9_-
 
@@ -50,7 +58,6 @@ def clean_id(name: str) -> str:
     Returns:
         str: The cleaned id name.
     """
-    # Remove all characters that aren't a-zA-Z0-9_-
     cleaned_name = re.sub(r"[^a-zA-Z0-9_\- ]", "", name)
 
     return cleaned_name

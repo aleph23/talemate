@@ -44,9 +44,7 @@ from base64 import b85decode
 
 
 def include_setuptools(args):
-    """
-    Install setuptools only if absent, not excluded and when using Python <3.12.
-    """
+    """Determine if setuptools should be installed based on conditions."""
     cli = not args.no_setuptools
     env = not os.environ.get("PIP_NO_SETUPTOOLS")
     absent = not importlib.util.find_spec("setuptools")
@@ -55,9 +53,7 @@ def include_setuptools(args):
 
 
 def include_wheel(args):
-    """
-    Install wheel only if absent, not excluded and when using Python <3.12.
-    """
+    """Determine if wheel should be installed based on conditions."""
     cli = not args.no_wheel
     env = not os.environ.get("PIP_NO_WHEEL")
     absent = not importlib.util.find_spec("wheel")
@@ -83,14 +79,7 @@ def determine_pip_install_arguments():
 
 
 def monkeypatch_for_cert(tmpdir):
-    """Patches `pip install` to provide default certificate with the lowest priority.
-
-    This ensures that the bundled certificates are used unless the user specifies a
-    custom cert via any of pip's option passing mechanisms (config, env-var, CLI).
-
-    A monkeypatch is the easiest way to achieve this, without messing too much with
-    the rest of pip's internals.
-    """
+    """Patches pip install to use a default certificate."""
     from pip._internal.commands.install import InstallCommand
 
     # We want to be using the internal certificates.
@@ -101,6 +90,7 @@ def monkeypatch_for_cert(tmpdir):
     install_parse_args = InstallCommand.parse_args
 
     def cert_parse_args(self, args):
+        """Parse command line arguments and set default certificate if not provided."""
         if not self.parser.get_default_values().cert:
             # There are no user provided cert -- force use of bundled cert
             self.parser.defaults["cert"] = cert_path  # calculated above
@@ -110,6 +100,7 @@ def monkeypatch_for_cert(tmpdir):
 
 
 def bootstrap(tmpdir):
+    """Install the latest pip and user-requested packages from PyPI."""
     monkeypatch_for_cert(tmpdir)
 
     # Execute the included pip and use it to install the latest pip and
@@ -120,6 +111,7 @@ def bootstrap(tmpdir):
 
 
 def main():
+    """Create a temporary directory, unpack a zipfile, and run the bootstrap."""
     tmpdir = None
     try:
         # Create a temporary working directory

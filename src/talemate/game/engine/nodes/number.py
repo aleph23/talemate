@@ -9,6 +9,7 @@ log = structlog.get_logger("talemate.game.engine.nodes.number")
 
 class NumberNode(Node):
     def normalized_number_input(self, name: str, types: tuple = (int, float)):
+        """Normalize and convert input value to specified number type."""
         value = self.get_input_value(name)
 
         if value is UNRESOLVED:
@@ -58,11 +59,14 @@ class MakeNumber(NumberNode):
         )
 
     def setup(self):
+        """Initializes properties and output for the object."""
+        """Initializes properties and output for the object."""
         self.set_property("value", 0)
         self.set_property("number_type", "float")
         self.add_output("value", socket_type="any")  # Can be int or float
 
     async def run(self, state: GraphState):
+        """Processes the input value based on the specified number type."""
         number_type = self.get_property("number_type")
 
         if number_type == "int":
@@ -99,11 +103,14 @@ class AsNumber(NumberNode):
         )
 
     def setup(self):
+        """Sets up input and output properties for the component."""
+        """Sets up input and output properties for the component."""
         self.add_input("value", socket_type="any")
         self.set_property("number_type", "int")
         self.add_output("value", socket_type="int,float")
 
     async def run(self, state: GraphState):
+        """Processes the input value based on the specified number type."""
         if self.get_property("number_type") == "int":
             valid_types = (int,)
         else:
@@ -151,6 +158,7 @@ class BasicArithmetic(NumberNode):
         )
 
     def setup(self):
+        """Sets up input and output sockets and initializes properties."""
         self.add_input("a", socket_type="int,float")
         self.add_input("b", socket_type="int,float")
         self.add_output("result", socket_type="int,float")
@@ -160,6 +168,36 @@ class BasicArithmetic(NumberNode):
         self.set_property("b", 0)
 
     async def run(self, state: GraphState):
+        """Execute a mathematical operation based on user input.
+        
+        This asynchronous function retrieves two normalized numbers, `a` and `b`, and
+        performs a specified mathematical operation on them. The operation is
+        determined by the `operation` property, which can be addition, subtraction,
+        multiplication, division, power, or modulo. The function handles potential
+        errors, such as division or modulo by zero, and raises an `InputValueError` if
+        any calculation issues occur.
+        
+        Args:
+            state (GraphState): The current state of the graph containing necessary context.
+        
+        Raises:
+            InputValueError: If an invalid operation is specified or if a calculation error occurs.
+        """
+        """Execute a mathematical operation based on user input.
+        
+        This asynchronous function retrieves two normalized numeric inputs, 'a' and
+        'b', and performs a specified mathematical operation on them. The operation is
+        determined by the property "operation". If either input is unresolved, the
+        function exits early. It handles various operations including addition,
+        subtraction, multiplication, division, power, and modulo, with specific error
+        handling for division and modulo by zero.
+        
+        Args:
+            state (GraphState): The current state of the graph containing necessary context for execution.
+        
+        Raises:
+            InputValueError: If an invalid operation is specified or if a calculation error occurs.
+        """
         a = self.normalized_number_input("a")
         b = self.normalized_number_input("b")
 
@@ -243,6 +281,8 @@ class Compare(NumberNode):
         )
 
     def setup(self):
+        """Initializes inputs, outputs, and properties for the setup."""
+        """Initializes input and output sockets and sets default properties."""
         self.add_input("a", socket_type="int,float")
         self.add_input("b", socket_type="int,float")
         self.add_output("result", socket_type="bool")
@@ -253,6 +293,16 @@ class Compare(NumberNode):
         self.set_property("b", 0)
 
     async def run(self, state: GraphState):
+        """Executes a comparison operation based on user input.
+        
+        This asynchronous function retrieves two normalized numeric inputs, 'a' and
+        'b',  and a specified operation along with a tolerance value. It performs the
+        comparison  operation based on the provided operation type, which can be
+        'equals', 'not_equals',  'greater_than', 'less_than', 'greater_equal', or
+        'less_equal'. If either input  is unresolved, the function exits early without
+        performing any operation. The result  of the comparison is then set as an
+        output value.
+        """
         a = self.normalized_number_input("a")
         b = self.normalized_number_input("b")
         operation = self.get_property("operation")
@@ -308,6 +358,8 @@ class MinMax(NumberNode):
         )
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
+        """Sets up input and output sockets for the component."""
         self.add_input("numbers", socket_type="list")
         self.add_output("result", socket_type="int,float")
         self.add_output("index", socket_type="int")
@@ -315,6 +367,22 @@ class MinMax(NumberNode):
         self.set_property("operation", "min")
 
     async def run(self, state: GraphState):
+        """Execute a mathematical operation on a list of numbers.
+        
+        This asynchronous function retrieves a list of numbers and an operation type
+        from the object's properties. It validates the input to ensure the list is not
+        empty and that all items are numeric. Depending on the specified operation,  it
+        calculates either the minimum or maximum value from the list and its index,
+        then sets the output values accordingly.
+        """
+        """Run the specified operation on a list of numbers.
+        
+        This asynchronous function retrieves a list of numbers and an operation type
+        from the object's properties. It validates the input to ensure the list is not
+        empty and that all items are numeric. Depending on the specified operation,
+        either the minimum or maximum value is calculated, and the result along with
+        its index in the original list is set as output values.
+        """
         numbers = self.get_input_value("numbers")
         operation = self.get_property("operation")
 
@@ -350,12 +418,14 @@ class Sum(NumberNode):
     """
 
     def setup(self):
+        """Initializes input and output sockets for the component."""
         self.add_input("numbers", socket_type="list")
         self.add_output("result", socket_type="int,float")
 
         self.set_property("numbers", [])
 
     async def run(self, state: GraphState):
+        """Processes input numbers and sets the output result."""
         numbers = self.get_input_value("numbers")
 
         if not all(isinstance(n, (int, float)) for n in numbers):
@@ -395,12 +465,32 @@ class Average(NumberNode):
         )
 
     def setup(self):
+        """Sets up input and output sockets and initializes properties."""
+        """Sets up input and output sockets and initializes properties."""
         self.add_input("numbers", socket_type="list")
         self.add_output("result", socket_type="int,float")
 
         self.set_property("method", "mean")
 
     async def run(self, state: GraphState):
+        """Runs a statistical calculation based on the provided method and input numbers.
+        
+        This asynchronous function retrieves a list of numbers and a specified method
+        from the object's properties. It validates the input to ensure that the list
+        is not empty and that all items are numeric. Depending on the method, it
+        calculates the mean, median, or mode of the numbers. The result is then set  as
+        an output value. If any errors occur during the calculation, an
+        InputValueError is raised with an appropriate message.
+        """
+        """Run the calculation based on the provided method and input numbers.
+        
+        This asynchronous function retrieves a list of numbers and a method from the
+        object's properties. It validates the input to ensure it is not empty and
+        contains only numeric values. Depending on the specified method, it computes
+        the mean, median, or mode of the numbers. The result is then set as an output
+        value. If any errors occur during the calculation, an InputValueError is
+        raised.
+        """
         numbers = self.get_input_value("numbers")
         method = self.get_property("method")
 
@@ -505,6 +595,36 @@ class Random(NumberNode):
         self.set_property("std_dev", 1.0)
 
     async def run(self, state: GraphState):
+        """Run a random number generation method based on the specified state.
+        
+        This asynchronous function determines the method of random number generation
+        from the state and executes the corresponding logic. It supports various
+        methods including uniform, integer, normal, and choice. Each method retrieves
+        necessary parameters, validates them, and generates a random value accordingly.
+        The result is then set in the output values.
+        
+        Args:
+            state (GraphState): The state containing the method and parameters for random number generation.
+        
+        Raises:
+            InputValueError: If the standard deviation is non-positive for the normal method or if an empty
+                list is provided for the choice method.
+        """
+        """Run a random number generation method based on the specified state.
+        
+        This asynchronous function determines the method of random number generation
+        from the state and executes the corresponding logic. It supports various
+        methods including uniform, integer, normal, and choice. Each method retrieves
+        necessary parameters, validates them, and generates a random value accordingly.
+        The result is then set in the output values.
+        
+        Args:
+            state (GraphState): The state containing the method and parameters for random number generation.
+        
+        Raises:
+            InputValueError: If the standard deviation is non-positive for the normal method or if an empty
+                list is provided for the choice method.
+        """
         method = self.get_property("method")
 
         if method == "uniform":
@@ -584,6 +704,8 @@ class Clamp(NumberNode):
         )
 
     def setup(self):
+        """Sets up input and output sockets and initializes properties."""
+        """Sets up input and output sockets and initializes properties."""
         self.add_input("value", socket_type="int,float")
         self.add_input("min", socket_type="int,float")
         self.add_input("max", socket_type="int,float")
@@ -594,6 +716,22 @@ class Clamp(NumberNode):
         self.set_property("max", 1)
 
     async def run(self, state: GraphState):
+        """Processes input values and sets the output result.
+        
+        This asynchronous function retrieves and normalizes three input values:
+        "value", "min", and "max". It checks for unresolved inputs and ensures  that
+        the minimum value is not greater than the maximum value. If all  conditions are
+        met, it calculates the result by clamping the "value"  between "min" and "max",
+        and sets the output accordingly.
+        """
+        """Processes input values and sets the output result.
+        
+        This function retrieves and normalizes the input values for "value",  "min",
+        and "max". It checks for unresolved inputs and ensures that  the minimum value
+        is not greater than the maximum value. If all  conditions are met, it
+        calculates the result by clamping the value  between min_val and max_val, and
+        sets the output accordingly.
+        """
         value = self.normalized_number_input("value")
         min_val = self.normalized_number_input("min")
         max_val = self.normalized_number_input("max")

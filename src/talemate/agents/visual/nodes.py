@@ -39,6 +39,7 @@ class GenerateCharacterPortrait(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up the inputs and outputs for the component."""
         self.add_input("state")
         self.add_input("character", socket_type="character")
         self.add_input("instructions", socket_type="str", optional=True)
@@ -50,6 +51,7 @@ class GenerateCharacterPortrait(AgentNode):
         self.add_output("portrait", socket_type="image")
 
     async def run(self, state: GraphState):
+        """Generates a character portrait and sets output values."""
         character = self.get_input_value("character")
         instructions = self.normalized_input_value("instructions")
 

@@ -23,6 +23,15 @@ class CmdAdvanceTime(TalemateCommand):
     aliases = ["time_a"]
 
     async def run(self):
+        """Runs the time advancement process in the simulation.
+        
+        This function checks if an amount of time has been specified. If not, it emits
+        a system message indicating the requirement. If the narrator's action for
+        narrating time passage is enabled and configured to ask for a prompt, it waits
+        for user input to guide the narration. Finally, it advances the time in the
+        world state by the specified amount, optionally using the provided narration
+        prompt.
+        """
         if not self.args:
             self.emit("system", "You must specify an amount of time to advance")
             return

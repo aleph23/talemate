@@ -227,6 +227,7 @@ class Scene(Emitter):
 
     @property
     def player_character_exists(self) -> bool:
+        """Check if a player character exists."""
         try:
             character = self.get_player_character()
             return character is not None and character.is_player
@@ -235,6 +236,7 @@ class Scene(Emitter):
 
     @property
     def characters(self):
+        """Yield the characters of each actor."""
         for actor in self.actors:
             yield actor.character
 
@@ -252,6 +254,7 @@ class Scene(Emitter):
 
     @property
     def all_character_names(self):
+        """Return a list of all character names."""
         return [character.name for character in self.all_characters]
 
     @property
@@ -266,10 +269,12 @@ class Scene(Emitter):
 
     @property
     def npc_character_names(self):
+        """Returns a list of NPC character names."""
         return [character.name for character in self.get_npc_characters()]
 
     @property
     def has_active_npcs(self):
+        """Check if there are active NPC characters."""
         return bool(list(self.get_npc_characters()))
 
     @property
@@ -278,6 +283,7 @@ class Scene(Emitter):
 
     @property
     def project_name(self) -> str:
+        """Return the project name formatted as a lowercase string with hyphens."""
         return self.name.replace(" ", "-").replace("'", "").lower()
 
     @property
@@ -301,6 +307,7 @@ class Scene(Emitter):
 
     @property
     def num_history_entries(self):
+        """Returns the number of entries in the history."""
         return len(self.history)
 
     @property
@@ -309,12 +316,14 @@ class Scene(Emitter):
         # and return the character name attached to it to determine the actor
         # that most recently spoke
 
+        """Return the name of the most recent actor from history."""
         for idx in range(len(self.history) - 1, -1, -1):
             if isinstance(self.history[idx], CharacterMessage):
                 return self.history[idx].character_name
 
     @property
     def save_dir(self):
+        """Return the path to the save directory, creating it if it doesn't exist."""
         saves_dir = os.path.join(
             self.scenes_dir(),
             self.project_name,
@@ -327,6 +336,7 @@ class Scene(Emitter):
 
     @property
     def full_path(self):
+        """Get the full path of the file."""
         if not self.filename:
             return None
 
@@ -334,6 +344,7 @@ class Scene(Emitter):
 
     @property
     def template_dir(self):
+        """Returns the path to the templates directory."""
         return os.path.join(self.save_dir, "templates")
 
     @property
@@ -342,14 +353,17 @@ class Scene(Emitter):
 
     @property
     def info_dir(self):
+        """Return the path to the info directory."""
         return os.path.join(self.save_dir, "info")
 
     @property
     def auto_save(self):
+        """Gets the auto_save configuration setting."""
         return self.config.game.general.auto_save
 
     @property
     def auto_progress(self):
+        """Gets the auto_progress setting from the game configuration."""
         return self.config.game.general.auto_progress
 
     @property
@@ -358,10 +372,12 @@ class Scene(Emitter):
 
     @property
     def conversation_format(self):
+        """Get the conversation format from the agent."""
         return get_agent("conversation").conversation_format
 
     @property
     def writing_style(self) -> world_state_templates.WritingStyle | None:
+        """Returns the writing style template or None if not available."""
         if not self.writing_style_template:
             return None
 
@@ -373,14 +389,17 @@ class Scene(Emitter):
 
     @property
     def max_backscroll(self):
+        """Get the maximum backscroll value from the game configuration."""
         return self.config.game.general.max_backscroll
 
     @property
     def nodes_filename(self):
+        """Get the filename for the nodes."""
         return self._nodes_filename or "scene-loop.json"
 
     @nodes_filename.setter
     def nodes_filename(self, value: str):
+        """Set the nodes filename, defaulting to an empty string if None."""
         self._nodes_filename = value or ""
 
     @property
@@ -393,14 +412,17 @@ class Scene(Emitter):
 
     @creative_nodes_filename.setter
     def creative_nodes_filename(self, value: str):
+        """Set the creative nodes filename."""
         self._creative_nodes_filename = value or ""
 
     @property
     def creative_nodes_filepath(self) -> str:
+        """Get the file path for creative nodes."""
         return os.path.join(self.nodes_dir, self.creative_nodes_filename)
 
     @property
     def intent(self) -> dict:
+        """Returns the intent as a dictionary based on the current phase."""
         phase = self.intent_state.phase
         if not phase:
             return {}
@@ -415,12 +437,14 @@ class Scene(Emitter):
         return getattr(self, "node_graph", getattr(self, "creative_node_graph", None))
 
     def set_intro(self, intro: str):
+        """Sets the introduction string."""
         self.intro = intro
 
     def set_name(self, name: str):
         self.name = name
 
     def set_title(self, title: str):
+        """Set the title of the object."""
         self.title = title
 
     def connect(self):
@@ -430,9 +454,7 @@ class Scene(Emitter):
         self.signals["config.changed"].connect(self.on_config_changed)
 
     def disconnect(self):
-        """
-        disconnect scenes from signals
-        """
+        """Disconnects the on_config_changed signal from config.changed."""
         self.signals["config.changed"].disconnect(self.on_config_changed)
 
     def __del__(self):
@@ -442,6 +464,7 @@ class Scene(Emitter):
         self.emit_status()
 
     def recent_history(self, max_tokens: int = 2048):
+        """Retrieve recent history entries up to a specified token limit."""
         scene = self
         history_legnth = len(scene.history)
         num = 0
@@ -463,10 +486,19 @@ class Scene(Emitter):
         return recent_history
 
     def push_history(self, messages: list[SceneMessage]):
-        """
-        Adds one or more messages to the scene history
-        """
 
+        """Adds one or more messages to the scene history.
+        
+        This function processes a list of messages, ensuring that only one
+        DirectorMessage from a specific source exists in the history. If a  new
+        DirectorMessage is added, any existing one from the same source  is removed.
+        Additionally, if a TimePassageMessage is encountered,  the time is advanced
+        accordingly. The messages are then added to  the history, and relevant signals
+        are sent to update the game loop  with the new messages.
+        
+        Args:
+            messages (list[SceneMessage]): A list of messages to be added
+        """
         if isinstance(messages, SceneMessage):
             messages = [messages]
 
@@ -507,8 +539,13 @@ class Scene(Emitter):
             )
 
     def pop_message(self, message: SceneMessage | int) -> bool:
-        """
-        Removes the last message from the history that matches the given message
+        """Removes the last message from the history that matches the given message.
+        
+        This function checks the type of the provided message. If it is an instance of
+        SceneMessage, it attempts to remove it from the history. If the message is an
+        integer, it first finds the corresponding SceneMessage and then removes it.  If
+        the message cannot be found, it returns False. An invalid message type raises
+        a ValueError.
         """
         if isinstance(message, SceneMessage):
             try:
@@ -582,8 +619,14 @@ class Scene(Emitter):
             self.history.remove(message)
 
     def find_message(self, typ: str, max_iterations: int = 100, **filters):
-        """
-        Finds the last message in the history that matches the given typ and source
+        """def find_message(self, typ: str, max_iterations: int = 100, **filters):
+        
+        Finds the last message in the history that matches the given typ and source.
+        This function iterates through the message history in reverse order,  checking
+        each message's type against the specified typ. It also applies  any additional
+        filters provided as keyword arguments. The iteration stops  if the maximum
+        number of iterations is reached, returning None if no  matching message is
+        found.
         """
         iterations = 0
         for idx in range(len(self.history) - 1, -1, -1):
@@ -603,26 +646,20 @@ class Scene(Emitter):
             return self.history[idx]
 
     def message_index(self, message_id: int) -> int:
-        """
-        Returns the index of the given message in the history
-        """
+        """Returns the index of the given message in the history."""
         for idx in range(len(self.history) - 1, -1, -1):
             if self.history[idx].id == message_id:
                 return idx
         return -1
 
     def get_message(self, message_id: int) -> SceneMessage:
-        """
-        Returns the message in the history with the given id
-        """
+        """Retrieve the message from history by its ID."""
         for idx in range(len(self.history) - 1, -1, -1):
             if self.history[idx].id == message_id:
                 return self.history[idx]
 
     def last_player_message(self) -> str:
-        """
-        Returns the last message from the player
-        """
+        """Returns the last message from the player."""
         for idx in range(len(self.history) - 1, -1, -1):
             if isinstance(self.history[idx], CharacterMessage):
                 if self.history[idx].source == "player":
@@ -637,19 +674,28 @@ class Scene(Emitter):
         on_iterate: Callable = None,
         **filters,
     ) -> SceneMessage | None:
-        """
-        Returns the last message of the given type and source
 
-        Arguments:
-        - typ: str | list[str] - the type of message to find
-        - source: str - the source of the message
-        - max_iterations: int - the maximum number of iterations to search for the message
-        - stop_on_time_passage: bool - if True, the search will stop when a TimePassageMessage is found
-        - on_iterate: Callable - a function to call on each iteration of the search
-        Keyword Arguments:
-        Any additional keyword arguments will be used to filter the messages against their attributes
+        """Return the last message of the specified type and source from the history.
+        
+        This function iterates through the message history in reverse order, checking
+        each message against the provided type and source. It allows for a maximum
+        number of iterations and can stop early if a TimePassageMessage is encountered.
+        Additional filters can be applied to refine the search based on message
+        attributes.
+        
+        Args:
+            typ (str | list[str]): The type of message to find.
+            source (str?): The source of the message.
+            max_iterations (int?): The maximum number of iterations to search for the message.
+            stop_on_time_passage (bool?): If True, the search will stop when a TimePassageMessage is found.
+            on_iterate (Callable?): A function to call on each iteration of the search.
+            **filters: Any additional keyword arguments will be used to filter the messages against
+                their attributes.
+        
+        Returns:
+            SceneMessage | None: The last message matching the criteria, or None if not
+                found.
         """
-
         if not isinstance(typ, list):
             typ = [typ]
 
@@ -692,10 +738,27 @@ class Scene(Emitter):
         stop_on_time_passage: bool = False,
         start_idx: int | None = None,
     ):
-        """
-        Finds all messages in the history that match the given typ and source
-        """
 
+        """Collect messages from history that match specified criteria.
+        
+        This function retrieves messages from the history based on the provided `typ`
+        and `source` parameters. It iterates through the history in reverse order,
+        collecting messages that meet the criteria until it reaches the specified
+        limits of `max_iterations` and `max_messages`. The function also has the option
+        to stop collecting messages upon encountering a `TimePassageMessage` if
+        `stop_on_time_passage` is set to True.
+        
+        Args:
+            typ (str | list[str]?): The type(s) of messages to collect. Defaults to None.
+            source (str?): The source of the messages to collect. Defaults to None.
+            max_iterations (int?): The maximum number of iterations to perform. Defaults to 100.
+            max_messages (int | None?): The maximum number of messages to collect. Defaults to None.
+            stop_on_time_passage (bool?): Whether to stop collecting on time passage messages. Defaults to False.
+            start_idx (int | None?): The index to start collecting messages from. Defaults to None.
+        
+        Returns:
+            list: A list of messages that match the specified criteria.
+        """
         if typ and not isinstance(typ, list):
             typ = [typ]
 
@@ -731,10 +794,27 @@ class Scene(Emitter):
         start: int = None,
         as_format: str = "movie_script",
     ) -> str:
-        """
-        Returns a snapshot of the scene history
-        """
 
+        """Return a snapshot of the scene history.
+        
+        This function retrieves a specified number of recent messages from the scene
+        history, optionally ignoring certain message types. It processes the `ignore`
+        list to ensure it contains valid message types, and then collects the relevant
+        messages from the history based on the provided `lines` and `start` parameters.
+        The collected messages are formatted according to the specified `as_format`.
+        
+        Args:
+            lines (int?): The number of recent messages to retrieve. Defaults to 3.
+            ignore (list[str | SceneMessage]?): A list of message types to ignore. Defaults to None.
+            start (int?): The index from which to start collecting messages. Defaults to None.
+            as_format (str?): The format in which to return the messages. Defaults to "movie_script".
+        
+        Returns:
+            str: A formatted string containing the collected messages.
+        
+        Raises:
+            ValueError: If the `ignore` list contains invalid types.
+        """
         if not ignore:
             ignore = [
                 ReinforcementMessage,
@@ -839,13 +919,15 @@ class Scene(Emitter):
     async def remove_character(
         self, character: Character, purge_from_memory: bool = True
     ):
-        """
-        Remove a character from the scene
 
-        Class remove_actor if the character is active
-        otherwise remove from inactive_characters.
+        """Remove a character from the scene.
+        
+        This function checks if the specified character is active among the  current
+        actors. If found, it removes the actor associated with that  character. If the
+        character is inactive, it deletes the character  from the inactive_characters
+        dictionary. Additionally, if  purge_from_memory is set to True, it purges the
+        character from  memory.
         """
-
         for actor in self.actors:
             if actor.character == character:
                 await self.remove_actor(actor)
@@ -868,10 +950,22 @@ class Scene(Emitter):
         actor.character = None
 
     def get_character(self, character_name: str, partial: bool = False):
-        """
-        Returns the character with the given name if it exists
-        """
 
+        """Retrieve a character object by name, with support for partial matches.
+        
+        This function checks if the provided character_name is valid and then attempts
+        to return the corresponding character object. It first checks for a special
+        case of the narrator, then looks in the inactive characters. If not found, it
+        iterates through the active actors, returning a match based on exact or partial
+        name comparisons.
+        
+        Args:
+            character_name (str): The name of the character to retrieve.
+            partial (bool): A flag indicating whether to allow partial name matches.
+        
+        Returns:
+            Character: The character object that matches the given name or None if not found.
+        """
         if not character_name:
             return
 
@@ -904,13 +998,12 @@ class Scene(Emitter):
                 yield actor.character
 
     def num_npc_characters(self) -> int:
+        """Return the number of NPC characters."""
         return len(list(self.get_npc_characters()))
 
     def parse_character_from_line(self, line: str) -> Character:
-        """
-        Parse a character from a line of text
-        """
 
+        """Parse a character from a line of text."""
         for actor in self.actors:
             if actor.character.name.lower() in line.lower():
                 return actor.character
@@ -918,10 +1011,16 @@ class Scene(Emitter):
     def parse_characters_from_text(
         self, text: str, exclude_active: bool = False
     ) -> list[Character]:
-        """
-        Parse characters from a block of text
-        """
 
+        """Parse characters from a block of text.
+        
+        This function processes a given text to identify and extract characters  based
+        on their active or inactive status. It first converts the text to  lowercase
+        and uses regular expressions to match whole words for active  characters if
+        `exclude_active` is set to False. It then checks for  inactive characters and
+        appends them to the list. Finally, the function  returns a sorted list of
+        characters based on the length of their names.
+        """
         characters = []
         text = condensed(text.lower())
 
@@ -948,11 +1047,7 @@ class Scene(Emitter):
             yield actor.character
 
     def set_description(self, description: str):
-        """
-        Sets the description of the scene
-
-        Overview of the scenario.
-        """
+        """Sets the description of the scene."""
         self.description = description
 
     def get_intro(self, intro: str = None) -> str:
@@ -987,11 +1082,15 @@ class Scene(Emitter):
         return count_tokens(self.history)
 
     def count_messages(self, message_type: str = None, source: str = None) -> int:
-        """
-        Counts the number of messages in the history that match the given message_type and source
-        If no message_type or source is given, will return the total number of messages in the history
-        """
 
+        """Counts the number of messages in the history based on specified criteria.
+        
+        This function iterates through the `self.history` list and counts messages that
+        match the given `message_type` and `source`. If no `message_type` or `source`
+        is provided, it returns the total count of messages in the history. The
+        function  utilizes conditional checks to filter messages based on the provided
+        parameters.
+        """
         count = 0
 
         for message in self.history:
@@ -1008,6 +1107,29 @@ class Scene(Emitter):
         return count
 
     def context_history(self, budget: int = 8192, **kwargs):
+        """Generate context and dialogue history based on specified parameters.
+        
+        This function constructs a history of context and dialogue by processing
+        archived and layered history entries. It manages the budget for context and
+        dialogue separately, ensuring that the total token count does not exceed
+        specified limits. The function also handles various conditions such as keeping
+        director messages, context investigations, and chapter labeling, while logging
+        warnings for potential issues with the history length.
+        
+        Args:
+            budget (int): The budget for token count, default is 8192.
+            **kwargs: Additional parameters to customize the behavior of the function, including:
+                - keep_director (bool): Whether to retain director messages.
+                - keep_context_investigation (bool): Whether to retain context investigation
+                messages.
+                - show_hidden (bool): Whether to include hidden messages.
+                - include_reinforcements (bool): Whether to include reinforcement messages.
+                - assured_dialogue_num (int): Minimum number of dialogue messages to assure.
+                - chapter_labels (bool): Whether to include chapter labels in the output.
+        
+        Returns:
+            list: A combined list of context and dialogue history as strings.
+        """
         parts_context = []
         parts_dialogue = []
 
@@ -1252,13 +1374,22 @@ class Scene(Emitter):
                 break
 
     def can_auto_save(self):
-        """
-        A scene can be autosaved if it has a filename set and is not immutable_save
-        """
 
+        """Check if the scene can be autosaved."""
         return self.filename and not self.immutable_save
 
     def emit_status(self, restored: bool = False):
+        """Emit the current status of the scene.
+        
+        This function gathers various attributes related to the scene, including
+        player character information, filenames, project details, and game state.  It
+        then emits a structured status message containing this data. The  function also
+        logs the scene status for debugging purposes, providing  insights into the
+        current scene's time and saved state.
+        
+        Args:
+            restored (bool): Indicates whether the scene has been restored.
+        """
         player_character = self.get_player_character()
         emit(
             "scene_status",
@@ -1319,9 +1450,7 @@ class Scene(Emitter):
         )
 
     def set_environment(self, environment: str):
-        """
-        Set the environment of the scene
-        """
+        """Set the environment of the scene."""
         self.environment = environment
         self.emit_status()
 
@@ -1333,9 +1462,7 @@ class Scene(Emitter):
         self.emit_status()
 
     def advance_time(self, ts: str):
-        """
-        Accepts an iso6801 duration string and advances the scene's world state by that amount
-        """
+        """Advances the scene's world state by the given iso6801 duration string."""
         log.debug(
             "advance_time",
             ts=ts,
@@ -1349,11 +1476,16 @@ class Scene(Emitter):
         )
 
     def sync_time(self):
-        """
-        Loops through self.history looking for TimePassageMessage and will
-        advance the world state by the amount of time passed for each
-        """
         # reset time
+        """Synchronizes the world state based on time passage messages.
+        
+        This function resets the time to "PT0S" and checks the  archived history for
+        the most recent timestamp to establish  a baseline. It then iterates through
+        the current history  starting from the end, advancing the world state for each
+        TimePassageMessage encountered. Additionally, it logs the  current timestamp
+        for debugging purposes. Future adjustments  to the archived history timestamps
+        may be necessary.
+        """
         self.ts = "PT0S"
 
         # archived history (if "ts" is set) should provide the base line
@@ -1479,19 +1611,26 @@ class Scene(Emitter):
         return ts
 
     async def load_active_pins(self):
-        """
-        Loads active pins from the world state manager
-        """
 
+        """Loads active pins from the world state manager."""
         _active_pins = await self.world_state_manager.get_pins(active=True)
         self.active_pins = list(_active_pins.pins.values())
 
     async def ensure_memory_db(self):
+        """Ensure the memory database is set up if not already initialized."""
         memory = get_agent("memory")
         if not memory.db:
             await memory.set_db()
 
     async def emit_history(self):
+        """Emit the game history and introduce the main character to NPCs.
+        
+        This function clears the screen and introduces the main character to  all non-
+        player characters (NPCs) that require it. It retrieves the  introductory
+        message using the `get_intro` method and sends it to  the narrator. Finally, it
+        emits the history messages, processing  each message to determine if it is
+        associated with a character,  and emits the appropriate type and content.
+        """
         emit("clear_screen", "")
         # this is mostly to support character cards
         # we introduce the main character to all such characters, replacing
@@ -1513,8 +1652,14 @@ class Scene(Emitter):
             emit(message.typ, message, character=character)
 
     async def start(self):
-        """
-        Start the scene
+        """Start the scene.
+        
+        This asynchronous function initializes the scene by ensuring the memory
+        database is ready and loading active pins.  It then enters a loop where it
+        emits the current world state and processes the scene based on the environment
+        type.  Depending on whether the environment is "creative" or not, it loads the
+        appropriate node graph and initializes the necessary packages,  subsequently
+        running the corresponding loop until an exit or reset condition is met.
         """
         await self.ensure_memory_db()
         await self.load_active_pins()
@@ -1605,6 +1750,18 @@ class Scene(Emitter):
                 emit("system", status="error", message=f"Unhandled Error: {e}")
 
     async def _run_creative_loop(self, init: bool = True):
+        """Runs the creative loop for the node graph.
+        
+        This function initializes the node graph state and enters a loop that
+        continues executing the creative node graph as long as the scene is  set to
+        continue and the loop is active. It handles various exceptions  that may arise
+        during execution, logging errors and emitting system  messages as necessary.
+        The loop will terminate when the scene is no  longer set to continue or if the
+        active state changes.
+        
+        Args:
+            init (bool): A flag indicating whether to initialize the loop.
+        """
         await self.emit_history()
 
         self.nodegraph_state = state = GraphState()
@@ -1639,6 +1796,7 @@ class Scene(Emitter):
         return
 
     def set_new_memory_session_id(self):
+        """Sets a new memory session ID and logs the change."""
         self.saved_memory_session_id = self.memory_session_id
         self.memory_session_id = str(uuid.uuid4())[:10]
         log.debug(
@@ -1735,6 +1893,7 @@ class Scene(Emitter):
             json.dump(serialized, f, indent=2, cls=save.SceneEncoder)
 
     async def add_to_recent_scenes(self):
+        """Add the current scene to the recent scenes list."""
         log.debug("add_to_recent_scenes", filename=self.filename)
         config = get_config()
         config.recent_scenes.push(self)
@@ -1762,6 +1921,7 @@ class Scene(Emitter):
 
     def reset(self):
         # remove messages
+        """Resets the history and world state."""
         self.history = []
 
         # clear out archived history, but keep pre-established history
@@ -1774,12 +1934,14 @@ class Scene(Emitter):
         self.filename = ""
 
     async def remove_all_actors(self):
+        """Remove all actors and reset their characters to None."""
         for actor in self.actors:
             actor.character = None
 
         self.actors = []
 
     async def reset_memory(self):
+        """Resets the memory session and commits changes."""
         memory_agent = get_agent("memory")
         memory_agent.close_db(self)
         self.memory_id = str(uuid.uuid4())[:10]
@@ -1828,11 +1990,13 @@ class Scene(Emitter):
             self.log.error("restore", error=e, traceback=traceback.format_exc())
 
     def sync_restore(self, *args, **kwargs):
+        """Synchronously restore using the event loop."""
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self.restore())
 
     @property
     def serialize(self) -> dict:
+        """Serialize the scene into a dictionary format."""
         scene = self
         return {
             "description": scene.description,
@@ -1869,12 +2033,14 @@ class Scene(Emitter):
 
     @property
     def json(self):
+        """Return the serialized JSON representation of the object."""
         return json.dumps(self.serialize, indent=2, cls=save.SceneEncoder)
 
     def interrupt(self):
         self.cancel_requested = True
 
     def continue_actions(self):
+        """Handles cancellation of actions if requested."""
         if self.cancel_requested:
             self.cancel_requested = False
             raise GenerationCancelled("action cancelled")

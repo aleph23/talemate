@@ -191,10 +191,12 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
 
     @property
     def scene(self):
+        """Get the current scene from the websocket handler."""
         return self.websocket_handler.scene
 
     @property
     def world_state_manager(self):
+        """Returns an instance of WorldStateManager for the current scene."""
         return WorldStateManager(self.scene)
 
     def __init__(self, websocket_handler):
@@ -211,6 +213,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         )
 
     async def handle_get_character_details(self, data):
+        """Handles the retrieval of character details and sends them via websocket."""
         character_details = await self.world_state_manager.get_character_details(
             data["name"]
         )
@@ -228,6 +231,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         )
 
     async def handle_get_world(self, data):
+        """Handles the retrieval of the world state."""
         world = await self.world_state_manager.get_world()
         self.websocket_handler.queue_put(
             {
@@ -238,6 +242,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         )
 
     async def handle_get_pins(self, data):
+        """Handles the retrieval of pins from the world state manager."""
         context_pins = await self.world_state_manager.get_pins()
         self.websocket_handler.queue_put(
             {
@@ -248,6 +253,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         )
 
     async def handle_get_templates(self, data):
+        """Handles the retrieval and queuing of templates."""
         templates = await self.world_state_manager.get_templates()
         self.websocket_handler.queue_put(
             {
@@ -261,6 +267,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         )
 
     async def handle_update_character_color(self, data):
+        """Handles the update of a character's color."""
         payload = UpdateCharacterColorPayload(**data)
 
         await self.world_state_manager.update_character_color(
@@ -281,6 +288,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         self.scene.emit_status()
 
     async def handle_update_character_attribute(self, data):
+        """Handles the update of a character's attribute."""
         payload = UpdateCharacterAttributePayload(**data)
 
         await self.world_state_manager.update_character_attribute(
@@ -301,6 +309,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_update_character_description(self, data):
+        """Updates the character description and signals the operation completion."""
         payload = UpdateCharacterAttributePayload(**data)
 
         await self.world_state_manager.update_character_description(
@@ -320,6 +329,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_update_character_detail(self, data):
+        """Handles the update of character details and notifies the websocket."""
         payload = UpdateCharacterDetailPayload(**data)
 
         await self.world_state_manager.update_character_detail(
@@ -339,6 +349,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_set_character_detail_reinforcement(self, data):
+        """Handles setting character detail reinforcement in the world state."""
         payload = SetCharacterDetailReinforcementPayload(**data)
 
         await self.world_state_manager.add_detail_reinforcement(
@@ -390,6 +401,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_delete_character_detail_reinforcement(self, data):
+        """Handles the deletion of character detail reinforcement."""
         payload = CharacterDetailReinforcementPayload(**data)
 
         await self.world_state_manager.delete_detail_reinforcement(
@@ -409,6 +421,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_update_character_actor(self, data):
+        """Handles the update of a character actor in the world state."""
         payload = CharacterActorPayload(**data)
 
         await self.world_state_manager.update_character_actor(
@@ -430,6 +443,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_save_world_entry(self, data):
+        """Handles saving a world entry and updating the state."""
         payload = SaveWorldEntryPayload(**data)
 
         log.debug(
@@ -454,6 +468,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         self.scene.world_state.emit()
 
     async def handle_delete_world_entry(self, data):
+        """Handles the deletion of a world entry."""
         payload = DeleteWorldEntryPayload(**data)
 
         log.debug("Delete world entry", id=payload.id)
@@ -475,6 +490,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         self.scene.emit_status()
 
     async def handle_set_world_state_reinforcement(self, data):
+        """Handles setting the world state reinforcement."""
         payload = SetWorldEntryReinforcementPayload(**data)
 
         log.debug(
@@ -510,6 +526,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_run_world_state_reinforcement(self, data):
+        """Handles the reinforcement of the world state based on provided data."""
         payload = WorldEntryReinforcementPayload(**data)
 
         await self.world_state_manager.run_detail_reinforcement(
@@ -560,6 +577,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_query_context_db(self, data):
+        """Handles a query to the context database and sends the result."""
         payload = QueryContextDBPayload(**data)
 
         log.debug("Query context db", query=payload.query, meta=payload.meta)
@@ -579,6 +597,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_update_context_db(self, data):
+        """Handles the update of the context database."""
         payload = UpdateContextDBPayload(**data)
 
         log.debug(
@@ -645,6 +664,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         self.scene.emit_status()
 
     async def handle_remove_pin(self, data):
+        """Handles the removal of a pin based on the provided data."""
         payload = RemovePinPayload(**data)
 
         log.debug("Remove pin", entry_id=payload.entry_id)
@@ -665,6 +685,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         self.scene.emit_status()
 
     async def handle_apply_template(self, data):
+        """Applies a world state template and updates the websocket handler."""
         payload = ApplyWorldStateTemplatePayload(**data)
 
         log.debug("Apply world state template", payload=payload)
@@ -708,6 +729,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_delete_template(self, data):
+        """Handles the deletion of a world state template."""
         payload = DeleteWorldStateTemplatePayload(**data)
         template = payload.template
 
@@ -731,11 +753,13 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_apply_templates(self, data):
+        """Applies world state templates and manages their application status."""
         payload = ApplyWorldStateTemplatesPayload(**data)
 
         log.debug("Applying world state templates", templates=payload.templates)
 
         def callback_done(template, result, last_template: bool):
+            """Handles the completion of a template application."""
             self.websocket_handler.queue_put(
                 {
                     "type": "world_state_manager",
@@ -748,6 +772,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
             )
 
         def callback_start(template, last_template: bool):
+            """Sends a template applying action to the websocket handler."""
             self.websocket_handler.queue_put(
                 {
                     "type": "world_state_manager",
@@ -780,6 +805,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_save_template_group(self, data):
+        """Handles saving a template group and notifying clients."""
         payload = SaveWorldStateTemplateGroupPayload(**data)
         group = payload.group
         log.debug("Save template group", group=group)
@@ -817,6 +843,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_generate_character_dialogue_instructions(self, data):
+        """Generates dialogue instructions for a character."""
         payload = SelectiveCharacterPayload(**data)
 
         log.debug("Generate character dialogue instructions", name=payload.name)
@@ -850,6 +877,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         self.scene.emit_status()
 
     async def handle_delete_character(self, data):
+        """Handles the deletion of a character from the scene."""
         payload = SelectiveCharacterPayload(**data)
         character = self.scene.get_character(payload.name)
 
@@ -896,6 +924,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         self.scene.emit_status()
 
     async def handle_deactivate_character(self, data):
+        """Deactivates a character based on the provided data."""
         payload = SelectiveCharacterPayload(**data)
         character = self.scene.get_character(payload.name)
 
@@ -919,6 +948,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         self.scene.emit_status()
 
     async def handle_create_character(self, data):
+        """Creates a character based on the provided data."""
         payload = CreateCharacterPayload(**data)
 
         try:
@@ -955,6 +985,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         self.scene.emit_status()
 
     async def handle_update_scene_outline(self, data):
+        """Handles the update of the scene outline."""
         payload = SceneOutlinePayload(**data)
 
         await self.world_state_manager.update_scene_outline(**payload.model_dump())
@@ -972,6 +1003,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.scene.emit_history()
 
     async def handle_update_scene_settings(self, data):
+        """Handles the update of scene settings."""
         payload = SceneSettingsPayload(**data)
 
         await self.world_state_manager.update_scene_settings(**payload.model_dump())
@@ -987,6 +1019,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done(allow_auto_save=False)
 
     async def handle_export_scene(self, data):
+        """Handles the export of a scene based on the provided data."""
         payload = ExportOptions(**data)
         scene_data = await export(self.scene, payload)
 
@@ -1012,12 +1045,14 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         await self.signal_operation_done()
 
     async def handle_restore_scene(self, data):
+        """Restores the scene and emits the current world state."""
         await self.scene.restore()
         await self.signal_operation_done()
         await self.scene.emit_history()
         self.scene.world_state.emit()
 
     async def handle_save_scene(self, data):
+        """Handles saving the scene with the provided data."""
         payload = SaveScenePayload(**data)
 
         log.debug("Save scene", copy=payload.save_as, project_name=payload.project_name)
@@ -1033,10 +1068,8 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
     # Suggestions
 
     async def handle_request_suggestions(self, data):
-        """
-        Request current suggestions from the world state.
-        """
 
+        """Request current suggestions from the world state."""
         world_state_dict = self.scene.world_state.model_dump()
         suggestions = world_state_dict.get("suggestions", [])
         self.websocket_handler.queue_put(
@@ -1065,10 +1098,8 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         )
 
     async def handle_generate_suggestions(self, data):
-        """
-        Generate's suggestions for character development.
-        """
 
+        """Generates suggestions for character development."""
         world_state = get_agent("world_state")
         world_state_manager: WorldStateManager = self.scene.world_state_manager
         payload = GenerateSuggestionPayload(**data)
@@ -1076,6 +1107,7 @@ class WorldStateManagerPlugin(SceneIntentMixin, HistoryMixin, CharacterMixin, Pl
         log.debug("Generate suggestions", payload=payload)
 
         async def send_suggestion(call: focal.Call):
+            """Sends a suggestion to the world state manager."""
             await world_state_manager.add_suggestion(
                 Suggestion(
                     name=payload.name,

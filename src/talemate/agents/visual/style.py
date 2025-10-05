@@ -26,12 +26,14 @@ class Style(pydantic.BaseModel):
 
     @property
     def negative_prompt(self):
+        """Return a comma-separated string of negative keywords."""
         return ", ".join(self.negative_keywords)
 
     def __str__(self):
         return f"POSITIVE: {self.positive_prompt}\nNEGATIVE: {self.negative_prompt}"
 
     def load(self, prompt: str, negative_prompt: str = ""):
+        """Load keywords from the given prompt and negative prompt."""
         self.keywords = prompt.split(", ")
         self.negative_keywords = negative_prompt.split(", ")
 
@@ -48,6 +50,17 @@ class Style(pydantic.BaseModel):
         return self
 
     def prepend(self, *styles):
+        """Prepend keywords and negative keywords from styles.
+        
+        This method iterates over the provided styles and adds their keywords  and
+        negative keywords to the instance's keyword lists. It ensures that  only unique
+        keywords are added by checking against existing keywords  before insertion. The
+        insertion is done in reverse order to maintain  the original order of keywords
+        in the styles.
+        
+        Args:
+            *styles: Variable length argument list of style objects containing
+        """
         for style in styles:
             for idx in range(len(style.keywords) - 1, -1, -1):
                 kw = style.keywords[idx]
@@ -62,6 +75,18 @@ class Style(pydantic.BaseModel):
         return self
 
     def append(self, *styles):
+        """Append unique keywords from styles to the instance.
+        
+        This method iterates over the provided styles and appends unique keywords and
+        negative keywords to the instance's respective lists. It checks for the
+        presence of each keyword before appending to ensure that duplicates are not
+        added. This helps maintain the integrity of the keywords and negative keywords
+        associated with the instance.
+        
+        Args:
+            styles: A variable number of style objects containing keywords
+                and negative keywords to be appended.
+        """
         for style in styles:
             for kw in style.keywords:
                 if kw not in self.keywords:
@@ -74,6 +99,7 @@ class Style(pydantic.BaseModel):
         return self
 
     def copy(self):
+        """Create a copy of the Style object."""
         return Style(
             keywords=self.keywords.copy(),
             negative_keywords=self.negative_keywords.copy(),

@@ -33,6 +33,7 @@ class PackageManagerPlugin(Plugin):
     router = "package_manager"
 
     def connect(self):
+        """Establish a connection."""
         pass
 
     def disconnect(self):

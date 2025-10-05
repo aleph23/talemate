@@ -41,6 +41,7 @@ class AgentNode(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
         return NodeStyle(
             node_color="#392c34",
             title_color="#572e44",
@@ -49,9 +50,11 @@ class AgentNode(Node):
 
     @property
     def agent(self):
+        """Retrieve the agent based on the agent name."""
         return get_agent(self._agent_name)
 
     async def get_agent(self, agent_name: str):
+        """Retrieve an agent by its name."""
         return get_agent(agent_name)
 
 
@@ -66,6 +69,14 @@ class AgentSettingsNode(Node):
     _agent_name: ClassVar[str | None] = None
 
     def setup(self):
+        """Sets up the agent and its associated outputs.
+        
+        This method retrieves the agent class based on the provided  _agent_name. If
+        the agent class is not found, it raises an  InputValueError. It then
+        initializes the agent's actions and  adds the corresponding outputs for each
+        action and its  configurations, if available. Each output is registered with
+        the appropriate socket type.
+        """
         agent_cls = get_agent_class(self._agent_name)
 
         if not agent_cls:
@@ -87,6 +98,15 @@ class AgentSettingsNode(Node):
                 self.add_output(f"{action_name}_{config_name}", socket_type=config.type)
 
     async def run(self, state: GraphState):
+        """Runs the agent and collects its configuration state.
+        
+        This asynchronous function retrieves the agent specified by the  _agent_name
+        attribute. It checks if the agent exists and raises an  InputValueError if not.
+        The function then gathers the agent's  enabled status and iterates through its
+        actions and their  configurations, storing relevant values in the outputs
+        dictionary  before setting the output values using the set_output_values
+        method.
+        """
         agent = get_agent(self._agent_name)
 
         if not agent:
@@ -151,6 +171,8 @@ class ToggleAgentAction(Node):
         )
 
     def setup(self):
+        """Sets up input and output properties for the component."""
+        """Sets up inputs, outputs, and properties for the component."""
         self.add_input("state")
         self.add_input("agent", socket_type="str,agent", optional=True)
         self.add_input("action_name", socket_type="str", optional=True)
@@ -165,6 +187,7 @@ class ToggleAgentAction(Node):
         self.add_output("enabled", socket_type="bool")
 
     async def run(self, state: GraphState):
+        """Executes an action for a specified agent in the given state."""
         agent = self.get_input_value("agent")
         action_name = self.get_input_value("action_name")
         enabled = self.get_input_value("enabled")
@@ -227,6 +250,7 @@ class CallAgentFunction(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes input and output properties for the agent function."""
         self.add_input("agent", socket_type="str,agent")
         self.add_input("function_name", socket_type="str")
         self.add_input("arguments", socket_type="dict")
@@ -238,6 +262,24 @@ class CallAgentFunction(Node):
         self.add_output("result", socket_type="any")
 
     async def run(self, state: GraphState):
+        """Execute a function on a specified agent.
+        
+        This method retrieves the agent, function name, and arguments from the input
+        values. It checks if the agent is a string and resolves it to an agent object.
+        The function is then retrieved from the agent, and if it is a coroutine, it is
+        awaited; otherwise, it is called directly. The result is logged if the
+        verbosity level is set to VERBOSE, and the output values are updated with the
+        result.
+        """
+        """Runs a specified function of an agent with given arguments.
+        
+        This asynchronous method retrieves the agent, function name, and arguments
+        from the input values. It checks if the agent is a string and resolves it to
+        an actual agent object. The function is then retrieved from the agent, and  if
+        it is a coroutine, it is awaited; otherwise, it is called directly.  Finally,
+        the result is logged if verbosity is set to verbose, and the output  values are
+        updated with the result.
+        """
         agent = self.get_input_value("agent")
         function_name = self.get_input_value("function_name")
         arguments = self.get_input_value("arguments")
@@ -294,6 +336,8 @@ class GetAgent(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
+        """Return the style of the node as a NodeStyle object."""
         return NodeStyle(
             node_color="#313150",
             title_color="#403f71",
@@ -305,10 +349,13 @@ class GetAgent(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes the agent properties and output."""
+        """Initialize agent properties and output."""
         self.set_property("agent_name", "")
         self.add_output("agent", socket_type="agent")
 
     async def run(self, state: GraphState):
+        """Executes the agent based on the provided GraphState."""
         agent_name = self.get_property("agent_name")
 
         if not agent_name:
@@ -349,11 +396,33 @@ class AgentStateManipulation(StateManipulation):
         )
 
     def setup(self):
+        """Sets up the agent input and property."""
+        """Sets up the agent input and property."""
         super().setup()
         self.add_input("agent", socket_type="str,agent")
         self.set_property("agent", UNRESOLVED)
 
     def get_state_container(self, state: GraphState):
+        """def get_state_container(self, state: GraphState):
+        Retrieve the state container for a given agent based on the scope.  This
+        function first determines the scope from the properties and retrieves the agent
+        based on the input value. If the agent is a string, it attempts to resolve it
+        to an Agent object. Depending on the scope, it either returns the agent's state
+        from the scene or dumps the context state. If the agent cannot be found or the
+        scope is unknown, it raises an InputValueError.
+        
+        Args:
+            state (GraphState): The state object associated with the graph."""
+        """def get_state_container(self, state: GraphState):
+        Retrieve the state container for a given agent based on the scope.  This
+        function first determines the scope from the properties and retrieves the agent
+        based on the input value. If the agent is a string, it attempts to resolve it
+        to an Agent object. Depending on the scope, it either returns the agent's state
+        from the scene or dumps the context state. If the agent cannot be found or the
+        scope is unknown, it raises an InputValueError.
+        
+        Args:
+            state (GraphState): The state object associated with the graph."""
         scope = self.get_property("scope")
         agent: Agent | str = self.get_input_value("agent")
 
@@ -388,6 +457,7 @@ class SetAgentState(AgentStateManipulation, ConditionalSetState):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
         return NodeStyle(
             title_color="#2e4657",
             icon="F06F4",  # download-network
@@ -458,6 +528,7 @@ class CounterAgentState(AgentStateManipulation, ConditionalCounterState):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
         return NodeStyle(
             title_color="#2e4657",
             icon="F0199",  # counter
@@ -494,6 +565,7 @@ class DynamicInstruction(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Sets up input and output sockets for the component."""
         self.add_input("header", socket_type="str", optional=True)
         self.add_input("content", socket_type="str", optional=True)
 
@@ -503,6 +575,7 @@ class DynamicInstruction(Node):
         self.add_output("dynamic_instruction", socket_type="dynamic_instruction")
 
     async def run(self, state: GraphState):
+        """Processes the input values and sets the output if valid."""
         header = self.normalized_input_value("header")
         content = self.normalized_input_value("content")
 

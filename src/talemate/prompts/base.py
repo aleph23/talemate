@@ -56,6 +56,7 @@ prepended_template_dirs = ContextVar("prepended_template_dirs", default=[])
 
 class PydanticJsonEncoder(json.JSONEncoder):
     def default(self, obj):
+        """Return the model dump of the object if available, else call the superclass method."""
         if hasattr(obj, "model_dump"):
             return obj.model_dump()
         return super().default(obj)
@@ -91,6 +92,7 @@ class register_sectioning_handler:
 
 
 def set_default_sectioning_handler(name):
+    """Sets the default sectioning handler if it exists."""
     if name not in SECTIONING_HANDLERS:
         raise ValueError(
             f"Sectioning handler {name} does not exist. Possible values are {list(SECTIONING_HANDLERS.keys())}"
@@ -101,6 +103,7 @@ def set_default_sectioning_handler(name):
 
 
 def validate_line(line):
+    """Check if a line is not a comment or end marker."""
     return (
         not line.strip().startswith("//")
         and not line.strip().startswith("/*")
@@ -139,10 +142,12 @@ class LoopedPrompt:
 
     @property
     def render_items(self):
+        """Return a string representation of generated items."""
         return "\n".join([f"{key}: {value}" for key, value in self.generated.items()])
 
     @property
     def next_item(self):
+        """Retrieve the next item from the list, skipping generated items."""
         item = self.items.pop(0)
         while self.generated.get(item):
             try:
@@ -164,6 +169,16 @@ class LoopedPrompt:
 
     @property
     def done(self):
+        """
+        Check if the current loop is complete.
+        
+        This property checks whether the loop has been initialized and  increments the
+        current loop count. If the loop count exceeds  the specified limit, a
+        ValueError is raised. It also logs the  current state of the loop, including
+        the current item and  generated keys. The function returns True if there are no
+        remaining items and the current item is in the generated  dictionary;
+        otherwise, it returns False.
+        """
         if not self._initialized:
             self._initialized = True
             return False
@@ -193,6 +208,15 @@ class LoopedPrompt:
         return item == self.current_item
 
     def update(self, value):
+        """
+        Update the current item with a new value.
+        
+        This method checks if the provided value is valid and updates the current item
+        in the generated dictionary. If the value is None or empty, or if there is no
+        current item, the method returns early. After updating, it attempts to remove
+        the current item from the items list and triggers the on_update callback if it
+        is set. Finally, it resets the current item to None.
+        """
         if value is None or not value.strip() or self._current_item is None:
             return
         self.generated[self._current_item] = self.validate_value(
@@ -211,6 +235,7 @@ class LoopedPrompt:
 
 class JoinableList(list):
     def join(self, separator: str = "\n"):
+        """Join elements with a specified separator."""
         return separator.join(self)
 
 
@@ -262,6 +287,7 @@ class Prompt:
     def get(cls, uid: str, vars: dict = None):
         # split uid into agent_type and prompt_name
 
+        """Retrieve a prompt instance based on the given uid."""
         try:
             agent_type, prompt_name = uid.split(".")
         except ValueError as exc:
@@ -280,6 +306,7 @@ class Prompt:
 
     @classmethod
     def from_text(cls, text: str, vars: dict = None):
+        """Create an instance from the given text and optional variables."""
         return cls(
             uid="",
             agent_type="",
@@ -304,12 +331,14 @@ class Prompt:
 
     @property
     def as_list(self):
+        """Return the prompt as a list of strings split by newlines."""
         if not self.prompt:
             return ""
         return self.prompt.split("\n")
 
     @property
     def config(self):
+        """Get the configuration, initializing it if necessary."""
         if not hasattr(self, "_config"):
             self._config = get_config()
         return self._config
@@ -319,6 +348,7 @@ class Prompt:
 
     def template_env(self):
         # Get the directory of this file
+        """Create a Jinja2 environment with template directories."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
 
         _prepended_template_dirs = prepended_template_dirs.get() or []
@@ -358,15 +388,16 @@ class Prompt:
     def render(self):
         """
         Render the prompt using jinja2.
-
-        This method uses the jinja2 library to render the prompt. It first creates a jinja2 environment with the
-        appropriate template paths. Then it loads the template corresponding to the prompt name. Finally, it renders
-        the template with the prompt variables.
-
-        Returns:
-            str: The rendered prompt.
+        
+        This method utilizes the jinja2 library to render a prompt by first creating a
+        jinja2 environment  with the necessary template paths. It prepares a context
+        dictionary with various global variables  and functions, then loads the
+        appropriate template based on the prompt name. Finally, it renders  the
+        template with the context variables and handles any potential errors during the
+        rendering process.  If a sectioning handler is specified, it applies that
+        handler to the rendered prompt. The method  also includes error logging and
+        emits system messages in case of rendering failures.
         """
-
         env = self.template_env()
 
         ctx = {
@@ -473,18 +504,14 @@ class Prompt:
         return self.prompt
 
     def render_second_pass(self, prompt_text: str):
+
+        # replace any {{ and }} as they are not from the scenario content
+        # and not meant to be rendered
         """
         Will find all {!{ and }!} occurances replace them with {{ and }} and
         then render the prompt again.
         """
-
-        # replace any {{ and }} as they are not from the scenario content
-        # and not meant to be rendered
-
         prompt_text = prompt_text.replace("{{", "__").replace("}}", "__")
-
-        # now replace {!{ and }!} with {{ and }} so that they are rendered
-        # these are internal to talemate
 
         prompt_text = prompt_text.replace("{!{", "{{").replace("}!}", "}}")
 
@@ -501,6 +528,7 @@ class Prompt:
 
     def render_template(self, uid, **kwargs) -> "Prompt":
         # copy self.vars and update with kwargs
+        """Render a template with updated variables."""
         vars = self.vars.copy()
         vars.update(kwargs)
         return Prompt.get(uid, vars=vars)
@@ -524,6 +552,7 @@ class Prompt:
             loop.update(result)
 
     def get_bullet_num(self):
+        """Retrieve and increment the bullet number."""
         _bullet_num = self.vars.get("bullet_num", 1)
         self.vars["bullet_num"] = _bullet_num + 1
         return _bullet_num
@@ -535,6 +564,7 @@ class Prompt:
         as_narrative: bool = False,
         as_question_answer: bool = True,
     ):
+        """Processes a query and returns a narration or a question-answer format."""
         loop = asyncio.get_event_loop()
         narrator = instance.get_agent("narrator")
         query = query.format(**self.vars)
@@ -565,6 +595,22 @@ class Prompt:
         as_question_answer: bool = True,
         short: bool = False,
     ):
+        """
+        Process a query against the provided text and return the result.
+        
+        This function formats the query using the instance variables and  processes the
+        text to either return a direct answer or a formatted  question-answer pair. It
+        utilizes the `world_state` agent to analyze  the text and generate responses
+        based on the specified parameters.  The response length can be adjusted based
+        on the `short` flag,  allowing for flexibility in the output.
+        
+        Args:
+            query (str): The query string to be processed.
+            text (str): The text to analyze against the query.
+            as_question_answer (bool?): Flag to determine output format.
+                Defaults to True.
+            short (bool?): Flag to specify response length. Defaults to False.
+        """
         loop = asyncio.get_event_loop()
         world_state = instance.get_agent("world_state")
         query = query.format(**self.vars)
@@ -592,11 +638,27 @@ class Prompt:
         )
 
     def query_text_eval(self, query: str, text: str):
+        """Evaluates a query against the provided text for a yes or no answer."""
         query = f"{query} Answer with a yes or no."
         response = self.query_text(query, text, as_question_answer=False, short=True)
         return response.strip().lower().startswith("y")
 
     def query_memory(self, query: str, as_question_answer: bool = True, **kwargs):
+        """
+        Query the memory and return the result.
+        
+        This function formats the provided query using the instance variables  and
+        interacts with the memory agent to retrieve answers. It can return  the result
+        as a question-answer format or as a direct answer based on  the
+        `as_question_answer` flag. If the `iterate` keyword argument is  set, it will
+        perform a multi-query operation for each line in the  query string.
+        
+        Args:
+            query (str): The query string to be processed.
+            as_question_answer (bool?): Flag to determine the output
+                format. Defaults to True.
+            **kwargs: Additional keyword arguments passed to the memory query.
+        """
         loop = asyncio.get_event_loop()
         memory = instance.get_agent("memory")
         query = query.format(**self.vars)
@@ -621,6 +683,14 @@ class Prompt:
             )
 
     def instruct_text(self, instruction: str, text: str, as_list: bool = False):
+        """
+        Processes an instruction with the given text and returns the response.
+        
+        Args:
+            instruction (str): The instruction to be processed.
+            text (str): The text to analyze.
+            as_list (bool?): If True, return the response as a list. Defaults to False.
+        """
         loop = asyncio.get_event_loop()
         world_state = instance.get_agent("world_state")
         instruction = instruction.format(**self.vars)
@@ -638,6 +708,7 @@ class Prompt:
             return response
 
     def retrieve_memories(self, lines: list[str], goal: str = None):
+        """Retrieve memories by analyzing provided text lines."""
         loop = asyncio.get_event_loop()
         world_state = instance.get_agent("world_state")
 
@@ -657,6 +728,7 @@ class Prompt:
             return ""
 
     def agent_action(self, agent_name: str, _action_name: str, **kwargs):
+        """Executes an action for a specified agent."""
         loop = asyncio.get_event_loop()
         agent = instance.get_agent(agent_name)
         action = getattr(agent, _action_name)
@@ -669,6 +741,7 @@ class Prompt:
             emit("status", status=status, message=message)
 
     def time_diff(self, iso8601_time: str):
+        """Calculate the time difference from the given ISO 8601 time."""
         scene = active_scene.get()
         if not iso8601_time:
             return ""
@@ -720,18 +793,16 @@ class Prompt:
 
             responses (list[str]): A list of responses.
         """
-
         response = random.choice(responses)
         return self.set_prepared_response(f"{prefix}{response}")
 
     def set_eval_response(self, empty: str = None):
         """
-        Set the prepared response for evaluation
-
+        Set the evaluation response and update counters if provided.
+        
         Args:
-            response (str): The prepared response.
+            empty (str?): The key to update in the counters.
         """
-
         if empty:
             self.eval_context.setdefault("counters", {})[empty] = 0
 
@@ -744,15 +815,26 @@ class Prompt:
     def set_data_response(
         self, initial_object: dict, instruction: str = "", cutoff: int = 3
     ):
-        """
-        Prepares for a data response in the client's preferred format (YAML or JSON)
-
-        Args:
-            initial_object (dict): The data structure to serialize
-            instruction (str): Optional instruction/schema comment
-            cutoff (int): Number of lines to trim from the end
-        """
         # Always use client data format if available
+        """Prepare a data response in the client's preferred format (YAML or JSON).
+        
+        This function determines the appropriate data format based on the client's
+        settings and serializes the provided `initial_object` accordingly. If the
+        format is YAML, it handles specific cases for lists and nested dictionaries to
+        ensure the response is concise. For JSON, it applies a similar trimming logic
+        and includes optional instructions as comments.
+        
+        Args:
+            initial_object (dict): The data structure to serialize.
+            instruction (str): Optional instruction/schema comment.
+            cutoff (int): Number of lines to trim from the end.
+        
+        Returns:
+            str: The prepared data response in the specified format.
+        
+        Raises:
+            ImportError: If PyYAML is required for YAML support but not installed.
+        """
         data_format_type = (
             getattr(self.client, "data_format", None) or self.data_format_type
         )
@@ -837,6 +919,7 @@ class Prompt:
     def set_question_eval(
         self, question: str, trigger: str, counter: str, weight: float = 1.0
     ):
+        """Sets a question evaluation in the context."""
         self.eval_context.setdefault("questions", [])
         self.eval_context.setdefault("counters", {})[counter] = 0
         self.eval_context["questions"].append((question, trigger, counter, weight))
@@ -845,6 +928,7 @@ class Prompt:
         return f"{num_questions}. {question}"
 
     def disable_dedupe(self):
+        """Disable deduplication functionality."""
         self.dedupe_enabled = False
         return ""
 
@@ -854,6 +938,11 @@ class Prompt:
     async def parse_yaml_response(self, response):
         """
         Parse a YAML response from the LLM.
+        
+        This function extracts YAML content from a given response string, which may
+        contain markdown code blocks. It checks for the presence of YAML code blocks
+        and handles various scenarios, including incomplete blocks. If the YAML parsing
+        fails, it logs the error and raises an LLMAccuracyError with relevant details.
         """
         if yaml is None:
             raise ImportError(
@@ -882,10 +971,8 @@ class Prompt:
             )
 
     async def parse_data_response(self, response):
-        """
-        Parse response based on configured data format
-        """
         # If json_response is True for backward compatibility, default to JSON
+        """Parse response based on the configured data format."""
         if self.data_format_type == "json":
             return await self.parse_json_response(response)
         elif self.data_format_type == "yaml":
@@ -895,6 +982,26 @@ class Prompt:
 
     async def parse_json_response(self, response, ai_fix: bool = True):
         # strip comments
+        """
+        Parse a JSON response, attempting to fix errors if necessary.
+        
+        This function processes a JSON response by first stripping comments and
+        handling specific formatting cases. It attempts to decode the JSON and, if that
+        fails, it sanitizes the response and tries to fix any faulty JSON structure. If
+        the initial parsing fails and AI fixing is enabled, it sends the response to an
+        AI client for correction. The function logs various stages of processing and
+        raises an LLMAccuracyError if parsing ultimately fails.
+        
+        Args:
+            response (str): The JSON response string to be parsed.
+            ai_fix (bool): A flag indicating whether to use AI to fix parsing errors.
+        
+        Returns:
+            dict: The parsed JSON response.
+        
+        Raises:
+            LLMAccuracyError: If the JSON response cannot be parsed after attempts to fix it.
+        """
         try:
             # if response starts with ```json and ends with ```
             # then remove those
@@ -957,6 +1064,17 @@ class Prompt:
                 )
 
     async def evaluate(self, response: str) -> Tuple[str, dict]:
+        """
+        async def evaluate(self, response: str) -> Tuple[str, dict]:
+        Evaluate the response against predefined questions.  This function processes
+        the provided response by parsing it as JSON  and comparing the answers to the
+        expected questions. It checks for  consistency in the number of questions and
+        answers, collects the  answers while handling potential errors, and evaluates
+        them based  on specific criteria defined in the evaluation context. The results
+        are logged and returned along with updated counters.
+        
+        Args:
+            response (str): The JSON response string to evaluate."""
         questions = self.eval_context["questions"]
         log.debug("evaluate", response=response)
 
@@ -1021,13 +1139,22 @@ class Prompt:
 
     async def send(self, client: Any, kind: str = "create"):
         """
-        Send the prompt to the client.
-
+        Send the prompt to the client and handle the response.
+        
+        This asynchronous function sends a prompt to the specified client and processes
+        the response based on the expected data format. It checks if the response needs
+        to be prepended with a prepared response and handles different formats such as
+        JSON and YAML. The function also evaluates the response if required and logs
+        the data response for debugging purposes.
+        
         Args:
             client (Any): The client to send the prompt to.
             kind (str): The kind of prompt to send.
+        
+        Returns:
+            Any: The processed response from the client, which may vary based on the evaluation
+                and data response settings.
         """
-
         self.client = client
 
         response = await client.send_prompt(
@@ -1087,9 +1214,8 @@ class Prompt:
         return response
 
     def poplines(self, num):
-        """
-        Pop the first n lines from the prompt.
-
+        """Pop the first n lines from the prompt.
+        
         Args:
             num (int): The number of lines to pop.
         """
@@ -1194,13 +1320,8 @@ def _prompt_sectioning(
 
 @register_sectioning_handler("bracket")
 def bracket_prompt_sectioning(prompt: Prompt) -> str:
-    """
-    Will loop through the prompt lines and find <|SECTION:{NAME}|> and <|CLOSE_SECTION|> tags
-    and replace them with a bracketed section.
 
-    Bracketed sections have both a beginning and end tag.
-    """
-
+    """Replaces <|SECTION:{NAME}|> and <|CLOSE_SECTION|> tags with bracketed sections."""
     return _prompt_sectioning(
         prompt,
         lambda section_name: f"[{section_name}]",
@@ -1211,6 +1332,7 @@ def bracket_prompt_sectioning(prompt: Prompt) -> str:
 
 @register_sectioning_handler("none")
 def none_prompt_sectioning(prompt: Prompt) -> str:
+    """Handles sectioning for a 'none' prompt."""
     return _prompt_sectioning(
         prompt,
         None,
@@ -1220,6 +1342,7 @@ def none_prompt_sectioning(prompt: Prompt) -> str:
 
 @register_sectioning_handler("titles")
 def titles_prompt_sectioning(prompt: Prompt) -> str:
+    """Formats the section titles in a prompt."""
     return _prompt_sectioning(
         prompt,
         lambda section_name: f"\n## {section_name.capitalize()}",
@@ -1229,6 +1352,7 @@ def titles_prompt_sectioning(prompt: Prompt) -> str:
 
 @register_sectioning_handler("html")
 def html_prompt_sectioning(prompt: Prompt) -> str:
+    """Wraps the prompt in HTML section tags."""
     return _prompt_sectioning(
         prompt,
         lambda section_name: f"<{section_name.capitalize().replace(' ', '')}>",

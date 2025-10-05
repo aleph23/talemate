@@ -32,6 +32,17 @@ class set_loading:
 
     def __call__(self, fn):
         async def wrapper(*args, **kwargs):
+            """async def wrapper(*args, **kwargs):
+            Wraps a function to manage its execution status.  This function checks if the
+            operation is busy and emits a status message accordingly.  It attempts to
+            execute the provided function `fn` with the given arguments. Depending on  the
+            success or failure of the execution, it emits different status messages. If the
+            operation is cancelled or an error occurs, it handles these cases by logging
+            the  appropriate messages and emitting error statuses.
+            
+            Args:
+                *args: Positional arguments to pass to the wrapped function.
+                **kwargs: Keyword arguments to pass to the wrapped function."""
             if self.set_busy:
                 status_data = {}
                 if self.cancellable:
@@ -61,6 +72,7 @@ class set_loading:
         if self.as_async:
 
             async def async_wrapper(*args, **kwargs):
+                """Wraps a coroutine in an asyncio task."""
                 return asyncio.create_task(wrapper(*args, **kwargs))
 
             return async_wrapper
@@ -92,6 +104,7 @@ class LoadingStatus:
         )
 
     def done(self, message: str = "", status: str = "idle"):
+        """Emit a status message if the current step is not zero."""
         if self.current_step == 0:
             return
 

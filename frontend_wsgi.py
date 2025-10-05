@@ -17,6 +17,7 @@ app.mount("/", StaticFiles(directory=dist_dir, html=True), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_root():
+    """Serve the root HTML page if it exists."""
     index_path = os.path.join(dist_dir, "index.html")
     if os.path.exists(index_path):
         with open(index_path, "r") as f:

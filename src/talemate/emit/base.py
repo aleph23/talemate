@@ -48,6 +48,15 @@ def emit(
     scene: Scene = None,
     **kwargs,
 ):
+    """Sends a message of a specified type.
+    
+    Args:
+        typ (str): The type of the message.
+        message (str?): The message content.
+        character (Character?): The character associated with the message.
+        scene (Scene?): The scene associated with the message.
+        **kwargs: Additional keyword arguments.
+    """
     if typ not in handlers:
         raise ValueError(f"Unknown message type: {typ}")
 
@@ -71,6 +80,7 @@ def emit(
 
 
 async def wait_for_input_yesno(message: str, default: str = "yes"):
+    """Wait for a yes or no input from the user."""
     return await wait_for_input(
         message,
         data={
@@ -91,9 +101,8 @@ async def wait_for_input(
     abort_condition: Callable = None,
     sleep_time: float = 0.1,
 ) -> str | dict:
-    """
-    Wait for input from the user.
 
+    """Wait for user input asynchronously.
     Arguments:
 
     - message: The message to display to the user.
@@ -106,6 +115,7 @@ async def wait_for_input(
     input_received = {"message": None}
 
     def input_receiver(emission: Emission):
+        """Receives input from an emission and stores it in a dictionary."""
         input_received["message"] = emission.message
         input_received["interaction"] = interaction.get()
 
@@ -152,6 +162,7 @@ async def wait_for_input(
 
 
 def abort_wait_for_input():
+    """Abort waiting for input by disconnecting all receivers."""
     for receiver in list(handlers["receive_input"].receivers):
         log.debug("aborting waiting for input", receiver=receiver)
         handlers["receive_input"].disconnect(receiver)
@@ -159,6 +170,7 @@ def abort_wait_for_input():
 
 class Receiver:
     def handle(self, emission: Emission):
+        """Handles the given emission based on its type."""
         fn = getattr(self, f"handle_{emission.typ}", None)
         if not fn:
             return False
@@ -166,10 +178,12 @@ class Receiver:
         return True
 
     def connect(self):
+        """Connects all handlers to the specified handle."""
         for typ in handlers:
             handlers[typ].connect(self.handle)
 
     def disconnect(self):
+        """Disconnects all handlers from the current handle."""
         for typ in handlers:
             handlers[typ].disconnect(self.handle)
 
@@ -178,22 +192,28 @@ class Emitter:
     emit_for_scene = None
 
     def setup_emitter(self, scene: Scene = None):
+        """Sets the emitter for the given scene."""
         self.emit_for_scene = scene
 
     def emit(self, typ: str, message: str, character: Character = None, **kwargs):
+        """Emit a message of a specified type."""
         emit(typ, message, character=character, scene=self.emit_for_scene, **kwargs)
 
     def system_message(self, message: str, **kwargs):
         self.emit("system", message, **kwargs)
 
     def narrator_message(self, message: str):
+        """Emit a narrator message."""
         self.emit("narrator", message)
 
     def character_message(self, message: str, character: Character):
+        """Emit a character message."""
         self.emit("character", message, character=character)
 
     def player_message(self, message: str, character: Character):
+        """Sends a message from a player character."""
         self.emit("player", message, character=character)
 
     def context_investigation_message(self, message: str):
+        """Emit a context investigation message."""
         self.emit("context_investigation", message)

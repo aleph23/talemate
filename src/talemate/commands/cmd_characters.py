@@ -27,6 +27,22 @@ class CmdDeactivateCharacter(TalemateCommand):
     label = "Character exit"
 
     async def run(self):
+        """Run the character deactivation process in the scene.
+        
+        This asynchronous function manages the deactivation of a character within the
+        scene. It retrieves the list of non-player characters (NPCs) and prompts the
+        user for a character name if not provided. The function checks the character's
+        presence and whether they are leaving, logging relevant information. If the
+        character is present and not leaving, it requests the user for the exit
+        direction and narrates the exit. Finally, it deactivates the character and
+        emits the status of the operation.
+        
+        Args:
+            self: The instance of the class containing the scene and arguments.
+        
+        Returns:
+            bool: Always returns True after processing the character deactivation.
+        """
         narrator = get_agent("narrator")
         world_state = get_agent("world_state")
         characters = list(

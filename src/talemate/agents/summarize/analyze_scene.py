@@ -73,6 +73,7 @@ class SceneAnalyzationMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Adds actions related to scene analysis to the provided actions dictionary."""
         actions["analyze_scene"] = AgentAction(
             enabled=False,
             container=True,
@@ -136,22 +137,27 @@ class SceneAnalyzationMixin:
 
     @property
     def analyze_scene(self) -> bool:
+        """Returns whether the analyze_scene action is enabled."""
         return self.actions["analyze_scene"].enabled
 
     @property
     def analysis_length(self) -> int:
+        """Get the analysis length from the configuration."""
         return int(self.actions["analyze_scene"].config["analysis_length"].value)
 
     @property
     def cache_analysis(self) -> bool:
+        """Returns the cache analysis configuration value."""
         return self.actions["analyze_scene"].config["cache_analysis"].value
 
     @property
     def deep_analysis(self) -> bool:
+        """Returns the deep analysis configuration value."""
         return self.actions["analyze_scene"].config["deep_analysis"].value
 
     @property
     def deep_analysis_max_context_investigations(self) -> int:
+        """Gets the maximum number of context investigations for deep analysis."""
         return (
             self.actions["analyze_scene"]
             .config["deep_analysis_max_context_investigations"]
@@ -160,10 +166,12 @@ class SceneAnalyzationMixin:
 
     @property
     def analyze_scene_for_conversation(self) -> bool:
+        """Returns whether the scene is configured for conversation."""
         return self.actions["analyze_scene"].config["for_conversation"].value
 
     @property
     def analyze_scene_for_narration(self) -> bool:
+        """Returns whether the scene is configured for narration."""
         return self.actions["analyze_scene"].config["for_narration"].value
 
     # signal connect
@@ -187,10 +195,21 @@ class SceneAnalyzationMixin:
         self,
         emission: ConversationAgentEmission | NarratorAgentEmission,
     ):
-        """
-        Injects instructions into the conversation.
-        """
 
+        """Injects instructions into the conversation based on the type of emission.
+        
+        The function first determines the type of emission, either as a conversation or
+        narration. It checks if scene analysis is enabled and handles context-related
+        conditions. If caching is enabled, it attempts to retrieve cached analysis;
+        otherwise, it analyzes the scene for the next action. Finally, it appends the
+        analysis as dynamic instructions to the emission.
+        
+        Args:
+            emission (ConversationAgentEmission | NarratorAgentEmission): The emission object containing context for the analysis.
+        
+        Raises:
+            ValueError: If the emission type is invalid.
+        """
         if isinstance(emission, ConversationAgentEmission):
             emission_type = "conversation"
         elif isinstance(emission, NarratorAgentEmission):
@@ -259,15 +278,14 @@ class SceneAnalyzationMixin:
     async def on_rag_build_sub_instruction(
         self, emission: "RagBuildSubInstructionEmission"
     ):
-        """
-        Injects the sub instruction into the analysis.
-        """
+        """Injects the sub instruction into the emission."""
         sub_instruction = await self.analyze_scene_rag_build_sub_instruction()
 
         if sub_instruction:
             emission.sub_instruction = sub_instruction
 
     async def on_editor_revision_analysis_before(self, emission: AgentTemplateEmission):
+        """Handles analysis before an editor revision."""
         last_analysis = self.get_scene_state("scene_analysis")
         if last_analysis:
             emission.dynamic_instructions.append(
@@ -277,10 +295,8 @@ class SceneAnalyzationMixin:
     # helpers
 
     async def get_cached_analysis(self, typ: str) -> str | None:
-        """
-        Returns the cached analysis for the given type.
-        """
 
+        """Returns the cached analysis for the specified type."""
         cached_analysis = self.get_scene_state(f"cached_analysis_{typ}")
 
         if not cached_analysis:
@@ -301,10 +317,8 @@ class SceneAnalyzationMixin:
         return None
 
     async def set_cached_analysis(self, typ: str, analysis: str):
-        """
-        Sets the cached analysis for the given type.
-        """
 
+        """Sets the cached analysis for the specified type."""
         fingerprint = self.context_fingerprint()
 
         self.set_scene_states(
@@ -317,10 +331,8 @@ class SceneAnalyzationMixin:
         )
 
     async def analyze_scene_sub_type(self, analysis_type: str) -> str:
-        """
-        Analyzes the active agent context to figure out the appropriate sub type
-        """
 
+        """Analyzes the active agent context to determine the appropriate sub type."""
         fn = getattr(self, f"analyze_scene_{analysis_type}_sub_type", None)
 
         if fn:
@@ -361,11 +373,19 @@ class SceneAnalyzationMixin:
         return "progress"
 
     async def analyze_scene_rag_build_sub_instruction(self):
-        """
-        Analyzes the active agent context to figure out the appropriate sub type
-        for rag build sub instruction.
-        """
 
+        """Analyze the active agent context to determine the appropriate sub type for rag
+        build sub instruction.
+        
+        This function retrieves the active agent context and evaluates its state to
+        generate a specific instruction based on various narrative elements. It checks
+        for the presence of queries, sensory narration, visual narration, character
+        entries, exits, and story progression to formulate a relevant response.
+        
+        Returns:
+            str: A string instruction based on the active agent context or an empty string if no
+                relevant context is found.
+        """
         active_agent_context = active_agent.get()
 
         if not active_agent_context:
@@ -420,13 +440,10 @@ class SceneAnalyzationMixin:
     async def analyze_scene_for_next_action(
         self, typ: str, character: "Character" = None, length: int = 1024
     ) -> str:
-        """
-        Analyzes the current scene progress and gives a suggestion for the next action.
-        taken by the given actor.
-        """
 
         # deep analysis is only available if the scene has a layered history
         # and context investigation is enabled
+        """Analyzes the current scene and suggests the next action for the actor."""
         deep_analysis = self.deep_analysis and self.context_investigation_available
         analysis_sub_type = await self.analyze_scene_sub_type(typ)
 

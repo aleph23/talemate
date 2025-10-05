@@ -90,6 +90,7 @@ class NodeEditorPlugin(Plugin):
     router = "node_editor"
 
     def connect(self):
+        """Connects signal handlers for node state and breakpoint events."""
         signals.get("nodes_node_state").connect(self.handle_node_state)
         signals.get("nodes_breakpoint").connect(self.handle_breakpoint)
 
@@ -98,6 +99,7 @@ class NodeEditorPlugin(Plugin):
         signals.get("nodes_breakpoint").disconnect(self.handle_breakpoint)
 
     async def handle_node_state(self, state: GraphState):
+        """Handles the state of a node by queuing it for processing."""
         self.websocket_handler.queue_put(
             {
                 "type": self.router,
@@ -138,6 +140,7 @@ class NodeEditorPlugin(Plugin):
 
         # Define sorting key function
         def sort_key(file_path):
+            """Determine the sorting key for a given file path."""
             filename = os.path.basename(file_path)
 
             if file_path == scene_dir or file_path.startswith(scene_dir_prefix):
@@ -157,6 +160,18 @@ class NodeEditorPlugin(Plugin):
         )
 
     async def handle_create_mode_module(self, data: dict):
+        """Handle the creation of a node module based on the provided data.
+        
+        This asynchronous function processes the creation of a node module by
+        validating the registry path,  handling different creation scenarios such as
+        creating from selected nodes, creating a new module from scratch,  extending
+        from an existing module, or copying from another module. It also manages the
+        saving of the module  and updates the websocket handler with the creation
+        event.
+        
+        Args:
+            data (dict): A dictionary containing the parameters for creating the node module.
+        """
         request = RequestCreateNodeModule(**data)
 
         log.debug("creating node", request=request)
@@ -349,6 +364,7 @@ class NodeEditorPlugin(Plugin):
         return new_graph_cls
 
     async def handle_request_node_module(self, data: dict):
+        """Handles a request for a node module and processes the data."""
         request = RequestNodeModule(**data)
 
         graph, path_info = load_graph(request.path, search_paths=[self.scene.nodes_dir])
@@ -378,6 +394,14 @@ class NodeEditorPlugin(Plugin):
 
     @requires_creative_environment
     async def handle_update_node_module(self, data: dict):
+        """Handles the update of a node module in the creative environment.
+        
+        This asynchronous function processes the provided data to update a node module.
+        It imports the necessary node definitions and ensures the module path is
+        absolute.  The function also updates the scene's nodes filename if the graph's
+        base type is  "scene/SceneLoop" and the `set_as_main` flag is true. Finally, it
+        queues a  websocket message to notify that the node module has been updated.
+        """
         import_nodes = RequestUpdateNodeModule(**data)
         graph = import_flat_graph(import_nodes.graph)
 
@@ -487,12 +511,11 @@ class NodeEditorPlugin(Plugin):
         )
 
     async def _start_test_with_graph(self, graph):
-        """
-        Common logic for starting a test with a loaded graph
-        """
+        """Starts a test with a loaded graph and sets up callbacks for error handling."""
         active_graph_state: GraphState = self.scene.nodegraph_state
 
         async def on_error(state: GraphState, error: Exception):
+            """Handles errors by processing passthrough errors and queuing error data."""
             if isinstance(error, PASSTHROUGH_ERRORS):
                 return
             self.websocket_handler.queue_put(
@@ -508,6 +531,7 @@ class NodeEditorPlugin(Plugin):
             await self.handle_test_stop({})
 
         async def on_done(state: GraphState):
+            """Handles the completion of a test by sending a message and stopping the test."""
             self.websocket_handler.queue_put(
                 {
                     "type": self.router,
@@ -534,6 +558,7 @@ class NodeEditorPlugin(Plugin):
 
     @requires_creative_environment
     async def handle_test_stop(self, data: dict):
+        """Handles the stopping of a test and notifies via websocket."""
         await self._stop_test()
 
         self.websocket_handler.queue_put(
@@ -557,6 +582,7 @@ class NodeEditorPlugin(Plugin):
         )
 
     async def _stop_test(self):
+        """Cancels the running test task if it exists."""
         active_graph_state: GraphState = self.scene.nodegraph_state
         module = active_graph_state.shared.pop("__test_module", None)
 

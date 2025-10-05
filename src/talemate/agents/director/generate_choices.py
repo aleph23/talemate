@@ -45,6 +45,7 @@ class GenerateChoicesMixin:
 
     @classmethod
     def add_actions(cls, actions: dict[str, AgentAction]):
+        """Add dynamic actions to the provided actions dictionary."""
         actions["_generate_choices"] = AgentAction(
             enabled=True,
             container=True,
@@ -92,33 +93,47 @@ class GenerateChoicesMixin:
 
     @property
     def generate_choices_enabled(self):
+        """Returns whether the generate_choices action is enabled."""
         return self.actions["_generate_choices"].enabled
 
     @property
     def generate_choices_chance(self):
+        """Gets the chance value from the generate_choices action configuration."""
         return self.actions["_generate_choices"].config["chance"].value
 
     @property
     def generate_choices_num_choices(self):
+        """Returns the number of choices from the configuration."""
         return self.actions["_generate_choices"].config["num_choices"].value
 
     @property
     def generate_choices_never_auto_progress(self):
+        """Returns the value of 'never_auto_progress' from the configuration."""
         return self.actions["_generate_choices"].config["never_auto_progress"].value
 
     @property
     def generate_choices_instructions(self):
+        """Returns the instructions for generating choices."""
         return self.actions["_generate_choices"].config["instructions"].value
 
     # signal connect
 
     def connect(self, scene):
+        """Connects the scene and sets up the player turn start signal."""
         super().connect(scene)
         talemate.emit.async_signals.get("player_turn_start").connect(
             self.on_player_turn_start
         )
 
     async def on_player_turn_start(self, event: GameLoopStartEvent):
+        """Handles the start of a player's turn in the game loop.
+        
+        This function checks if the game is enabled and whether choice generation is
+        allowed.  It then inspects the scene's history in reverse to determine if the
+        last message  was from the player. If the last message was from the player and
+        no other messages  preceded it, choice generation is aborted. If conditions are
+        met, it may trigger  the generation of choices based on a random chance.
+        """
         if not self.enabled:
             return
 
@@ -150,6 +165,20 @@ class GenerateChoicesMixin:
         instructions: str = None,
         character: "Character | str | None" = None,
     ):
+        """Generate choices based on provided instructions and character.
+        
+        This asynchronous function processes the generation of choices by first
+        determining the appropriate character, either from the provided string or  by
+        defaulting to the player character. It emits signals before and after
+        generating choices, and utilizes the Prompt.request method to obtain a
+        response. The response is parsed to extract choices, which are then  emitted
+        along with the character's name. Error handling is included to  log any issues
+        that arise during the process.
+        
+        Args:
+            instructions (str?): Instructions to guide the choice generation.
+            character (Character | str | None?): The character for whom choices are generated.
+        """
         emission: GenerateChoicesEmission = GenerateChoicesEmission(agent=self)
 
         if isinstance(character, str):

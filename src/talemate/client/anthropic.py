@@ -68,14 +68,17 @@ class AnthropicClient(EndpointOverrideMixin, ClientBase):
 
     @property
     def can_be_coerced(self) -> bool:
+        """Indicates if coercion is possible based on reason_enabled."""
         return not self.reason_enabled
 
     @property
     def anthropic_api_key(self):
+        """Get the Anthropic API key from the configuration."""
         return self.config.anthropic.api_key
 
     @property
     def supported_parameters(self):
+        """Return a list of supported parameters."""
         return [
             "temperature",
             "top_p",
@@ -85,13 +88,27 @@ class AnthropicClient(EndpointOverrideMixin, ClientBase):
 
     @property
     def min_reason_tokens(self) -> int:
+        """Return the minimum number of reason tokens."""
         return MIN_THINKING_TOKENS
 
     @property
     def requires_reasoning_pattern(self) -> bool:
+        """Indicates whether reasoning pattern is required."""
         return False
 
     def emit_status(self, processing: bool = None):
+        """Emit the current status of the client.
+        
+        This method updates the processing state and determines the current status
+        based on the presence of an API key and a loaded model. If the API key is
+        missing, it prepares an error action to prompt the user to set the key.
+        Additionally, it gathers common status data and emits a status message  to the
+        client, including relevant details such as the model name and  error messages
+        if applicable.
+        
+        Args:
+            processing (bool?): Indicates whether the client is currently
+        """
         error_action = None
         error_message: str | None = None
         if processing is not None:
@@ -136,19 +153,39 @@ class AnthropicClient(EndpointOverrideMixin, ClientBase):
         )
 
     def response_tokens(self, response: str):
+        """Return the output tokens from the response."""
         return response.usage.output_tokens
 
     def prompt_tokens(self, response: str):
+        """Returns the input tokens from the response."""
         return response.usage.input_tokens
 
     async def status(self):
+        """Emit the current status."""
         self.emit_status()
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
 
+        """Generate text from the given prompt and parameters.
+        
+        This asynchronous function generates a response based on the provided prompt
+        and parameters by interacting with the Anthropic API. It handles coercion of
+        the prompt if applicable, constructs the necessary messages, and manages token
+        usage for both the prompt and the generated response. The function also
+        includes error handling for API permission issues and logs relevant information
+        throughout the process.
+        
+        Args:
+            prompt (str): The input text prompt to generate a response for.
+            parameters (dict): A dictionary of parameters to customize the generation.
+            kind (str): The type of system message to use for the generation.
+        
+        Returns:
+            str: The generated response text.
+        
+        Raises:
+            Exception: If no anthropic API key is set or if an error occurs during generation.
+        """
         if (
             not self.anthropic_api_key
             and not self.endpoint_override_base_url_configured

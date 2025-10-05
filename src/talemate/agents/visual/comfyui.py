@@ -76,6 +76,22 @@ class Workflow(pydantic.BaseModel):
         # if no CLIPTextEncode node is found an exception will be raised for
         # the negative prompt if it is not None
 
+        """Set the prompts for CLIPTextEncode nodes.
+        
+        This function searches through the nodes to find the appropriate CLIPTextEncode
+        nodes for both positive and negative prompts. It prioritizes nodes with
+        specific titles, and if those are not found, it defaults to the first or second
+        available node. If no suitable nodes are found for the positive or negative
+        prompts, a ValueError is raised.
+        
+        Args:
+            prompt (str): The positive prompt to be set on the selected node.
+            negative_prompt (str?): The negative prompt to be set on the selected node.
+        
+        Raises:
+            ValueError: If no positive prompt node is found or if no negative prompt node is found when
+                a negative prompt is provided.
+        """
         positive_prompt_node = None
         negative_prompt_node = None
 
@@ -130,6 +146,7 @@ class Workflow(pydantic.BaseModel):
         checkpoint_node["inputs"]["ckpt_name"] = checkpoint
 
     def set_seeds(self):
+        """Set random noise seeds for each node's inputs."""
         for node in self.nodes.values():
             for field in node.get("inputs", {}).keys():
                 if field == "noise_seed":
@@ -177,10 +194,12 @@ class ComfyUIMixin:
 
     @property
     def comfyui_checkpoint(self):
+        """Get the checkpoint value from the comfyui configuration."""
         return self.actions["comfyui"].config["checkpoint"].value
 
     @property
     def comfyui_workflow_filename(self):
+        """Get the absolute path of the comfyui workflow file."""
         base_name = self.actions["comfyui"].config["workflow"].value
 
         # make absolute path
@@ -207,6 +226,7 @@ class ComfyUIMixin:
 
     @property
     def comfyui_workflow(self) -> Workflow:
+        """Load and return the comfyui workflow from a specified file."""
         workflow = self.comfyui_workflow_filename
         if not workflow:
             raise ValueError("No comfyui workflow file specified")
@@ -227,6 +247,7 @@ class ComfyUIMixin:
 
     @property
     async def comfyui_checkpoints(self):
+        """Retrieve a list of checkpoints from the comfyui object."""
         loader_node = (await self.comfyui_object_info)["CheckpointLoaderSimple"]
         _checkpoints = loader_node["input"]["required"]["ckpt_name"][0]
         log.debug("comfyui_checkpoints", _checkpoints=_checkpoints)
@@ -235,6 +256,7 @@ class ComfyUIMixin:
         ]
 
     def comfyui_agent_details(self):
+        """Returns details of the comfyui agent checkpoint."""
         checkpoint: str = self.comfyui_checkpoint
         if not checkpoint:
             return {}
@@ -251,6 +273,7 @@ class ComfyUIMixin:
         }
 
     async def comfyui_get_image(self, filename: str, subfolder: str, folder_type: str):
+        """Fetches an image from the specified API endpoint."""
         data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
         url_values = urllib.parse.urlencode(data)
 
@@ -259,11 +282,22 @@ class ComfyUIMixin:
             return response.content
 
     async def comfyui_get_history(self, prompt_id: str):
+        """Fetches the history for a given prompt ID."""
         async with httpx.AsyncClient() as client:
             response = await client.get(url=f"{self.api_url}/history/{prompt_id}")
             return response.json()
 
     async def comfyui_get_images(self, prompt_id: str, max_wait: int = 60.0):
+        """async def comfyui_get_images(self, prompt_id: str, max_wait: int = 60.0):
+        Retrieve images based on the provided prompt ID.  This function continuously
+        checks for the history of the specified  prompt ID until it is available or the
+        maximum wait time is exceeded.  It logs the waiting status and retrieves images
+        from the history once  available. The images are fetched using the
+        comfyui_get_image method  and are organized by their respective node IDs.
+        
+        Args:
+            prompt_id (str): The ID of the prompt for which images are to be retrieved.
+            max_wait (int?): The maximum time to wait for the history. Defaults to 60.0."""
         output_images = {}
         history = {}
 
@@ -291,6 +325,7 @@ class ComfyUIMixin:
         return output_images
 
     async def comfyui_generate(self, prompt: Style, format: str):
+        """Generates images based on the provided prompt and format."""
         url = self.api_url
         workflow = self.comfyui_workflow
         is_sdxl = self.comfyui_workflow_is_sdxl
@@ -327,6 +362,7 @@ class ComfyUIMixin:
     async def comfyui_apply_config(
         self, backend_changed: bool = False, *args, **kwargs
     ):
+        """Applies the configuration for ComfyUI based on backend changes."""
         log.debug(
             "comfyui_apply_config",
             backend_changed=backend_changed,
@@ -339,10 +375,8 @@ class ComfyUIMixin:
             self.actions["comfyui"].config["checkpoint"].value = selected_checkpoint
 
     async def comfyui_ready(self) -> bool:
-        """
-        Will send a GET to /system_stats and on 200 will return True
-        """
 
+        """Checks if the system is ready by sending a GET request to /system_stats."""
         async with httpx.AsyncClient() as client:
             response = await client.get(url=f"{self.api_url}/system_stats", timeout=2)
             return response.status_code == 200

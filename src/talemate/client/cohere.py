@@ -71,6 +71,7 @@ class CohereClient(EndpointOverrideMixin, ClientBase):
 
     @property
     def supported_parameters(self):
+        """Return a list of supported parameters."""
         return [
             "temperature",
             ParameterReroute(talemate_parameter="top_p", client_parameter="p"),
@@ -84,6 +85,30 @@ class CohereClient(EndpointOverrideMixin, ClientBase):
         ]
 
     def emit_status(self, processing: bool = None):
+        """Emit the current status of the processing state.
+        
+        This function updates the processing state based on the provided  argument and
+        emits the current status to the client. It checks  for the presence of a valid
+        API key and model name, setting the  status accordingly. If there are errors,
+        it prepares an error  action and message to be included in the emitted data.
+        
+        Args:
+            processing (bool?): Indicates whether processing is
+                currently happening. If None, the current processing state
+                is not changed.
+        """
+        """Emit the current status of the processing state.
+        
+        This function updates the processing state based on the provided  argument and
+        emits the current status to the client. It checks  for the presence of a valid
+        API key and model name, setting the  status accordingly. If there are errors,
+        it prepares an error  action and message to be included in the emitted data.
+        
+        Args:
+            processing (bool?): Indicates whether processing is
+                currently happening. If None, the current processing state
+                is retained.
+        """
         error_action = None
         error_message = None
         if processing is not None:
@@ -127,15 +152,36 @@ class CohereClient(EndpointOverrideMixin, ClientBase):
         )
 
     def response_tokens(self, response: str):
+        """Count the tokens in the given response string."""
         return count_tokens(response)
 
     def prompt_tokens(self, prompt: str):
+        """Returns the token count for the given prompt."""
         return count_tokens(prompt)
 
     async def status(self):
+        """Emit the current status."""
         self.emit_status()
 
     def clean_prompt_parameters(self, parameters: dict):
+        """Cleans and validates prompt parameters.
+        
+        This method first calls the superclass's clean_prompt_parameters method to
+        handle any initial cleaning. It then enforces specific constraints on the
+        parameters:  the "temperature" value is clamped between 0.0 and 1.0, the
+        "stop_sequences"  list is limited to a maximum of 5 items, and if both
+        "frequency_penalty"  and "presence_penalty" are provided, the
+        "frequency_penalty" is removed.
+        """
+        """Cleans and validates prompt parameters.
+        
+        This method first calls the superclass's clean_prompt_parameters method to
+        handle any initial cleaning. It then enforces specific constraints on the
+        parameters:  the "temperature" value is clamped between 0.0 and 1.0, the
+        "stop_sequences"  list is limited to a maximum of 5 items, and if both
+        "frequency_penalty"  and "presence_penalty" are provided, the
+        "frequency_penalty" is removed.
+        """
         super().clean_prompt_parameters(parameters)
 
         # if temperature is set, it needs to be clamped between 0 and 1.0
@@ -151,10 +197,22 @@ class CohereClient(EndpointOverrideMixin, ClientBase):
             del parameters["frequency_penalty"]
 
     async def generate(self, prompt: str, parameters: dict, kind: str):
-        """
-        Generates text from the given prompt and parameters.
-        """
 
+        """Generates text from the given prompt and parameters.
+        
+        This asynchronous function utilizes the Cohere API to generate a response based
+        on the provided prompt and parameters. It first checks for the necessary API
+        key and initializes an asynchronous client. The function constructs messages
+        """
+        """Generates text from the given prompt and parameters.
+        
+        This asynchronous function utilizes the Cohere API to generate a response based
+        on the provided prompt and parameters. It first checks for the necessary API
+        key and initializes an asynchronous client. The function constructs messages
+        for the system and user roles, then streams the response from the API. As the
+        response is received, it accumulates the generated text and tracks token usage
+        for the request. Finally, it returns the complete generated response.
+        """
         if not self.cohere_api_key and not self.endpoint_override_base_url_configured:
             raise Exception("No cohere API key set")
 

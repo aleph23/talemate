@@ -18,12 +18,14 @@ class QuickSettingsPlugin:
 
     @property
     def scene(self):
+        """Get the current scene from the websocket handler."""
         return self.websocket_handler.scene
 
     def __init__(self, websocket_handler):
         self.websocket_handler = websocket_handler
 
     async def handle(self, data: dict):
+        """Handles quick settings actions based on the provided data."""
         log.info("quick settings action", action=data.get("action"))
 
         fn = getattr(self, f"handle_{data.get('action')}", None)
@@ -34,6 +36,7 @@ class QuickSettingsPlugin:
         await fn(data)
 
     async def handle_set(self, data: dict):
+        """Handles setting quick settings based on the provided data."""
         payload = SetQuickSettingsPayload(**data)
         config: Config = get_config()
 

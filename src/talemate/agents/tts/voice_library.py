@@ -49,12 +49,14 @@ class ScopedVoiceLibrary(pydantic.BaseModel):
     fn_save: Callable[[VoiceLibrary], None]
 
     async def save(self):
+        """Saves the voice library asynchronously."""
         await self.fn_save(self.voice_library)
 
 
 def scoped_voice_library(
     scope: Literal["global", "scene"], scene: "Scene | None" = None
 ) -> ScopedVoiceLibrary:
+    """Creates a ScopedVoiceLibrary based on the given scope and scene."""
     if scope == "global":
         return ScopedVoiceLibrary(
             voice_library=get_instance(), fn_save=save_voice_library
@@ -64,12 +66,14 @@ def scoped_voice_library(
             raise ValueError("Scene is required for scoped voice library")
 
         async def _save(library: VoiceLibrary):
+            """Saves the voice library to the scene."""
             await save_scene_voice_library(scene, library)
 
         return ScopedVoiceLibrary(voice_library=scene.voice_library, fn_save=_save)
 
 
 async def require_instance():
+    """Ensure the voice library is loaded and return it."""
     global VOICE_LIBRARY
     if not VOICE_LIBRARY:
         VOICE_LIBRARY = await load_voice_library()
@@ -77,9 +81,7 @@ async def require_instance():
 
 
 async def load_voice_library() -> VoiceLibrary:
-    """
-    Load the voice library from the file.
-    """
+    """Load the voice library from the specified file."""
     try:
         with open(VOICE_LIBRARY_PATH, "r") as f:
             return VoiceLibrary.model_validate_json(f.read())
@@ -92,9 +94,7 @@ async def load_voice_library() -> VoiceLibrary:
 
 
 async def save_voice_library(voice_library: VoiceLibrary):
-    """
-    Save the voice library to the file.
-    """
+    """Save the voice library to the file."""
     await async_signals.get("voice_library.update.before").send(voice_library)
     with open(VOICE_LIBRARY_PATH, "w") as f:
         f.write(voice_library.model_dump_json(indent=2))
@@ -102,18 +102,14 @@ async def save_voice_library(voice_library: VoiceLibrary):
 
 
 def get_instance() -> VoiceLibrary:
-    """
-    Get the shared voice library instance.
-    """
+    """Get the shared voice library instance."""
     if not VOICE_LIBRARY:
         raise RuntimeError("Voice library not loaded yet.")
     return VOICE_LIBRARY
 
 
 def add_default_voices(voices: list[Voice]):
-    """
-    Add default voices to the voice library.
-    """
+    """Add default voices to the voice library."""
     global DEFAULT_VOICES
     for voice in voices:
         DEFAULT_VOICES[voice.id] = voice
@@ -127,18 +123,17 @@ def voices_for_apis(apis: list[str], voice_library: VoiceLibrary) -> list[Voice]
 
 
 def _scene_library_path(scene: "Scene") -> Path:
-    """Return the path to the *scene* voice-library.json file."""
 
+    """Return the path to the scene voice-library.json file."""
     return Path(scene.info_dir) / "voice-library.json"
 
 
 async def load_scene_voice_library(scene: "Scene") -> VoiceLibrary:
-    """Load and return the voice library for *scene*.
 
+    """Load and return the voice library for the given scene.
     If the file does not exist an empty ``VoiceLibrary`` instance is returned.
     The returned instance is *not* stored on the scene – caller decides.
     """
-
     path = _scene_library_path(scene)
 
     try:
@@ -155,11 +150,10 @@ async def load_scene_voice_library(scene: "Scene") -> VoiceLibrary:
 
 
 async def save_scene_voice_library(scene: "Scene", library: VoiceLibrary):
-    """Persist *library* to the scene's ``voice-library.json``.
 
+    """Persist library to the scene's voice-library.json.
     The directory ``scene/{name}/info`` is created if necessary.
     """
-
     path = _scene_library_path(scene)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)

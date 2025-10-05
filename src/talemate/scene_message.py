@@ -21,12 +21,14 @@ _message_id = 0
 
 
 def get_message_id():
+    """Increments and returns the global message ID."""
     global _message_id
     _message_id += 1
     return _message_id
 
 
 def reset_message_id():
+    """Reset the global message ID to zero."""
     global _message_id
     _message_id = 0
 
@@ -94,20 +96,25 @@ class SceneMessage:
         return iter(self.message)
 
     def split(self, *args, **kwargs):
+        """Splits the message using the specified arguments."""
         return self.message.split(*args, **kwargs)
 
     def startswith(self, *args, **kwargs):
+        """Check if the message starts with the given prefix."""
         return self.message.startswith(*args, **kwargs)
 
     def endswith(self, *args, **kwargs):
+        """Check if the message ends with the given suffix."""
         return self.message.endswith(*args, **kwargs)
 
     @property
     def secondary_source(self):
+        """Returns the source property."""
         return self.source
 
     @property
     def raw(self):
+        """Return the string representation of the message."""
         return str(self.message)
 
     @property
@@ -116,34 +123,38 @@ class SceneMessage:
 
     @property
     def fingerprint(self) -> str:
-        """
-        Returns a unique hash fingerprint for the message
-        """
+        """Returns a unique hash fingerprint for the message."""
         return str(hash(self.message))[:16]
 
     @property
     def source_agent(self) -> str | None:
+        """Return the source agent from meta or None if not present."""
         return (self.meta or {}).get("agent", None)
 
     @property
     def source_function(self) -> str | None:
+        """Return the function name from meta or None if not present."""
         return (self.meta or {}).get("function", None)
 
     @property
     def source_arguments(self) -> dict:
+        """Return the source arguments as a dictionary."""
         return (self.meta or {}).get("arguments", {})
 
     @property
     def meta_hash(self) -> int:
+        """Return the hash of the meta attribute as an integer."""
         return hash(str(self.meta))
 
     def hide(self):
+        """Set the HIDDEN flag for the instance."""
         self.flags |= Flags.HIDDEN
 
     def unhide(self):
         self.flags &= ~Flags.HIDDEN
 
     def as_format(self, format: str, **kwargs) -> str:
+        """Formats the message based on the specified format type."""
         if format == "movie_script":
             return self.message.rstrip("\n") + "\n"
         elif format == "narrative":
@@ -151,6 +162,7 @@ class SceneMessage:
         return self.message
 
     def set_source(self, agent: str, function: str, **kwargs):
+        """Sets the source metadata for the agent and function."""
         if not self.meta:
             self.meta = {}
         self.meta["agent"] = agent
@@ -174,18 +186,22 @@ class CharacterMessage(SceneMessage):
 
     @property
     def character_name(self):
+        """Get the character name from the message."""
         return self.message.split(":", 1)[0]
 
     @property
     def secondary_source(self):
+        """Return the character name."""
         return self.character_name
 
     @property
     def raw(self):
+        """Returns the raw message content after processing."""
         return self.message.split(":", 1)[1].replace('"', "").replace("*", "").strip()
 
     @property
     def without_name(self) -> str:
+        """Returns the part of the message after the first colon."""
         return self.message.split(":", 1)[1]
 
     @property
@@ -218,6 +234,7 @@ class CharacterMessage(SceneMessage):
         return rv
 
     def as_format(self, format: str, **kwargs) -> str:
+        """Returns a formatted string based on the specified format type."""
         if format == "movie_script":
             return self.as_movie_script
         elif format == "narrative":
@@ -231,6 +248,18 @@ class NarratorMessage(SceneMessage):
     typ = "narrator"
 
     def source_to_meta(self) -> dict:
+        """Converts a source string into a metadata dictionary.
+        
+        This function takes the source string, splits it into an action name and  its
+        associated arguments, and constructs a parameters dictionary based on  the
+        action type. It supports various actions such as "paraphrase",
+        "narrate_character_entry", and "progress_story", each requiring different
+        arguments. The resulting dictionary includes the agent type, function name,
+        and the constructed parameters.
+        
+        Returns:
+            dict: A dictionary containing the agent, function name, and arguments.
+        """
         source = self.source
         action_name, *args = source.split(":")
         parameters = {}
@@ -257,6 +286,7 @@ class NarratorMessage(SceneMessage):
         return {"agent": "narrator", "function": action_name, "arguments": parameters}
 
     def migrate_source_to_meta(self):
+        """Migrate data from source to meta if meta is not set."""
         if self.source and not self.meta:
             try:
                 self.meta = self.source_to_meta()
@@ -279,6 +309,7 @@ class DirectorMessage(SceneMessage):
 
     @property
     def instructions(self) -> str:
+        """Return the message as instructions."""
         return self.message
 
     @property
@@ -287,6 +318,7 @@ class DirectorMessage(SceneMessage):
         # so we need to replace those to fit a first person perspective
 
         # first we lowercase
+        """Converts instructions to a first-person perspective for the character."""
         instructions = self.instructions.lower()
 
         if not self.character_name:
@@ -305,15 +337,18 @@ class DirectorMessage(SceneMessage):
 
     @property
     def as_story_progression(self):
+        """Return the story progression for the character."""
         return f"{self.character_name}'s next action: {self.instructions}"
 
     @property
     def as_director_action(self) -> str:
+        """Return the action message for the director."""
         if not self.character_name:
             return f"{self.message}\n{self.action}"
 
     # Become aggressive towards Elmer as you no longer recognize the man.
     def migrate_message_to_meta(self):
+        """Migrates the message to meta format if it starts with 'Director instructs'."""
         if self.message.startswith("Director instructs"):
             parts = self.message.split(":", 1)
             character_name = parts[0].replace("Director instructs ", "").strip()
@@ -344,6 +379,18 @@ class DirectorMessage(SceneMessage):
         return self.as_format("chat")
 
     def as_format(self, format: str, **kwargs) -> str:
+        """Format the output based on the specified format type.
+        
+        This method checks the `instructions` attribute and returns an  appropriate
+        formatted string based on the provided `format` and  `mode` arguments. If the
+        `format` is either "movie_script" or  "narrative", it will return a different
+        format for internal  monologues compared to story progression. For other
+        formats,  it uses a different prefix while still considering the `mode`.
+        
+        Args:
+            format (str): The format type to apply.
+            **kwargs: Additional keyword arguments, including mode.
+        """
         if not self.instructions.strip():
             return ""
 
@@ -383,18 +430,21 @@ class ReinforcementMessage(SceneMessage):
 
     @property
     def question(self):
+        """Return the question from source_arguments or a default value."""
         return self.source_arguments.get("question", "question")
 
     def __str__(self):
         return f"# Internal note for {self.character_name} - {self.question}\n{self.message}"
 
     def as_format(self, format: str, **kwargs) -> str:
+        """Formats the message based on the specified format type."""
         if format in ["movie_script", "narrative"]:
             message = str(self)[2:]
             return f"\n({message})\n"
         return f"\n{self.message}\n"
 
     def migrate_source_to_meta(self):
+        """Migrate data from source to meta if conditions are met."""
         if self.source and not self.meta:
             try:
                 self.source_to_meta()
@@ -406,6 +456,7 @@ class ReinforcementMessage(SceneMessage):
         return self
 
     def source_to_meta(self):
+        """Sets the source parameters from the source string."""
         source = self.source
         args = source.split(":")
         parameters = {"character": args[1], "question": args[0]}
@@ -420,6 +471,7 @@ class ContextInvestigationMessage(SceneMessage):
 
     @property
     def character(self) -> str:
+        """Return the character from source_arguments or a default value."""
         return self.source_arguments.get("character", "character")
 
     @property
@@ -457,6 +509,7 @@ class ContextInvestigationMessage(SceneMessage):
         return rv
 
     def as_format(self, format: str, **kwargs) -> str:
+        """Formats the message based on the specified format type."""
         if format in ["movie_script", "narrative"]:
             message = str(self)[2:]
             return f"\n({message})\n".replace("*", "")

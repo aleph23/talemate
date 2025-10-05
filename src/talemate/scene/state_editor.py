@@ -22,6 +22,7 @@ class SceneStateEditor:
         self.scene = scene
 
     def dump(self) -> dict:
+        """Dump the current state of the scene as a dictionary."""
         scene: "Scene" = self.scene
         self.state = SceneState(
             world_state=scene.world_state,

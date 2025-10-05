@@ -58,6 +58,7 @@ class GameInstructionScope:
         client = director.client
 
         def assert_scene_active():
+            """Check if the scene is active and raise an error if not."""
             if not scene.active:
                 raise RuntimeError("Scene is not active")
 
@@ -99,6 +100,7 @@ class GameInstructionScope:
             handle_generation_cancelled(exc)
 
     def emit_status(self, status: str, message: str, **kwargs):
+        """Emit a status message with optional additional data."""
         if kwargs:
             emit("status", status=status, message=message, data=kwargs)
         else:

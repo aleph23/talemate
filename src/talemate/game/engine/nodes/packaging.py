@@ -88,9 +88,7 @@ class PackageData(pydantic.BaseModel):
     @pydantic.computed_field(description="Whether the package is configured")
     @property
     def configured(self) -> bool:
-        """
-        Whether the package is configured.
-        """
+        """Check if the package is configured."""
         return all(
             prop.value is not None
             for prop in self.package_properties.values()
@@ -98,10 +96,8 @@ class PackageData(pydantic.BaseModel):
         )
 
     def properties_for_node(self, node_registry: str) -> dict[str, Any]:
-        """
-        Get the properties for a node.
-        """
 
+        """Get the properties of a node based on the node registry."""
         return {
             prop.name: prop.value
             for prop in self.package_properties.values()
@@ -113,9 +109,11 @@ class ScenePackageInfo(pydantic.BaseModel):
     packages: list[PackageData]
 
     def has_package(self, package_registry: str) -> bool:
+        """Check if a package exists in the package registry."""
         return any(p.registry == package_registry for p in self.packages)
 
     def get_package(self, package_registry: str) -> PackageData | None:
+        """Retrieve a package by its registry."""
         return next((p for p in self.packages if p.registry == package_registry), None)
 
 
@@ -125,12 +123,8 @@ class ScenePackageInfo(pydantic.BaseModel):
 
 
 async def initialize_scene_package_info(scene: "Scene"):
-    """
-    Initialize the scene package info.
 
-    This means creation of an empty json file in the scene's info directory.
-    """
-
+    """Initialize the scene package info by creating an empty JSON file in the scene directory."""
     filepath = os.path.join(scene.info_dir, SCENE_PACKAGE_INFO_FILENAME)
 
     # if info dir does not exist, create it
@@ -144,12 +138,11 @@ async def initialize_scene_package_info(scene: "Scene"):
 
 async def get_scene_package_info(scene: "Scene") -> ScenePackageInfo:
     """
-    Get the scene package info.
-
+    Retrieve the scene package information.
+    
     Returns:
         ScenePackageInfo: Scene package info.
     """
-
     filepath = os.path.join(scene.info_dir, SCENE_PACKAGE_INFO_FILENAME)
 
     # if info dir does not exist, create it
@@ -188,11 +181,14 @@ async def apply_scene_package_info(scene: "Scene", package_datas: list[PackageDa
 async def list_packages() -> list[PackageData]:
     """
     List all installable packages.
-
-    Returns:
-        list[PackageData]: List of package data.
+    
+    This asynchronous function retrieves all package modules of type
+    "util/packaging/Package" and checks their installability. For each  installable
+    package, it gathers relevant properties and nodes,  including install node
+    modules and promoted properties. The function  constructs a list of PackageData
+    instances, which encapsulate the  details of each package, including any errors
+    encountered during  processing.
     """
-
     packages = get_nodes_by_base_type("util/packaging/Package")
     package_datas = []
 
@@ -280,24 +276,21 @@ async def list_packages() -> list[PackageData]:
 
 
 async def get_package_by_registry(package_registry: str) -> PackageData | None:
-    """
-    Get a package by its registry.
 
+    """Get a package by its registry.
+    
     Args:
         package_registry (str): The registry of the package to get.
     """
-
     packages = await list_packages()
 
     return next((p for p in packages if p.registry == package_registry), None)
 
 
 async def save_scene_package_info(scene: "Scene", scene_package_info: ScenePackageInfo):
-    """
-    Save the scene package info to the scene's info directory.
-    """
 
     # if info dir does not exist, create it
+    """Save the scene package info to the scene's info directory."""
     if not os.path.exists(scene.info_dir):
         os.makedirs(scene.info_dir)
 
@@ -307,13 +300,12 @@ async def save_scene_package_info(scene: "Scene", scene_package_info: ScenePacka
 
 async def install_package(scene: "Scene", package_data: PackageData) -> PackageData:
     """
-    Install a package to the scene.
-
+    Install a package to the specified scene.
+    
     Args:
         scene (Scene): The scene to install the package to.
         package_data (PackageData): The package data to install.
     """
-
     scene_package_info = await get_scene_package_info(scene)
 
     if scene_package_info.has_package(package_data.registry):
@@ -334,10 +326,8 @@ async def update_package_properties(
     package_registry: str,
     package_properties: dict[str, PackageProperty],
 ) -> PackageData | None:
-    """
-    Update the properties of a package.
-    """
 
+    """Update the properties of a package in the given scene."""
     scene_package_info = await get_scene_package_info(scene)
 
     package_data = scene_package_info.get_package(package_registry)
@@ -355,13 +345,18 @@ async def update_package_properties(
 
 async def uninstall_package(scene: "Scene", package_registry: str):
     """
-    Uninstall a package from the scene. (Removes the package from the scene package info)
-
+    Uninstall a package from the scene.
+    
+    This function removes a specified package from the scene's package information.
+    It first retrieves the current package information for the scene and checks if
+    the package is installed. If it is, the package is removed from the list of
+    installed packages, and any associated nodes in the active node graph are also
+    deleted. Finally, the updated package information is saved back to the scene.
+    
     Args:
         scene (Scene): The scene to uninstall the package from.
         package_registry (str): The registry of the package to uninstall.
     """
-
     scene_package_info = await get_scene_package_info(scene)
 
     if not scene_package_info.has_package(package_registry):
@@ -385,9 +380,7 @@ async def uninstall_package(scene: "Scene", package_registry: str):
 
 
 async def initialize_packages(scene: "Scene", scene_loop: SceneLoop):
-    """
-    Initialize all installed packages into the scene loop.
-    """
+    """Initialize all installed packages into the scene loop."""
 
     try:
         scene_package_info = await get_scene_package_info(scene)
@@ -413,16 +406,11 @@ async def initialize_package(
 ):
     """
     Initialize an installed package into the scene loop.
-
-    This is the logic that actually adds the package's nodes to the scene loop through the InstallNodeModule node(s)
-    contained in the package module.
-
     Args:
         scene (Scene): The scene to install the package to.
         scene_loop (SceneLoop): The scene loop to install the package to.
         package_data (PackageData): The package data to install.
     """
-
     try:
         for registry in package_data.install_nodes:
             install_node_cls = get_node(registry)
@@ -504,6 +492,7 @@ class Package(Graph):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initialize properties for the package."""
         self.set_property("package_name", "")
         self.set_property("author", "")
         self.set_property("description", "")
@@ -524,6 +513,7 @@ class InstallNodeModule(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the style of the node."""
         return NodeStyle(
             node_color="#2c3339",
             title_color="#2e4657",
@@ -534,6 +524,7 @@ class InstallNodeModule(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes the node registry property."""
         self.set_property("node_registry", UNRESOLVED)
 
 
@@ -582,6 +573,7 @@ class PromoteConfig(Node):
     @pydantic.computed_field(description="Node style")
     @property
     def style(self) -> NodeStyle:
+        """Return the NodeStyle for the node."""
         return NodeStyle(
             icon="F168A",
         )
@@ -590,6 +582,7 @@ class PromoteConfig(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
+        """Initializes properties for the object."""
         self.set_property("node_registry", UNRESOLVED)
         self.set_property("property_name", UNRESOLVED)
         self.set_property("exposed_property_name", UNRESOLVED)

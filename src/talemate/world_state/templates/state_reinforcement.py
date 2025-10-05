@@ -35,6 +35,7 @@ class StateReinforcement(Template):
 
     @pydantic.field_serializer("insert")
     def serialize_insert(self, value: InsertionMode, _info) -> str:
+        """Serialize the InsertionMode value to a string."""
         return value.value
 
     async def generate(
@@ -43,6 +44,7 @@ class StateReinforcement(Template):
         character_name: str = None,
         run_immediately: bool = False,
     ) -> GeneratedStateReinforcement:
+
         """
         Applies a state reinforcement template to a specific character, if provided.
 
@@ -57,7 +59,6 @@ class StateReinforcement(Template):
         Raises:
             ValueError: If a character name is required but not provided.
         """
-
         if not character_name and self.state_type in ["npc", "character", "player"]:
             raise ValueError("Character name required for this template type.")
 

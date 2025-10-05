@@ -77,6 +77,7 @@ class ConfigPlugin:
         )
 
     async def handle_save_default_character(self, data):
+        """Handles saving the default character configuration."""
         log.info("Saving default character", data=data["data"])
 
         payload = DefaultCharacterPayload(**data["data"])
@@ -102,6 +103,7 @@ class ConfigPlugin:
         )
 
     async def handle_request_std_llm_templates(self, data):
+        """Handles the request for standard LLM templates."""
         log.info("Requesting standard LLM templates")
 
         self.websocket_handler.queue_put(
@@ -115,6 +117,7 @@ class ConfigPlugin:
         )
 
     async def handle_set_llm_template(self, data):
+        """Handles setting the LLM template based on provided data."""
         payload = SetLLMTemplatePayload(**data["data"])
 
         copied_to = model_prompt.create_user_override(
@@ -198,6 +201,7 @@ class ConfigPlugin:
         )
 
     async def handle_toggle_client(self, data):
+        """Toggle the enabled state of a client based on the provided data."""
         payload = ToggleClientPayload(**data)
 
         log.info("Toggling client", name=payload.name, state=payload.state)
@@ -225,6 +229,7 @@ class ConfigPlugin:
         await emit_clients_status()
 
     async def handle_remove_scene_from_recents(self, data):
+        """Remove a scene from the recent scenes list."""
         payload = DeleteScenePayload(**data)
 
         log.info("Removing scene from recents", path=payload.path)
@@ -252,6 +257,7 @@ class ConfigPlugin:
         )
 
     async def handle_delete_scene(self, data):
+        """Handles the deletion of a scene."""
         payload = DeleteScenePayload(**data)
 
         await self.handle_remove_scene_from_recents(data)
