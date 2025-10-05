@@ -40,3 +40,6 @@ embedded_node/**/*
 /.vs/**/*
 /tempCodeRunnerFile.bat
 *.wav
+act.bat
+pyproject - Copy.toml
+tailwind.extension.json

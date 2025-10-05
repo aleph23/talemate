@@ -206,8 +206,14 @@ class CharacterMessage(SceneMessage):
 
     @property
     def as_movie_script(self):
+        """
+        Returns the dialogue line as a script dialogue line.
 
-        """Returns the dialogue line formatted as a movie script."""
+        Example:
+        {CHARACTER_NAME}
+        {dialogue}
+        """
+
         try:
             message = self.message.split(":", 1)[1].strip()
         except IndexError:
@@ -474,8 +480,18 @@ class ContextInvestigationMessage(SceneMessage):
 
     @property
     def title(self) -> str:
+        """
+        The title will differ based on sub_type
 
-        """Generate a title based on the sub_type."""
+        Current sub_types:
+
+        - visual-character
+        - visual-scene
+        - query
+
+        A natural language title will be generated based on the sub_type
+        """
+
         if self.sub_type == "visual-character":
             return f"Visual description of {self.character} in the current moment"
         elif self.sub_type == "visual-scene":
