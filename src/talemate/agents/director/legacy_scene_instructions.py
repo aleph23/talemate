@@ -9,9 +9,7 @@ from talemate.events import GameLoopActorIterEvent, SceneStateEvent
 log = structlog.get_logger("talemate.agents.conversation.legacy_scene_instructions")
 
 
-class LegacySceneInstructionsMixin(
-    GameInstructionsMixin,
-):
+class LegacySceneInstructionsMixin(GameInstructionsMixin,):
     """
     Legacy support for scoped api instructions in scenes.
 
@@ -122,7 +120,12 @@ class LegacySceneInstructionsMixin(
 
     @set_processing
     async def LSI_direct_scene(self):
-        """Direct the scene based on scoped API scene instructions."""
+
+        """
+        LEGACY: Direct the scene based scoped api scene instructions.
+        This is being replaced by node based instructions, but kept for
+        backwards compatibility.
+        """
         log.warning(
             "Direct python scene instructions are being DEPRECATED. Please use the new node based instructions. Support for this will be removed in the future."
         )

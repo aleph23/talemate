@@ -103,7 +103,16 @@ class AssistantPlugin(Plugin):
 
     async def handle_fork_new_scene(self, data: dict):
 
-        """Forks a new scene from a specific message in the current scene."""
+        """
+        Allows to fork a new scene from a specific message
+        in the current scene.
+
+        All content after the message will be removed and the
+        context database will be re imported ensuring a clean state.
+
+        All state reinforcements will be reset to their most recent
+        state before the message.
+        """
         payload = ForkScenePayload(**data)
 
         creator = get_agent("creator")

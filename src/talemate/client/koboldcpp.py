@@ -86,7 +86,6 @@ class KoboldCppClient(ClientBase):
     @property
     def request_headers(self):
         """Return the request headers for the API call."""
-        """Return the request headers for the API call."""
         headers = {}
         headers["Content-Type"] = "application/json"
         if self.api_key:
@@ -95,15 +94,22 @@ class KoboldCppClient(ClientBase):
 
     @property
     def url(self) -> str:
-        """Return the base URL from the api_url property."""
-        """Return the base URL from the API URL."""
-        """Check if the API URL is not the OpenAI implementation."""
+        parts = urlparse(self.api_url)
+        return f"{parts.scheme}://{parts.netloc}"
+
+    @property
+    def is_openai(self) -> bool:
+        """
+        kcpp has two apis
+
+        open-ai implementation at /v1
+        their own implementation at /api/v1
+        """
         return "/api/v1" not in self.api_url
 
     @property
     def api_url_for_model(self) -> str:
         """Get the API URL for the model based on the service type."""
-        """Constructs the API URL for the model based on the service type."""
         if self.is_openai:
             # join /model to url
             return urljoin(self.api_url, "models")
@@ -124,7 +130,6 @@ class KoboldCppClient(ClientBase):
     @property
     def max_tokens_param_name(self):
         """Return the parameter name for token limits based on the API type."""
-        """Return the parameter name for maximum tokens based on the model type."""
         if self.is_openai:
             return "max_tokens"
         else:
@@ -177,7 +182,6 @@ class KoboldCppClient(ClientBase):
     @property
     def supports_embeddings(self) -> bool:
         """Indicates if embeddings are supported."""
-        """Indicates if embeddings are supported."""
         return True
 
     @property
@@ -191,18 +195,15 @@ class KoboldCppClient(ClientBase):
     @property
     def embeddings_function(self):
         """Get the KoboldEmbeddingFunction instance."""
-        """Get the KoboldEmbeddingFunction instance."""
         return KoboldEmbeddingFunction(self.embeddings_url, self.embeddings_model_name)
 
     @property
     def default_prompt_template(self) -> str:
         """Return the default prompt template string."""
-        """Return the default prompt template string."""
         return "KoboldAI.jinja2"
 
     @property
     def api_url(self) -> str:
-        """Return the API URL from the client configuration."""
         """Return the API URL from the client configuration."""
         return self.client_config.api_url
 
@@ -329,7 +330,12 @@ class KoboldCppClient(ClientBase):
 
         # extract scheme and host from api url
 
-        """Counts tokens for the given content using the tokencount endpoint."""
+        """
+        KoboldCpp has a tokencount endpoint we can use to count tokens
+        for the prompt and response
+
+        If the endpoint is not available, we will use the default token count estimate
+        """
         parts = urlparse(self.api_url)
 
         url_tokencount = f"{parts.scheme}://{parts.netloc}/api/extra/tokencount"
@@ -348,6 +354,9 @@ class KoboldCppClient(ClientBase):
 
             tokencount = len(response.json().get("ids", []))
             return tokencount
+        
+
+    async def abort_generation(self):
         """Trigger the stop generation endpoint."""
         if self.is_openai:
             # openai api endpoint doesn't support abort
@@ -360,6 +369,8 @@ class KoboldCppClient(ClientBase):
                 url_abort,
                 headers=self.request_headers,
             )
+
+    async def generate(self, prompt: str, parameters: dict, kind: str):
         """Generates text based on the provided prompt and parameters."""
         if self.is_openai:
             return await self._generate_openai(prompt, parameters, kind)
@@ -368,6 +379,8 @@ class KoboldCppClient(ClientBase):
             return await loop.run_in_executor(
                 None, self._generate_kcpp_stream, prompt, parameters, kind
             )
+
+    def _generate_kcpp_stream(self, prompt: str, parameters: dict, kind: str):
         """Generates a streaming response from the API based on the prompt and parameters."""
         parameters["prompt"] = prompt.strip(" ")
 
@@ -391,7 +404,9 @@ class KoboldCppClient(ClientBase):
             self.update_request_tokens(self.count_tokens(chunk))
 
         return response
-        """Generates text from the given prompt and parameters."""
+    
+
+    async def _generate_openai(self, prompt: str, parameters: dict, kind: str):
         """Generates text from the given prompt and parameters."""
         parameters["prompt"] = prompt.strip(" ")
 

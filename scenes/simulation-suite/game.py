@@ -15,8 +15,11 @@ def game(TM):
     AUTO_NARRATE_INTERVAL = 10
 
     def parse_sim_call_arguments(call: str) -> str:
-
-        """Extracts the value between the parentheses of a simulation call."""
+        """Extracts the value between the parentheses of a simulation call.
+        Example:
+            call = 'change_environment("a house")'
+            parse_sim_call_arguments(call) -> "a house"
+        """
         try:
             return call.split("(", 1)[1].split(")")[0]
         except Exception:
@@ -259,8 +262,16 @@ def game(TM):
             return calls
 
         def process_call(self, call: str) -> str:
+            """Processes a simulation call.
+            
+            Simulation alls are pseudo functions that are called by the simulation suite
 
-            """Processes a simulation call."""
+            We grab the function name by splitting against ( and taking the first element
+            if the SimulationSuite has a method with the name _call_{function_name} then we call it
+
+            if a function name could be found but we do not have a method to call we dont do anything
+            but we still return it as procssed as the AI can still interpret it as something later on
+            """
             if "(" not in call:
                 return None
 
@@ -294,8 +305,10 @@ def game(TM):
             return call
 
         def call_change_environment(self, call: str, inject: str) -> str:
-
-            """Logs an action and returns the call string."""
+            """
+            Simulation changes the environment, this is entirely interpreted by the AI
+            and we dont need to do any logic on our end, so we just return the call
+            """
             TM.agents.director.log_action(
                 action=parse_sim_call_arguments(call),
                 action_description="The computer changes the environment of the simulation.",
@@ -304,7 +317,6 @@ def game(TM):
             return call
 
         def call_answer_question(self, call: str, inject: str) -> str:
-
             """Processes a player's query and generates an AI response."""
             TM.agents.narrator.action_to_narration(
                 action_name="progress_story",

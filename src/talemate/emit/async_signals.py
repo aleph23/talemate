@@ -31,7 +31,6 @@ class AsyncSignal:
 
 
 def _register(name: str):
-
     """Registers a signal handler for the given signal name."""
     if name in handlers:
         raise ValueError(f"Signal {name} already registered")
@@ -52,7 +51,8 @@ def register(*names):
 
 
 def get(name: str):
-    """Gets a signal handler by name.
+    """
+    Gets a signal handler by name.
     
     Args:
         name (str): The name of the signal handler.

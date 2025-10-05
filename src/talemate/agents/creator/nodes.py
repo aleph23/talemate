@@ -45,7 +45,6 @@ class DetermineContentContext(AgentNode):
 
     def setup(self):
         """Sets up the input and output sockets for the component."""
-        """Sets up input and output sockets for the component."""
         self.add_input("state")
         self.add_input("description", socket_type="str", optional=True)
 
@@ -125,7 +124,6 @@ class DetermineCharacterDialogueInstructions(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
-        """Sets up input and output sockets for the component."""
         """Sets up input and output sockets for the component."""
         self.add_input("state")
         self.add_input("character", socket_type="character")
@@ -360,7 +358,6 @@ class GenerateThematicList(AgentNode):
 
     def setup(self):
         """Initializes input and output properties for the component."""
-        """Initializes inputs and outputs for the component."""
         self.add_input("state")
         self.add_input("instructions", socket_type="str", optional=True)
 
@@ -371,8 +368,8 @@ class GenerateThematicList(AgentNode):
         self.add_output("list", socket_type="list")
 
     async def run(self, state: GraphState):
-        """Executes the run process with given state and parameters."""
-        """Executes the main logic of the agent with given state."""
+        """Executes the run process with given state and parameters.
+        Executes the main logic of the agent with given state."""
         instructions = self.normalized_input_value("instructions")
         iterations = self.require_number_input("iterations")
 

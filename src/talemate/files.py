@@ -3,7 +3,12 @@ import os
 
 
 def list_scenes_directory(path: str = ".") -> list:
-    """List all scene files in the specified directory."""
+
+    """
+    List all the scene files in the given directory.
+    :param directory: Directory to list scene files from.
+    :return: List of scene files in the given directory.
+    """ 
     current_dir = os.getcwd()
 
     scenes = _list_files_and_directories(os.path.join(current_dir, "scenes"), path)

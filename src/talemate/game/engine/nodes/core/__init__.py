@@ -295,7 +295,10 @@ class NodeState(pydantic.BaseModel):
 
     @property
     def flattened(self) -> dict:
-        """Creates a flattened representation of the node state."""
+        """
+        Creates a flattened representation of the node state.
+        with repr directly applied to input and output values to avoid circular references.
+        """
         r = reprlib.Repr()
         r.maxlevel = 1
         r.maxlist = 10
@@ -549,8 +552,8 @@ class NodeBase(pydantic.BaseModel):
 
     @property
     def field_definitions(self) -> dict[str, PropertyField]:
-
-        """Returns a dictionary of property field definitions.
+        """
+        Returns a dictionary of property field definitions.
         
         This method iterates through the properties of the instance and retrieves the
         corresponding PropertyField for each property using the  get_property_field
@@ -622,7 +625,8 @@ class NodeBase(pydantic.BaseModel):
     @pydantic.model_validator(mode="before")
     @classmethod
     def handle_unresolved_properties(cls, data: Any) -> Any:
-        """Handle unresolved properties in the given data.
+        """
+        Handle unresolved properties in the given data.
         
         This class method checks if the input `data` is a dictionary and contains the
         key "properties". If so, it iterates over the properties and updates their
@@ -762,8 +766,8 @@ class NodeBase(pydantic.BaseModel):
         pass
 
     def check_is_available(self, state: GraphState) -> bool:
-
-        """Check if the node is available based on its inputs and outputs.
+        """
+        Check if the node is available based on its inputs and outputs.
         
         This function determines the availability of a node by checking its input
         sockets  and their connections. It groups the input sockets and ensures that
@@ -902,8 +906,11 @@ class NodeBase(pydantic.BaseModel):
         return value
 
     def normalized_input_value(self, input_name: str, none_is_set: bool = False) -> Any:
+        """
+        Helper function to check if a value is set
 
-        """Return the normalized input value or None if not set."""
+        UNRESOLVED values are returned as None
+        """
         value = self.get_input_value(input_name)
 
         if not self.is_set(value, none_is_set):
@@ -1006,7 +1013,6 @@ class Input(Node):
     @property
     def style(self) -> NodeStyle:
         """Return the style of the node."""
-        """Get the style of the node."""
         return NodeStyle(
             node_color="#2d2c39",
             title_color="#312e57",
@@ -1050,7 +1056,6 @@ class Output(Node):
     @property
     def style(self) -> NodeStyle:
         """Return the style of the node."""
-        """Return the style of the node."""
         return NodeStyle(
             node_color="#2d392c",
             title_color="#30572e",
@@ -1075,9 +1080,8 @@ class ModuleProperty(Node):
     A node that can be placed to define a property of a Graph
 
     Properties:
-
     - property_name: The name of the property
-    - proeprty_type: The type of the property
+    - property_type: The type of the property
     - default: The default value of the property
     - choices: The choices of the property
     - readonly: Whether the property is readonly
@@ -1085,7 +1089,6 @@ class ModuleProperty(Node):
     - required: Whether the property is required
 
     Outputs:
-
     - name: The name of the property
     - value: The value of the property
     """
@@ -1157,7 +1160,6 @@ class ModuleProperty(Node):
 
     def setup(self):
         """Initializes properties and outputs for the object."""
-        """Initializes properties and outputs for the object."""
         self.set_property("property_name", "")
         self.set_property("property_type", "")
         self.set_property("default", UNRESOLVED)
@@ -1169,7 +1171,8 @@ class ModuleProperty(Node):
 
     def cast_value(self, value: Any) -> Any:
         # if UNRESOLVED return default
-        """Cast a value to a specified type based on property settings.
+        """
+        Cast a value to a specified type based on property settings.
         
         This method checks if the provided value is UNRESOLVED and retrieves a default
         value if necessary. It then determines the target type  from the property
@@ -1203,9 +1206,7 @@ class ModuleProperty(Node):
 
 @register("core/Route")
 class Route(Node):
-    """
-    Simply passes the value of the input to the output
-    """
+    """Simply passes the value of the input to the output"""
 
     def __init__(self, title="Route", **kwargs):
         super().__init__(title=title, **kwargs)
@@ -1421,14 +1422,12 @@ class ModuleStyle(Node):
 
     def setup(self):
         """Initialize properties for the node."""
-        """Initialize properties for the node."""
         self.set_property("node_color", UNRESOLVED)
         self.set_property("title_color", UNRESOLVED)
         self.set_property("auto_title", UNRESOLVED)
         self.set_property("icon", UNRESOLVED)
 
     def get_style(self) -> NodeStyle:
-        """Retrieve the style properties for a node."""
         """Retrieve the style properties for a node."""
         return NodeStyle(
             node_color=self.get_property("node_color"),
@@ -1438,7 +1437,6 @@ class ModuleStyle(Node):
         )
 
     async def run(self, state: GraphState):
-        """Runs the asynchronous process with the given state."""
         """Runs the asynchronous process with the given state."""
         pass
 
@@ -1662,8 +1660,8 @@ class Graph(NodeBase):
                 socket.deactivated = False
 
     def ensure_connections(self):
-
-        """Ensure all sockets are connected.
+        """
+        Ensure all sockets are connected.
         
         This function iterates through the edges of the graph, ensuring that  all
         output sockets are properly connected to their corresponding input  sockets.
@@ -1702,10 +1700,8 @@ class Graph(NodeBase):
                     node.set_property(property_name, field.default)
 
     def set_node_references(self) -> "Graph":
-        """
-        Loops through all nodes and sets their socket.node references
-        """
 
+        """Loops through all nodes and sets their socket.node references"""
         for node in self.nodes.values():
             for socket in node.inputs + node.outputs:
                 socket.node = node
@@ -1714,14 +1710,15 @@ class Graph(NodeBase):
         return self
 
     def set_socket_source_references(self) -> "Graph":
-
-        """def set_socket_source_references(self) -> "Graph":
+        """
+        def set_socket_source_references(self) -> "Graph":
         Set source references for input sockets based on edge connections.  This method
         iterates through all nodes in the graph and their input sockets. For each input
         socket, it checks the edges to find the corresponding output socket. If a match
         is found, it sets the `source` attribute of the input socket to the identified
         output socket. This process ensures that each input socket correctly references
-        its source based on the current graph structure."""
+        its source based on the current graph structure.
+        """
         for node in self.nodes.values():
             for socket in node.inputs:
                 for output_socket_id, input_socket_ids in self.edges.items():
@@ -1745,8 +1742,8 @@ class Graph(NodeBase):
             self.sockets[socket.id] = socket
 
     def connect(self, output_socket: Socket | str, input_socket: Socket | str):
-
-        """Connect an output socket to an input socket.
+        """
+        Connect an output socket to an input socket.
         
         This method establishes a connection between an output socket and an input
         socket.  It first checks if the provided sockets are strings and resolves them
@@ -1900,7 +1897,8 @@ class Graph(NodeBase):
     async def get_nodes_connected_to(
         self, node: NodeBase, fn_filter: Callable = None
     ) -> list[NodeBase]:
-        """Returns a list of nodes connected to the given node.
+        """
+        Returns a list of nodes connected to the given node.
         
         This function builds a graph and retrieves the ancestors of the specified  node
         using the `get_ancestors_with_forks` function. If a filter function
@@ -1928,7 +1926,8 @@ class Graph(NodeBase):
         execute_forks: bool = False,
         run_isolated: bool = True,
     ):
-        """Execute the graph in topological order up to a specified node.
+        """
+        Execute the graph in topological order up to a specified node.
         
         This function builds a graph and checks for the existence of the  specified
         stop_at_node. It retrieves all predecessor nodes,  constructs a subgraph, and
@@ -2398,7 +2397,8 @@ class Listen(Graph):
         return await super().run(state)
 
     async def execute_from_event(self, event: object):
-        """async def execute_from_event(self, event: object):
+        """
+        async def execute_from_event(self, event: object):
         Execute a process based on the provided event.  This function attempts to
         retrieve the current GraphState, either from the global context or from the
         active scene if the global context is unavailable. It then pushes the node
@@ -2407,17 +2407,8 @@ class Listen(Graph):
         performed if the event is executed outside of an active graph state.
         
         Args:
-            event (object): The event object that triggers the execution."""
-        """async def execute_from_event(self, event: object):
-        Execute a process based on the provided event.  This function attempts to
-        retrieve the current graph state, either from the global graph state or from
-        the active scene's nodegraph state. If neither is available, it logs an error
-        and exits. It then pushes the current node state, executes a process with the
-        given event, and finally pops the node state, handling any exceptions that may
-        occur during execution.
-        
-        Args:
-            event (object): The event object that triggers the execution."""
+            event (object): The event object that triggers the execution.
+        """
         try:
             state: GraphState = graph_state.get()
         except LookupError:
@@ -2458,7 +2449,6 @@ class Trigger(Node):
     @property
     def signals(self):
         """Get the async_signals property."""
-        """Get the async_signals property."""
         return async_signals
 
     @property
@@ -2475,17 +2465,14 @@ class Trigger(Node):
 
     def setup_required_inputs(self):
         """Sets up the required input for the instance."""
-        """Sets up the required input for the instance."""
         self.add_input("trigger")
 
     def setup_optional_inputs(self):
-        """Set up optional input for event name."""
         """Set up optional input for event name."""
         self.add_input("event_name", socket_type="str", optional=True)
 
     def setup_outputs(self):
         """Set up the output for the event socket."""
-        """Sets up the output for the event socket."""
         self.add_output("event", socket_type="event")
 
     def setup(self):
@@ -2497,7 +2484,6 @@ class Trigger(Node):
 
     def make_event_object(self, state: GraphState) -> object:
         """Creates an event object based on the given state."""
-        """Creates an event object based on the given state."""
         raise NotImplementedError("Event object not defined")
 
     async def after(self, state: GraphState, event: object):
@@ -2505,7 +2491,8 @@ class Trigger(Node):
         pass
 
     async def run(self, state: GraphState):
-        """Triggers an event based on the current state.
+        """
+        Triggers an event based on the current state.
         
         This asynchronous function checks if a valid event name is set and retrieves
         the corresponding signal.  If the signal is found, it creates an event object

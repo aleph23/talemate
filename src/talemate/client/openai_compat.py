@@ -59,8 +59,12 @@ class OpenAICompatibleClient(ClientBase):
     @property
     def experimental(self):
         """Returns the experimental description."""
-        """Returns the experimental description."""
         return EXPERIMENTAL_DESCRIPTION
+    
+
+
+    @property
+    def can_be_coerced(self):
         """Check if the client can pass LLM coercion."""
         return not self.reason_enabled
 
@@ -152,7 +156,9 @@ class OpenAICompatibleClient(ClientBase):
             emit(
                 "status", message="Error during generation (check logs)", status="error"
             )
-        """Adjusts temperature and presence penalty in prompt_config by random values."""
+            return ""
+
+    def jiggle_randomness(self, prompt_config: dict, offset: float = 0.3) -> dict:
         """Adjusts temperature and presence penalty in prompt_config by random values."""
         temp = prompt_config["temperature"]
 

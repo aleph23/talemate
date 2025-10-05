@@ -20,8 +20,20 @@ def create(scene: "Scene", client: "ClientBase") -> "ScopedAPI":
             kind: str = "create",
             **kwargs,
         ) -> str:
+            """
+            Renders a prompt template and sends it to the LLM for generation.
+            
+            Arguments:
+            - template_name: str - The name of the template to render
+              This should be the name of a template file without the extension
+            - dedupe_enabled: bool - Whether to dedupe the prompt
+            - kind: str - The kind of prompt to render
+            - kwargs: dict - The arguments to pass to the template
 
-            """Renders a prompt template and sends it to the LLM for generation."""
+            Returns:
+
+            - str - The generated response
+            """
             class Arguments(pydantic.BaseModel):
                 template_name: str
                 dedupe_enabled: bool

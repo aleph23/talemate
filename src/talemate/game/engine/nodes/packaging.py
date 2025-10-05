@@ -124,7 +124,7 @@ class ScenePackageInfo(pydantic.BaseModel):
 
 async def initialize_scene_package_info(scene: "Scene"):
 
-    """Initialize the scene package info by creating an empty JSON file."""
+    """Initialize the scene package info by creating an empty JSON file in the scene directory."""
     filepath = os.path.join(scene.info_dir, SCENE_PACKAGE_INFO_FILENAME)
 
     # if info dir does not exist, create it
@@ -137,8 +137,12 @@ async def initialize_scene_package_info(scene: "Scene"):
 
 
 async def get_scene_package_info(scene: "Scene") -> ScenePackageInfo:
-
-    """Retrieve the scene package information."""
+    """
+    Retrieve the scene package information.
+    
+    Returns:
+        ScenePackageInfo: Scene package info.
+    """
     filepath = os.path.join(scene.info_dir, SCENE_PACKAGE_INFO_FILENAME)
 
     # if info dir does not exist, create it
@@ -175,8 +179,8 @@ async def apply_scene_package_info(scene: "Scene", package_datas: list[PackageDa
 
 
 async def list_packages() -> list[PackageData]:
-
-    """List all installable packages.
+    """
+    List all installable packages.
     
     This asynchronous function retrieves all package modules of type
     "util/packaging/Package" and checks their installability. For each  installable
@@ -295,8 +299,13 @@ async def save_scene_package_info(scene: "Scene", scene_package_info: ScenePacka
 
 
 async def install_package(scene: "Scene", package_data: PackageData) -> PackageData:
-
-    """Install a package to the specified scene."""
+    """
+    Install a package to the specified scene.
+    
+    Args:
+        scene (Scene): The scene to install the package to.
+        package_data (PackageData): The package data to install.
+    """
     scene_package_info = await get_scene_package_info(scene)
 
     if scene_package_info.has_package(package_data.registry):
@@ -335,8 +344,8 @@ async def update_package_properties(
 
 
 async def uninstall_package(scene: "Scene", package_registry: str):
-
-    """Uninstall a package from the scene.
+    """
+    Uninstall a package from the scene.
     
     This function removes a specified package from the scene's package information.
     It first retrieves the current package information for the scene and checks if
@@ -371,9 +380,7 @@ async def uninstall_package(scene: "Scene", package_registry: str):
 
 
 async def initialize_packages(scene: "Scene", scene_loop: SceneLoop):
-    """
-    Initialize all installed packages into the scene loop.
-    """
+    """Initialize all installed packages into the scene loop."""
 
     try:
         scene_package_info = await get_scene_package_info(scene)
@@ -397,12 +404,13 @@ async def initialize_package(
     scene_loop: SceneLoop,
     package_data: PackageData,
 ):
-
-    """Initialize an installed package into the scene loop.
+    """
+    Initialize an installed package into the scene loop.
     Args:
         scene (Scene): The scene to install the package to.
         scene_loop (SceneLoop): The scene loop to install the package to.
-        package_data (PackageData): The package data to install."""
+        package_data (PackageData): The package data to install.
+    """
     try:
         for registry in package_data.install_nodes:
             install_node_cls = get_node(registry)
@@ -506,7 +514,6 @@ class InstallNodeModule(Node):
     @property
     def style(self) -> NodeStyle:
         """Return the style of the node."""
-        """Return the style of the node as a NodeStyle object."""
         return NodeStyle(
             node_color="#2c3339",
             title_color="#2e4657",
@@ -575,7 +582,6 @@ class PromoteConfig(Node):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
-        """Initializes properties for the object."""
         """Initializes properties for the object."""
         self.set_property("node_registry", UNRESOLVED)
         self.set_property("property_name", UNRESOLVED)

@@ -91,7 +91,11 @@ class ContextPins(pydantic.BaseModel):
 class WorldStateManager:
     @property
     def memory_agent(self):
-        """Retrieves the memory agent instance."""
+        """Retrieves the memory agent instance.
+        
+        Returns:
+            The memory agent instance responsible for managing memory-related operations.
+        """
         return get_agent("memory")
 
     @property
@@ -112,8 +116,11 @@ class WorldStateManager:
         self.world_state = scene.world_state
 
     async def get_character_list(self) -> CharacterList:
-
-        """Retrieves a list of characters from the current scene."""
+        """Retrieves a list of characters from the current scene.
+        
+        Returns:
+            A CharacterList object containing the characters with their select properties from the scene.
+        """
         characters = CharacterList()
 
         for character in self.scene.get_characters():
@@ -176,7 +183,11 @@ class WorldStateManager:
         return details
 
     async def get_world(self) -> World:
-        """Retrieves the current state of the world."""
+        """Retrieves the current state of the world.
+        
+        Returns:
+            A World object with the current state of the world.
+        """
         return World(
             entries=self.world_state.manual_context_for_world(),
             reinforcements=self.world_state.reinforcements_for_world(),
@@ -185,8 +196,17 @@ class WorldStateManager:
     async def get_context_db_entries(
         self, query: str, limit: int = 20, **meta
     ) -> ContextDB:
+        """
+        Retrieves entries from the context database based on a query and metadata.
 
-        """Retrieves entries from the context database based on a query."""
+        Arguments:
+            query: The query string to search for.
+            limit: The maximum number of entries to return; defaults to 20.
+            **meta: Additional metadata parameters used for filtering results.
+
+        Returns:
+            A ContextDB object containing the found entries.
+        """
         if query.startswith("id:"):
             _entries = await self.memory_agent.get_document(id=query[3:])
             _entries = list(_entries.values())
@@ -204,8 +224,8 @@ class WorldStateManager:
         return context_db
 
     async def get_pins(self, active: bool = None) -> ContextPins:
-
-        """Retrieves context pins that meet the specified activity condition.
+        """
+        Retrieves context pins that meet the specified activity condition.
         
         This asynchronous function filters and retrieves context pins based on their
         active state. It first collects all pins from the world state and then  filters
@@ -248,14 +268,27 @@ class WorldStateManager:
     async def update_character_attribute(
         self, character_name: str, attribute: str, value: str
     ):
-        """Updates a character's attribute to a new value."""
+        """
+        Updates the attribute of a character to a new value.
+
+        Arguments:
+            character_name: The name of the character to be updated.
+            attribute: The attribute of the character that needs to be updated.
+            value: The new value to assign to the character's attribute.
+        """
         character = self.scene.get_character(character_name)
         await character.set_base_attribute(attribute, value)
 
     async def update_character_detail(
         self, character_name: str, detail: str, value: str
     ):
-        """Updates a specific detail of a character to a new value."""
+        """Updates a specific detail of a character to a new value.
+        
+        Arguments:
+            character_name: The name of the character whose detail is to be updated.
+            detail: The detail key that needs to be updated.
+            value: The new value to be set for the detail.
+        """
         character = self.scene.get_character(character_name)
         await character.set_detail(detail, value)
 
@@ -290,7 +323,8 @@ class WorldStateManager:
         Args:
             character_name: Name of the character to update.
             voice_id: The unique id of the voice in the voice library ("provider:voice_id").
-                If *None* or empty string, the character voice assignment is cleared."""
+                If *None* or empty string, the character voice assignment is cleared.
+        """
         character = self.scene.get_character(character_name)
         if not character:
             log.error("character not found", character_name=character_name)
@@ -312,7 +346,14 @@ class WorldStateManager:
         dialogue_instructions: str = None,
         example_dialogue: list[str] = None,
     ):
-        """Sets the actor for a character with dialogue instructions and examples."""
+        """
+        Sets the actor for a character.
+
+        Arguments:
+            character_name: The name of the character whose actor is to be set.
+            dialogue_instructions: The dialogue instructions for the character.
+            example_dialogue: A list of example dialogue for the character.
+        """
         log.debug(
             "update_character_actor",
             character_name=character_name,
@@ -373,15 +414,26 @@ class WorldStateManager:
     async def run_detail_reinforcement(
         self, character_name: str, question: str, reset: bool = False
     ):
-        """Executes detail reinforcement for a character based on a question."""
+        """
+        Executes the detail reinforcement for a specific character and question.
+
+        Arguments:
+            character_name: The name of the character to run the reinforcement for.
+            question: The query/question that the reinforcement corresponds to.
+        """
         world_state_agent = get_agent("world_state")
         await world_state_agent.update_reinforcement(
             question, character_name, reset=reset
         )
 
     async def delete_detail_reinforcement(self, character_name: str, question: str):
+        """
+        Deletes a detail reinforcement for a specified character and question.
 
-        """Deletes a detail reinforcement for a specified character and question."""
+        Arguments:
+            character_name: The name of the character whose reinforcement is to be deleted.
+            question: The query/question of the reinforcement to be deleted.
+        """
         idx, reinforcement = await self.world_state.find_reinforcement(
             question, character_name
         )
@@ -392,7 +444,15 @@ class WorldStateManager:
     async def save_world_entry(
         self, entry_id: str, text: str, meta: dict, pin: bool = False
     ):
-        """Saves a manual world entry with specified text and metadata."""
+
+        """
+        Saves a manual world entry with specified text and metadata.
+
+        Arguments:
+            entry_id: The identifier of the world entry to be saved.
+            text: The text content of the world entry.
+            meta: A dictionary containing metadata for the world entry.
+        """
         meta["source"] = "manual"
         meta["typ"] = "world_state"
         await self.update_context_db_entry(entry_id, text, meta)
@@ -424,7 +484,12 @@ class WorldStateManager:
         await self.memory_agent.add_many([{"id": entry_id, "text": text, "meta": meta}])
 
     async def delete_context_db_entry(self, entry_id: str):
-        """Deletes a specific entry from the context database by its identifier."""
+        """
+        Deletes a specific entry from the context database using its identifier.
+
+        Arguments:
+            entry_id: The identifier of the world entry to be deleted.
+        """
         await self.memory_agent.delete({"ids": entry_id})
 
         if entry_id in self.world_state.manual_context:
@@ -482,7 +547,11 @@ class WorldStateManager:
         self, types: list[str] = None
     ) -> world_state_templates.TypedCollection:
 
-        """Retrieves the typed templates from the template collection."""
+        """Retrieves the typed templates from the template collection.
+        
+        Returns:
+            A WorldStateTemplates object containing state reinforcement templates.
+        """
         collection = self.template_collection
         return collection.typed(types=types)
 
@@ -500,7 +569,11 @@ class WorldStateManager:
         self.template_collection.remove(group)
 
     async def save_template(self, template: world_state_templates.AnnotatedTemplate):
-        """Saves a state reinforcement template to the scene configuration."""
+        """Saves a state reinforcement template to the scene configuration.
+        
+        Note:
+            If the template is set to auto-create, it will be applied immediately.
+        """
         group = self.template_collection.find(template.group)
         group.update_template(template)
         if getattr(template, "auto_create", False):
@@ -513,7 +586,11 @@ class WorldStateManager:
 
     async def apply_all_auto_create_templates(self):
 
-        """Applies all auto-create state reinforcement templates."""
+        """Applies all auto-create state reinforcement templates.
+        
+        This method goes through the scene configuration, identifies templates set for auto-creation,
+        and applies them.
+        """
         collection = self.template_collection
         flat_collection = collection.flat(types=["state_reinforcement"])
 
@@ -534,6 +611,9 @@ class WorldStateManager:
         
         Args:
             template: The StateReinforcementTemplate object to be auto-applied.
+        
+        Note:
+            This function delegates to a specific apply function based on the template type.
         """
         fn = getattr(self, f"auto_apply_template_{template.template_type}", None)
 
@@ -723,8 +803,10 @@ class WorldStateManager:
         generate_attributes: bool = True,
         generation_options: world_state_templates.GenerationOptions | None = None,
     ) -> "Character":
+        """
+        DEPRECATED: Use the director agent's persist_character method instead.
 
-        """Create a new character in the scene.
+        Create a new character in the scene.
         
         This asynchronous function generates a character with specified attributes,
         including name and description. It checks for existing names to avoid

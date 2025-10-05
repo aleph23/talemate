@@ -417,6 +417,44 @@ class LayeredHistoryMixin:
         performed using the same function for all layers. The function handles  the
         creation of new layers dynamically as needed and updates the status  during
         processing.
+        The layered history is a summarized archive with dynamic layers that
+        will get less and less granular as the scene progresses.
+
+        The most granular is still self.scene.archived_history, which holds
+        all the base layer summarizations.
+
+        self.scene.layered_history = [
+            # first layer after archived_history
+            [
+                {
+                    "start": 0, # index in self.archived_history
+                    "end": 10, # index in self.archived_history
+                    "ts": "PT5M",
+                    "text": "A summary of the first 10 entries"
+                },
+                ...
+            ],
+            # second layer
+            [
+                {
+                    "start": 0, # index in self.scene.layered_history[0]
+                    "end": 5, # index in self.scene.layered_history[0]
+                    "ts": "PT2M",
+                    "text": "A summary of the first 5 entries"
+                },
+                ...
+            ],
+            # additional layers
+            ...
+        ]
+
+        The same token threshold as for the base layer will be used for the
+        layers.
+
+        The same summarization function will be used for the layers.
+
+        The next level layer will be generated automatically when the token
+        threshold is reached.
         """
         if not self.scene.archived_history:
             return  # No base layer summaries to work with
@@ -655,6 +693,19 @@ class LayeredHistoryMixin:
                 correspond to.
             generation_options: Optional generation options to pass to the summarization
                 process.
+            
+        Returns:
+            List of LayeredArchiveEntry objects containing the summarized text along
+            with timestamp and index information. Currently returns a list with a
+            single entry, but the structure supports multiple entries if needed.
+
+        Notes:
+            - The method respects the layered_history_threshold for chunking
+            - Uses helper methods for timestamp extraction, context building, and
+              chunk summarization
+            - Validates that summaries are not longer than the original text
+            - The last entry is always included in the final chunk if it doesn't
+              exceed the token threshold
         """
         token_threshold = self.layered_history_threshold
 

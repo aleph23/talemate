@@ -143,6 +143,9 @@ class OllamaClient(ClientBase):
         self._available_models = sorted(model_names)
         self._models_last_fetched = time.time()
         return self._available_models
+    
+
+    def finalize_status(self, data: dict):
         """Finalizes the status data for the client."""
         data["manual_model_choices"] = self._available_models
         return data
@@ -241,8 +244,13 @@ class OllamaClient(ClientBase):
     async def abort_generation(self):
         # This is a no-op for now as Ollama doesn't expose an abort endpoint
         # in the Python client
-        """Attempt to abort the generation process."""
+        """Attempt to abort the generation process.
+        Ollama doesn't have a direct abort endpoint, but we can try to stop the model.
+        """
         pass
+
+
+    def jiggle_randomness(self, prompt_config: dict, offset: float = 0.3) -> dict:
         """Adjusts temperature and repetition_penalty in prompt_config by random values."""
         import random
 

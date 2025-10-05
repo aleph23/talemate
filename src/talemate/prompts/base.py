@@ -56,8 +56,7 @@ prepended_template_dirs = ContextVar("prepended_template_dirs", default=[])
 
 class PydanticJsonEncoder(json.JSONEncoder):
     def default(self, obj):
-        """Return the model dump of the object if available, else call the superclass
-        method."""
+        """Return the model dump of the object if available, else call the superclass method."""
         if hasattr(obj, "model_dump"):
             return obj.model_dump()
         return super().default(obj)
@@ -170,7 +169,8 @@ class LoopedPrompt:
 
     @property
     def done(self):
-        """Check if the current loop is complete.
+        """
+        Check if the current loop is complete.
         
         This property checks whether the loop has been initialized and  increments the
         current loop count. If the loop count exceeds  the specified limit, a
@@ -208,7 +208,8 @@ class LoopedPrompt:
         return item == self.current_item
 
     def update(self, value):
-        """Update the current item with a new value.
+        """
+        Update the current item with a new value.
         
         This method checks if the provided value is valid and updates the current item
         in the generated dictionary. If the value is None or empty, or if there is no
@@ -385,8 +386,8 @@ class Prompt:
         return found
 
     def render(self):
-
-        """Render the prompt using jinja2.
+        """
+        Render the prompt using jinja2.
         
         This method utilizes the jinja2 library to render a prompt by first creating a
         jinja2 environment  with the necessary template paths. It prepares a context
@@ -506,12 +507,11 @@ class Prompt:
 
         # replace any {{ and }} as they are not from the scenario content
         # and not meant to be rendered
-
-        """Replaces specific placeholders in the prompt text and renders it."""
+        """
+        Will find all {!{ and }!} occurances replace them with {{ and }} and
+        then render the prompt again.
+        """
         prompt_text = prompt_text.replace("{{", "__").replace("}}", "__")
-
-        # now replace {!{ and }!} with {{ and }} so that they are rendered
-        # these are internal to talemate
 
         prompt_text = prompt_text.replace("{!{", "{{").replace("}!}", "}}")
 
@@ -595,7 +595,8 @@ class Prompt:
         as_question_answer: bool = True,
         short: bool = False,
     ):
-        """Process a query against the provided text and return the result.
+        """
+        Process a query against the provided text and return the result.
         
         This function formats the query using the instance variables and  processes the
         text to either return a direct answer or a formatted  question-answer pair. It
@@ -643,7 +644,8 @@ class Prompt:
         return response.strip().lower().startswith("y")
 
     def query_memory(self, query: str, as_question_answer: bool = True, **kwargs):
-        """Query the memory and return the result.
+        """
+        Query the memory and return the result.
         
         This function formats the provided query using the instance variables  and
         interacts with the memory agent to retrieve answers. It can return  the result
@@ -681,7 +683,8 @@ class Prompt:
             )
 
     def instruct_text(self, instruction: str, text: str, as_list: bool = False):
-        """Processes an instruction with the given text and returns the response.
+        """
+        Processes an instruction with the given text and returns the response.
         
         Args:
             instruction (str): The instruction to be processed.
@@ -783,14 +786,19 @@ class Prompt:
         return f"<|BOT|>{prepend}{response}"
 
     def set_prepared_response_random(self, responses: list[str], prefix: str = ""):
+        """
+        Set the prepared response from a list of responses using random.choice
 
-        """Set a prepared response randomly from a list of responses."""
+        Args:
+
+            responses (list[str]): A list of responses.
+        """
         response = random.choice(responses)
         return self.set_prepared_response(f"{prefix}{response}")
 
     def set_eval_response(self, empty: str = None):
-
-        """Set the evaluation response and update counters if provided.
+        """
+        Set the evaluation response and update counters if provided.
         
         Args:
             empty (str?): The key to update in the counters.
@@ -928,7 +936,8 @@ class Prompt:
         return random.randint(min, max)
 
     async def parse_yaml_response(self, response):
-        """Parse a YAML response from the LLM.
+        """
+        Parse a YAML response from the LLM.
         
         This function extracts YAML content from a given response string, which may
         contain markdown code blocks. It checks for the presence of YAML code blocks
@@ -973,7 +982,8 @@ class Prompt:
 
     async def parse_json_response(self, response, ai_fix: bool = True):
         # strip comments
-        """Parse a JSON response, attempting to fix errors if necessary.
+        """
+        Parse a JSON response, attempting to fix errors if necessary.
         
         This function processes a JSON response by first stripping comments and
         handling specific formatting cases. It attempts to decode the JSON and, if that
@@ -1054,7 +1064,8 @@ class Prompt:
                 )
 
     async def evaluate(self, response: str) -> Tuple[str, dict]:
-        """async def evaluate(self, response: str) -> Tuple[str, dict]:
+        """
+        async def evaluate(self, response: str) -> Tuple[str, dict]:
         Evaluate the response against predefined questions.  This function processes
         the provided response by parsing it as JSON  and comparing the answers to the
         expected questions. It checks for  consistency in the number of questions and
@@ -1127,8 +1138,8 @@ class Prompt:
         return "\n".join(response), self.eval_context.get("counters")
 
     async def send(self, client: Any, kind: str = "create"):
-
-        """Send the prompt to the client and handle the response.
+        """
+        Send the prompt to the client and handle the response.
         
         This asynchronous function sends a prompt to the specified client and processes
         the response based on the expected data format. It checks if the response needs

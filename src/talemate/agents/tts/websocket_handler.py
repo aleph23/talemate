@@ -320,7 +320,13 @@ class TTSWebsocketHandler(Plugin):
 
     async def handle_test(self, data: dict):
 
-        """Handle a request to test a voice."""
+        """Handle a request to test a voice.
+        
+        Supports two payload formats:
+
+        1. Existing voice - identified by ``voice_id`` (legacy behaviour)
+        2. Unsaved voice - identified by at least ``provider`` and ``provider_id``.
+        """
         tts_agent: "TTSAgent" = get_agent("tts")
 
         try:
@@ -610,7 +616,23 @@ class TTSWebsocketHandler(Plugin):
 
     async def handle_upload_voice_file(self, data: dict):
 
-        """Handle uploading a new audio file for a voice."""
+        """Handle uploading a new audio file for a voice.
+        
+        The *provider* defines which MIME types it accepts via
+        ``VoiceProvider.upload_file_types``.  This method therefore:
+
+        1. Parses the data-URL to obtain the raw bytes **and** MIME type.
+        2. Verifies the MIME type against the provider's allowed list
+           (if the provider restricts uploads).
+        3. Stores the file under
+
+           ``tts/voice/<provider>/<slug(label)>.<extension>``
+
+           where *extension* is derived from the MIME type (e.g. ``audio/wav`` → ``wav``).
+        4. Returns the relative path ("provider_id") back to the frontend so
+           it can populate the voice's ``provider_id`` field.
+        """
+
         try:
             payload = UploadVoiceFilePayload(**data)
         except pydantic.ValidationError as e:

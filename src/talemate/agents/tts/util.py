@@ -69,7 +69,12 @@ def voice_is_talemate_asset(
 
 def voice_is_scene_asset(voice: Voice, provider: VoiceProvider) -> bool:
 
-    """Check if the voice is a scene asset."""
+    """Check if the voice is a scene asset.
+    Scene assets are stored in the the scene's assets directory.
+
+    This function does NOT check .is_scene_asset but does path resolution to
+    determine if the voice is a scene asset.
+    """
     is_talemate_asset, resolved = voice_is_talemate_asset(voice, provider)
     if not is_talemate_asset:
         return False
@@ -94,7 +99,11 @@ def get_voice(scene: "Scene", voice_id: str) -> Voice | None:
     
     Args:
         scene: Scene instance or ``None``.
-        voice_id: The fully-qualified voice identifier (``provider:provider_id``)."""
+        voice_id: The fully-qualified voice identifier (``provider:provider_id``).
+
+    The function first checks *scene.voice_library* (if present) and falls back
+    to the global voice library instance.
+    """
     try:
         if scene and getattr(scene, "voice_library", None):
             voice = scene.voice_library.get_voice(voice_id)
