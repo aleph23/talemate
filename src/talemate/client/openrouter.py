@@ -261,7 +261,7 @@ class OpenRouterClient(ClientBase):
 
     @property
     def openrouter_api_key(self):
-        """Returns the OpenRouter API key from the configuration."""
+        """Return the OpenRouter API key from the configuration."""
         return self.config.openrouter.api_key
 
     @property
