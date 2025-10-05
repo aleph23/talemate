@@ -152,7 +152,7 @@ class StateReinforcement(AgentNode):
         super().__init__(title=title, **kwargs)
 
     def setup(self):
-        """Initializes input and output sockets and sets default properties."""
+        """Initializes input and output sockets with default properties."""
         self.add_input("state")
         self.add_input("query_or_detail", socket_type="str")
         self.add_input("character", socket_type="character", optional=True)
