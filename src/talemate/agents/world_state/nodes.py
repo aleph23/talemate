@@ -153,7 +153,6 @@ class StateReinforcement(AgentNode):
 
     def setup(self):
         """Initializes input and output sockets and sets default properties."""
-        """Initializes input and output properties for the component."""
         self.add_input("state")
         self.add_input("query_or_detail", socket_type="str")
         self.add_input("character", socket_type="character", optional=True)
@@ -171,7 +170,6 @@ class StateReinforcement(AgentNode):
 
     async def run(self, state: GraphState):
         """Processes reinforcement learning updates for a given state."""
-        """Processes reinforcement learning updates for a scene."""
         scene: "Scene" = active_scene.get()
         query_or_detail = self.require_input("query_or_detail")
         character = self.normalized_input_value("character")
@@ -201,12 +199,10 @@ class DeactivateCharacter(AgentNode):
     Deactivates a character from the world state.
 
     Inputs:
-
     - state: The current state of the graph
     - character: The character to deactivate
 
     Outputs:
-
     - state: The updated state
     """
 
@@ -240,13 +236,11 @@ class EvaluateQuery(AgentNode):
     Evaluates a query on the world state.
 
     Inputs:
-
     - state: The current state of the graph
     - query: The query to evaluate
     - context: The context to evaluate the query in
 
     Outputs:
-
     - state: The current state
     - result: The result of the query
     """
@@ -292,11 +286,9 @@ class RequestWorldState(AgentNode):
     Requests the current world state.
 
     Inputs:
-
     - state: The current state of the graph
 
     Outputs:
-
     - state: The current state
     - world_state: The current world state
     """
