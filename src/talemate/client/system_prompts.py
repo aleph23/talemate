@@ -136,7 +136,6 @@ class SystemPrompts(pydantic.BaseModel):
     @property
     def defaults(self) -> dict:
         """Return a copy of the RENDER_CACHE dictionary."""
-        """Return a copy of the RENDER_CACHE dictionary."""
         return RENDER_CACHE.copy()
 
     def alias(self, alias: str) -> str:
@@ -207,7 +206,6 @@ class SystemPrompts(pydantic.BaseModel):
         return alias
 
     def get(self, kind: str, decensor: bool = False) -> str:
-        """Retrieve a value based on the specified kind and decensor flag."""
         """Retrieve a value based on the specified kind and decensor flag."""
         kind = self.alias(kind)
 
