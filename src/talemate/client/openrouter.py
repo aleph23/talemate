@@ -252,24 +252,20 @@ class OpenRouterClient(ClientBase):
     @property
     def provider_ignore(self) -> list[str]:
         """Returns the provider_ignore list from client_config."""
-        """Returns the provider_ignore list from client_config."""
         return self.client_config.provider_ignore
 
     @property
     def can_be_coerced(self) -> bool:
         """Indicates if coercion is possible based on the reason_enabled property."""
-        """Indicates if coercion is possible based on the reason_enabled property."""
         return not self.reason_enabled
 
     @property
     def openrouter_api_key(self):
-        """Get the OpenRouter API key from the configuration."""
         """Returns the OpenRouter API key from the configuration."""
         return self.config.openrouter.api_key
 
     @property
     def supported_parameters(self):
-        """Return a list of supported parameters."""
         """Return a list of supported parameters."""
         return [
             "temperature",
@@ -340,7 +336,6 @@ class OpenRouterClient(ClientBase):
 
     async def status(self):
         # Fetch models if we have an API key and haven't fetched yet
-        """Fetch models and emit status if conditions are met."""
         """Fetch models and emit status if conditions are met."""
         if self.openrouter_api_key and not self._models_fetched:
             self._models_fetched = True
