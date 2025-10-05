@@ -99,7 +99,6 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def disable_safety_settings(self):
-        """Get the disable_safety_settings property from client_config."""
         """Get the value of disable_safety_settings from client_config."""
         return self.client_config.disable_safety_settings
 
@@ -115,7 +114,6 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def google_credentials(self):
-        """Return Google credentials from the specified path."""
         """Return Google credentials from the specified path."""
         path = self.google_credentials_path
         if not path:
@@ -140,7 +138,6 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
     @property
     def vertexai_ready(self) -> bool:
         """Check if Vertex AI is ready based on credentials and location."""
-        """Check if Vertex AI is ready based on credentials and location."""
         return all(
             [
                 self.google_credentials_path,
@@ -150,7 +147,6 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def developer_api_ready(self) -> bool:
-        """Check if the developer API is ready."""
         """Check if the developer API is ready."""
         return all(
             [
@@ -180,7 +176,6 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
     @property
     def safety_settings(self):
         """Return safety settings if not disabled."""
-        """Returns safety settings if not disabled."""
         if not self.disable_safety_settings:
             return None
 
@@ -211,7 +206,6 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def http_options(self) -> genai_types.HttpOptions | None:
-        """Returns HttpOptions if the endpoint override base URL is configured."""
         """Returns HttpOptions if the endpoint override base URL is configured."""
         if not self.endpoint_override_base_url_configured:
             return None
@@ -246,7 +240,6 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     @property
     def requires_reasoning_pattern(self) -> bool:
-        """Indicates whether reasoning pattern is required."""
         """Indicates whether reasoning pattern is required."""
         return False
 
