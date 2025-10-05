@@ -41,11 +41,17 @@ class NodeNotFoundError(ValueError):
 
 
 def normalize_registry_name(name: str) -> str:
-
-    """Normalize a registry name to camel case with no spaces or special characters.
+     """
+    Normalize a registry name to camel case with no spaces or special characters.
     
     Args:
         name (str): Name to normalize.
+
+    Examples:
+
+    - "My Node" -> "myNode"
+    - "My-Node" -> "myNode"
+    - "My Other Node" -> "myOtherNode"
     """
     name = name.title()
 
@@ -120,8 +126,8 @@ class register:
 
 
 def validate_registry_path(path: str, node_definitions: dict | None = None):
-
-    """Validates a registry path to ensure it is a valid path.
+    """
+    Validates a registry path to ensure it is a valid path.
     
     This function checks if the provided registry path is valid by ensuring  it is
     not empty, contains at least two parts separated by '/', and does  not collide

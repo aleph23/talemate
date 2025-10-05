@@ -51,8 +51,8 @@ def handle_endofline_special_delimiter(content: str) -> str:
 def remove_trailing_markers(
     content: str, pair_markers: list[str] = None, enclosure_markers: list[str] = None
 ) -> str:
-
-    """Remove trailing markers from the content.
+    """
+    Remove trailing markers from the content.
     
     This function checks for uneven balance in the specified pair_markers  and
     removes any trailing markers from the content. If no pair_markers  or
@@ -90,7 +90,8 @@ def remove_trailing_markers(
 
 
 def parse_messages_from_str(string: str, names: list[str]) -> list[str]:
-    """def parse_messages_from_str(string: str, names: list[str]) -> list[str]:
+    """
+    def parse_messages_from_str(string: str, names: list[str]) -> list[str]:
     
     Parse a string containing chat history into individual messages.  This function
     takes a raw chat history string and a list of speaker names,  then uses regular
@@ -150,8 +151,7 @@ def strip_partial_sentences(text: str) -> str:
 
 
 def clean_message(message: str) -> str:
-    """Remove leading and trailing whitespace and reduce multiple spaces to a single
-    space."""
+    """Remove leading and trailing whitespace and reduce multiple spaces to a single space."""
     message = message.strip()
     message = re.sub(r" +", " ", message)
     return message
@@ -214,8 +214,8 @@ def ensure_dialog_format(
     #        return f"{talking_character}: \"{line}\""
     #    return f"\"{line}\""
     #
-
-    """Ensure the dialog format of a given line of text.
+    """
+    Ensure the dialog format of a given line of text.
     
     This function processes a line of text to ensure it adheres to a specific
     dialog format,  taking into account the presence of a talking character and the
@@ -284,8 +284,8 @@ def ensure_dialog_format(
 
 
 def ensure_dialog_line_format(line: str, default_wrap: str = None) -> str:
-
-    """Ensure the formatting of dialogue and action/thought descriptions in a text
+    """
+    Ensure the formatting of dialogue and action/thought descriptions in a text
     string.
     
     This function standardizes the formatting of dialogue and action/thought
@@ -443,7 +443,8 @@ def ensure_dialog_line_format(line: str, default_wrap: str = None) -> str:
 def clean_uneven_markers(chunk: str, marker: str):
     # if there is an uneven number of quotes, remove the last one if its
     # at the end of the chunk. If its in the middle, add a quote to the endc
-    """Clean uneven markers from a given string.
+    """
+    Clean uneven markers from a given string.
     
     This function checks for an uneven number of occurrences of the specified
     marker in the input string `chunk`. If the count of the marker is odd, it
@@ -471,7 +472,8 @@ def clean_uneven_markers(chunk: str, marker: str):
 
 
 def split_anchor_text(text: str, anchor_length: int = 10) -> tuple[str, str]:
-    """Splits input text into non-anchor and anchor parts.
+    """
+    Splits input text into non-anchor and anchor parts.
     
     Args:
         text (str): The input text to be split.
@@ -509,13 +511,14 @@ def separate_sentences(text: str) -> str:
 
 
 def parse_tts_markup(markup: str) -> list[DialogueChunk]:
-    """Parses TTS markup into DialogueChunk objects.
+    """
+    Parses TTS markup into DialogueChunk objects.
     
-    This function processes a string containing TTS markup formatted as  [Speaker
-    Name] followed by text content. It splits the input into  lines, matches each
-    line against the expected pattern, and  categorizes the content as either
-    dialogue or exposition. The  resulting DialogueChunk objects are collected into
-    a list and  returned.
+    This function processes a string containing TTS markup formatted as [Speaker
+    Name] followed by text content. It splits the input into lines, matches each
+    line against the expected pattern, and categorizes the content as either
+    dialogue or exposition. The resulting DialogueChunk objects are collected into
+    a list and returned.
     
     Args:
         markup (str): The TTS markup string to be parsed.

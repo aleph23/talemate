@@ -419,7 +419,7 @@ async def load_scene_from_data(
 
 @set_loading("Importing scene archive...")
 async def load_scene_from_zip(scene, zip_path, reset: bool = False):
-    """Load a complete scene from a ZIP file containing scene.json and assets."""
+    """Load a complete scene from a ZIP file containing scene.json and assets/nodes/info/templates."""
     log.info("Loading complete scene from ZIP", zip_path=zip_path, reset=reset)
 
     # Verify ZIP file
@@ -761,8 +761,16 @@ def character_from_chara_data(data: dict) -> Character:
 
 
 def load_from_image_metadata(image_path: str, file_format: str):
+    """
+    Load character data from an image file's metadata.
+    
+    Args:
+    image_path (str): The path to the image file.
+    file_format (str): The image file format ('png' or 'webp').
 
-    """Load character data from an image file's metadata."""
+    Returns:
+    None
+    """
     metadata = extract_metadata(image_path, file_format)
 
     if metadata.get("spec") == "chara_card_v2":
@@ -830,7 +838,12 @@ def _prepare_history(entry):
 
 def _prepare_legacy_history(entry):
 
-    """Convert legacy history entry to a new format."""
+    """
+    Convers legacy history to new format
+
+    Legacy: list<str>
+    New: list<SceneMessage>
+    """
     if entry.startswith("*"):
         cls = NarratorMessage
     elif entry.startswith("Director instructs"):

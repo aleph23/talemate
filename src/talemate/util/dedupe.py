@@ -186,8 +186,25 @@ def dedupe_sentences(
     split_on_comma: bool = False,
 ) -> str:
 
+    """
+    Will split both texts into sentences and then compare each sentence in text_a
+    against similar sentences in text_b. If a similar sentence is found, it will be
+    removed from text_a.
+
+    The similarity threshold is used to determine if two sentences are similar.
+
+    Arguments:
+        text_a (str): The first text.
+        text_b (str): The second text.
+        similarity_threshold (int): The similarity threshold to use when comparing sentences.
+        debug (bool): Whether to log debug messages.
+        on_dedupe (Callable): A callback function that is called when a duplicate is found.
+        split_on_comma (bool): Whether to split text_b sentences on commas as well.
+        min_length (int): The minimum length of a sentence to be considered for deduplication. Shorter sentences are skipped. If None, all sentences are considered.
+    Returns:
+        str: the cleaned text_a.
+    """
     # find similarity matches
-    """Remove similar sentences from text_a based on comparisons with text_b."""
     matches = similarity_matches(
         text_a, text_b, similarity_threshold, min_length, split_on_comma
     )

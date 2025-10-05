@@ -408,7 +408,6 @@ class UpdateCharacterData(Node):
 
     def setup(self):
         """Sets up input and output sockets for the character."""
-        """Sets up input and output sockets for the character."""
         self.add_input("character", socket_type="character")
         self.add_input("base_attributes", socket_type="dict", optional=True)
         self.add_input("details", socket_type="dict", optional=True)
@@ -421,7 +420,8 @@ class UpdateCharacterData(Node):
         self.add_output("character", socket_type="character")
 
     async def run(self, state: GraphState):
-        """async def run(self, state: GraphState):
+        """
+        async def run(self, state: GraphState):
         Update character attributes based on input values.  This function retrieves
         various attributes for a character, including  base_attributes, details,
         description, name, and color, using the  get_input_value method. It updates the
@@ -429,16 +429,8 @@ class UpdateCharacterData(Node):
         sets the updated  character as an output value.
         
         Args:
-            state (GraphState): The current state of the graph."""
-        """async def run(self, state: GraphState):
-        Update character attributes based on input values.  This function retrieves
-        various attributes for a character, including  base_attributes, details,
-        description, name, and color, using the  get_input_value method. It updates the
-        character's properties only  if the corresponding input values are set.
-        Finally, it sets the  updated character as an output value.
-        
-        Args:
-            state (GraphState): The current state of the graph."""
+            state (GraphState): The current state of the graph.
+        """
         character: "Character" = self.get_input_value("character")
         color = self.get_input_value("color")
         base_attributes = self.get_input_value("base_attributes")
@@ -552,7 +544,6 @@ class CharacterMessage(Node):
 
     async def run(self, state: GraphState):
         """Processes input values and sets the output message."""
-        """Processes input values and sets the output message."""
         character: "Character" = self.get_input_value("character")
         message = self.get_input_value("message")
         source = self.get_input_value("source")
@@ -609,7 +600,6 @@ class NarratorMessage(Node):
 
     def setup(self):
         """Sets up input and output sockets for the component."""
-        """Sets up input and output sockets for the component."""
         self.add_input("message", socket_type="str")
         self.add_input("source", socket_type="str", optional=True)
         self.add_input("meta", socket_type="dict", optional=True)
@@ -619,7 +609,6 @@ class NarratorMessage(Node):
         self.add_output("message", socket_type="message_object")
 
     async def run(self, state: GraphState):
-        """Processes input values and sets the output message."""
         """Processes input values and sets the output message."""
         message = self.get_input_value("message")
         source = self.get_input_value("source")
@@ -693,7 +682,8 @@ class DirectorMessage(Node):
         self.add_output("message", socket_type="message_object")
 
     async def run(self, state: GraphState):
-        """Processes input values and constructs a DirectorMessage.
+        """
+        Processes input values and constructs a DirectorMessage.
         
         This asynchronous function retrieves various input values such as  "message",
         "source", "action", "meta", and "character" from the  GraphState. It constructs
@@ -769,15 +759,12 @@ class ToggleMessageContextVisibility(Node):
     Hide or show a message. Hidden messages are not displayed to the AI.
 
     Inputs:
-
     - message: The message object
 
     Properties:
-
     - hidden: Whether the message is hidden
 
     Outputs:
-
     - message: The message object
     """
 
@@ -794,7 +781,6 @@ class ToggleMessageContextVisibility(Node):
 
     def setup(self):
         """Sets up input and output for the message object."""
-        """Sets up input and output for the message object."""
         self.add_input("message", socket_type="message_object")
 
         self.set_property("hidden", False)
@@ -802,7 +788,6 @@ class ToggleMessageContextVisibility(Node):
         self.add_output("message", socket_type="message_object")
 
     async def run(self, state: GraphState):
-        """Handles the visibility of a message based on the 'hidden' property."""
         """Processes the message visibility based on the hidden property."""
         message = self.require_input("message")
         hidden = self.get_property("hidden")
@@ -824,7 +809,6 @@ class WaitForInput(Node):
     for processing.
 
     Inputs:
-
     - state: The current graph state
     - player_character: The player character
     - reason: The reason for the input
@@ -832,17 +816,14 @@ class WaitForInput(Node):
     - abort_condition: A condition to abort the input loop
 
     Properties
-
     - allow_commands: Allow commands to be executed, using the ! prefix
 
     Outputs:
-
     - input: The input message
     - interaction_state: The interaction state
     - character: The character object
 
     Abort Conditions:
-
     The chain of nodes connected to the abort_condition socket will be executed
     on each iteration of the input loop. If the chain resolves to a boolean value,
     the input loop will be aborted.
@@ -875,7 +856,6 @@ class WaitForInput(Node):
 
     def setup(self):
         """Sets up input and output properties for the interaction."""
-        """Sets up input and output properties for the interaction."""
         self.add_input("state")
         self.add_input("player_character", optional=True, socket_type="character")
         self.add_input("reason", optional=True, socket_type="str")
@@ -891,8 +871,6 @@ class WaitForInput(Node):
         self.add_output("character", socket_type="character")
 
     async def run(self, state: GraphState):
-        """Handles the input loop for the game, processing player commands and
-        interactions."""
         """Handles the input loop for the game, processing player commands and
         interactions."""
         scene: "Scene" = active_scene.get()
@@ -1008,7 +986,8 @@ class WaitForInput(Node):
 
     async def execute_node_command(self, state: GraphState, command_name: str) -> bool:
         # command name needs to be split by : and then ;
-        """Execute a command node from the scene based on the provided command name.
+        """
+        Execute a command node from the scene based on the provided command name.
         
         This function processes the command_name by splitting it into the command and
         its arguments.  It retrieves the corresponding command node from the state and
@@ -1016,15 +995,6 @@ class WaitForInput(Node):
         command name is invalid, it returns False.  The function also handles
         leading/trailing spaces and removes any leading '!' from the command name.
         
-        """
-        """Execute a command node from the scene based on the provided command name.
-        
-        This function processes the command_name by splitting it into the command and
-        its arguments.  It retrieves the corresponding command node from the scene's
-        state and executes it with the  provided arguments. If the command node is not
-        found or the command name is invalid, it  returns False. The function also
-        handles leading/trailing spaces and removes any leading  exclamation marks from
-        the command name.
         """
         try:
             command_name, arg_str = command_name.split(":", 1)
@@ -1070,7 +1040,6 @@ class TriggerGameLoopActorIter(Trigger):
     In a most basic setup you will trigger this everytime an actor has had a turn.
 
     Inputs:
-
     - actor: The actor that has had a turn
     """
 
@@ -1080,7 +1049,6 @@ class TriggerGameLoopActorIter(Trigger):
     @property
     def signal_name(self) -> str:
         """Return the name of the signal."""
-        """Return the name of the signal."""
         return "game_loop_actor_iter"
 
     def __init__(self, title="Game Loop Actor Iteration", **kwargs):
@@ -1088,7 +1056,6 @@ class TriggerGameLoopActorIter(Trigger):
 
     def make_event_object(self, state: GraphState) -> events.GameLoopActorIterEvent:
         """Creates a GameLoopActorIterEvent with the current scene and actor."""
-        """Create a GameLoopActorIterEvent with the current scene and actor."""
         return events.GameLoopActorIterEvent(
             scene=active_scene.get(),
             event_type="game_loop_actor_iter",
@@ -1098,7 +1065,6 @@ class TriggerGameLoopActorIter(Trigger):
 
     def setup_required_inputs(self):
         """Sets up the required inputs for the actor."""
-        """Set up required inputs for the actor."""
         super().setup_required_inputs()
         self.add_input("actor", socket_type="actor")
 
@@ -1108,11 +1074,9 @@ class TriggerGameLoopActorIter(Trigger):
 
     def setup_properties(self):
         """Set up properties for the instance."""
-        """Set up properties for the instance."""
         return
 
     async def after(self, state: GraphState, event: events.GameLoopActorIterEvent):
-        """Handles game loop events for player and AI characters."""
         """Handles game loop events for player and AI characters."""
         new_event = events.GameLoopCharacterIterEvent(
             scene=active_scene.get(),
@@ -1133,11 +1097,9 @@ class UnpackCharacter(Node):
     Unpack a character into its individual fields
 
     Inputs:
-
     - character: The character object
 
     Outputs:
-
     - name: The name of the character
     - is_player: Whether the character is the player character
     - description: The character description
@@ -1185,11 +1147,9 @@ class ActivateCharacter(Node):
     Activate a character
 
     Inputs:
-
     - character: The character to activate
 
     Outputs:
-
     - character: The activated character
     """
 
@@ -1216,11 +1176,9 @@ class DeactivateCharacter(Node):
     Deactivate a character
 
     Inputs:
-
     - character: The character to deactivate
 
     Outputs:
-
     - character: The deactivated character
     """
 
@@ -1247,11 +1205,9 @@ class RemoveAllCharacters(Node):
     Remove all characters from the scene
 
     Inputs:
-
     - state: The graph state
 
     Outputs:
-
     - state: The graph state
     """
 
@@ -1280,12 +1236,10 @@ class RemoveCharacter(Node):
     Remove a character from the scene
 
     Inputs:
-
     - state: The graph state
     - character: The character to remove
 
     Outputs:
-
     - state: The graph state
     """
 
@@ -1315,7 +1269,6 @@ class GetSceneLoopState(Node):
     Returns the current scene loop states
 
     Outputs:
-
     - state: The current node state, this is the state of the graph currently being processed
     - parent: The parent node state, this is the state of the graph that contains the current graph
     - shared: The shared state, this is the state shared between all graphs
@@ -1346,11 +1299,9 @@ class RestoreScene(Node):
     Restore the scene to its resore point
 
     Inputs:
-
     - state: The graph state
 
     Outputs:
-
     - state: The graph state
     """
 
@@ -1375,17 +1326,14 @@ class SetIntroduction(Node):
     Set the introduction text for the scene
 
     Inputs:
-
     - state: The graph state
     - introduction: The introduction text
 
     Properties:
-
     - introduction: The introduction text
     - emit_history: Whether to re-emit the entire history of the scene
 
     Outputs:
-
     - state: The graph state
     """
 
@@ -1416,7 +1364,6 @@ class SetIntroduction(Node):
 
     async def run(self, state: GraphState):
         """Runs the scene with the given state and processes input values."""
-        """Runs the scene with the given state and processes input values."""
         scene: "Scene" = active_scene.get()
         introduction = self.require_input("introduction")
         emit_history = self.get_input_value("emit_history")
@@ -1437,7 +1384,6 @@ class SceneLoop(Loop):
     It will loop through the scene graph until the loop is broken.
 
     Properties:
-
     - trigger_game_loop: Whether to trigger the game loop event
     """
 
@@ -1464,7 +1410,8 @@ class SceneLoop(Loop):
         self.set_property("trigger_game_loop", True)
 
     async def on_loop_start(self, state: GraphState):
-        """async def on_loop_start(self, state: GraphState):
+        """
+        async def on_loop_start(self, state: GraphState):
         Handles the initialization and start of the scene loop.  This function ensures
         that the memory database is ready and loads the active pins  for the scene. It
         connects listeners and initializes the scene loop if it hasn't  been done yet.
@@ -1473,8 +1420,9 @@ class SceneLoop(Loop):
         about the game loop trigger.
         
         Args:
-            state (GraphState): The current state of the graph, containing scene and"""
-        """Starts the loop for the given state in the graph.
+            state (GraphState): The current state of the graph, containing scene and
+        
+        Starts the loop for the given state in the graph.
         
         This asynchronous function initializes the scene loop by ensuring the memory
         database is ready and loading active pins. It sets up listeners and registers
@@ -1528,7 +1476,6 @@ class SceneLoop(Loop):
 
     async def on_loop_end(self, state: GraphState):
         """Handles actions to perform at the end of the loop."""
-        """Handles actions to perform at the end of the loop."""
         scene: "Scene" = state.outer.data["scene"]
         if scene.auto_save:
             await scene.save(auto=True)
@@ -1536,6 +1483,9 @@ class SceneLoop(Loop):
         scene.emit_status()
 
         await async_signals.get("scene_loop_end_cycle").send(self.scene_loop_event)
+        
+    async def execute(self, outer_state: GraphState):
+        
         """Execute the scene loop."""
         try:
             outer_state.data["scene"] = active_scene.get()
@@ -1558,8 +1508,13 @@ class SceneLoop(Loop):
         await async_signals.get("scene_loop_error").send(self.scene_loop_event)
 
     async def register_commands(self, scene: "Scene", state: GraphState):
+        """
+        Will check the scene._NODE_DEFINITIONS for any command/Command nodes
+        and register them as commands in the scene.
 
-        """Registers command nodes in the scene."""
+        This is used to register commands that are defined in the scene
+        nodes directory.
+        """
         for node_cls in get_nodes_by_base_type("command/Command"):
             _node = node_cls()
             command_name = _node.get_property("name")

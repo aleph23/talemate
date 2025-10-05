@@ -141,7 +141,12 @@ class WorldState(BaseModel):
         self.character_name_mappings.extend([name.lower() for name in names])
 
     def normalize_name(self, name: str):
-        """Normalizes the item or character name to title case."""
+        """
+        Normalizes the item or character name to title case.
+        
+        Args:
+            name (str): item or character name
+        """
         return name.lower().replace("_", " ").strip().title()
 
     def filter_reinforcements(
@@ -154,10 +159,6 @@ class WorldState(BaseModel):
         - character: The name of the character to filter reinforcements for. Use ANY_CHARACTER to include all.
         - insert: A list of insertion modes to filter reinforcements by.
         """
-        """
-        Returns a filtered set of results as list
-        """
-
         result = []
 
         for reinforcement in self.reinforce:
@@ -181,12 +182,13 @@ class WorldState(BaseModel):
         self.location = None
 
     def emit(self, status="update"):
-        """Emits the current world state with the given status."""
+        """Emits the current world state with the given status.
+        Arguments: status: The status of the world state to emit, which influences the handling of the update event."""
         emit("world_state", status=status, data=self.model_dump())
 
     async def request_update(self, initial_only: bool = False):
-
-        """Request an update of the world state from the WorldState agent.
+        """
+        Request an update of the world state from the WorldState agent.
         
         This function handles the retrieval and processing of the world state,
         including characters and items.  If `initial_only` is true, it emits the
@@ -314,8 +316,17 @@ class WorldState(BaseModel):
         self.emit()
 
     async def persist(self):
+        """
+        Persists the world state snapshots of characters and items into memory.
+        
+        TODO: neeeds re-thinking.
 
-        """Persists the world state snapshots of characters and items into memory."""
+        Its better to use state reinforcement to track states, persisting the small world
+        state snapshots most of the time does not have enough context to be useful.
+
+        Arguments:
+        - None
+        """
         memory = instance.get_agent("memory")
 
         # first we check if any of the characters were refered
@@ -442,7 +453,13 @@ class WorldState(BaseModel):
         return reinforcement
 
     async def find_reinforcement(self, question: str, character: str = None):
-        """Finds the index and reinforcement object based on the question and character."""
+        """
+        Finds a reinforcement based on the question and character provided. Returns the index in the list and the reinforcement object.
+
+        Arguments:
+        - question: The question associated with the reinforcement to find.
+        - character: The character to whom the reinforcement is linked. Use None for global reinforcements.
+        """
         for idx, reinforcement in enumerate(self.reinforce):
             if (
                 reinforcement.question == question
@@ -452,7 +469,8 @@ class WorldState(BaseModel):
         return None, None
 
     def reinforcements_for_character(self, character: str):
-        """Returns a dictionary of reinforcements for a specified character.
+        """
+        Returns a dictionary of reinforcements for a specified character.
         
         Args:
             character (str): The name of the character for whom reinforcements are retrieved.

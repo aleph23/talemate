@@ -78,7 +78,8 @@ class WebsocketHandler(Receiver):
         return get_config()
 
     def set_agent_routers(self):
-        """Sets up websocket handler routes for agents with a websocket handler."""
+        """Sets up websocket handler routes for agents with a websocket handler.
+        This method dynamically adds agent-specific websocket handlers to the routes dictionary."""
         for agent_type, agent in instance.AGENTS.items():
             handler_cls = getattr(agent, "websocket_handler", None)
             if not handler_cls or handler_cls.router in self.routes:
@@ -179,7 +180,10 @@ class WebsocketHandler(Receiver):
         loop.call_soon_threadsafe(lambda: self.out_queue.put_nowait(data))
 
     def handle(self, emission: Emission):
-        """Handles an emission and routes it to the websocket if needed."""
+        """
+        Handles an emission by processing it or passing it through to the websocket if needed.
+        This method ensures that emissions are routed appropriately, including passthrough for websocket messages.
+        """
         called = super().handle(emission)
 
         if called is False and emission.websocket_passthrough:
@@ -200,7 +204,10 @@ class WebsocketHandler(Receiver):
                 log.error("emission passthrough", error=traceback.format_exc())
 
     def handle_system(self, emission: Emission):
-        """Handles system-type emissions and sends them to the output queue."""
+        """
+        Handles system-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for system messages.
+        """
         self.queue_put(
             {
                 "type": "system",
@@ -213,7 +220,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_status(self, emission: Emission):
-        """Handles status emissions and queues them for the websocket client."""
+        """
+        Handles status-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for status messages.
+        """
         self.queue_put(
             {
                 "type": "status",
@@ -225,7 +235,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_narrator(self, emission: Emission):
-        """Handles narrator-type emissions and sends them to the websocket client."""
+        """
+        Handles narrator-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for narrator messages.
+        """
         self.queue_put(
             {
                 "type": "narrator",
@@ -239,7 +252,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_director(self, emission: Emission):
-        """Handles director-type emissions and sends them to the output queue."""
+        """
+        Handles director-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for director messages, including action and direction mode.
+        """
         character = emission.message_object.character_name
         director = instance.get_agent("director")
         direction_mode = director.actor_direction_mode
@@ -261,7 +277,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_character(self, emission: Emission):
-        """Handles character emissions and sends them to the websocket client."""
+        """
+        Handles character-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for character messages, including character name and color.
+        """
         self.queue_put(
             {
                 "type": "character",
@@ -276,7 +295,10 @@ class WebsocketHandler(Receiver):
         )
 
     def handle_time(self, emission: Emission):
-        """Handles time-type emissions and sends them to the websocket client."""
+        """
+        Handles time-type emissions and sends them to the websocket client.
+        This method packages the emission data and places it in the output queue for time messages, including timestamp and flags.
+        """
         self.queue_put(
             {
                 "type": "time",
@@ -521,11 +543,13 @@ class WebsocketHandler(Receiver):
         )
 
     async def handle_base64(self, b64data):
-        # Decode the base64 string back into bytes
-        """Decode a base64 encoded string into bytes.
-        
-        Args:
-            b64data: base64 encoded string representing the file data.
+        # Decode the base64 string back into bytes        """
+        """
+        Handle file upload from the client.
+
+        The file data is expected to be a base64 encoded string.
+
+        :param file_data: base64 encoded string representing the file data
         """
         file_bytes = base64.b64decode(b64data)
         await asyncio.sleep(0.1)
@@ -533,7 +557,8 @@ class WebsocketHandler(Receiver):
         return file_bytes
 
     def request_scenes_list(self, query: str = ""):
-        """Request and filter a list of scenes.
+        """
+        Request and filter a list of scenes.
         
         This function retrieves a list of scenes from the directory using the
         list_scenes_directory function. If a query is provided, it filters the  scenes
@@ -627,7 +652,8 @@ class WebsocketHandler(Receiver):
         )
 
     def _asset(self, path: str, **asset):
-        """Retrieve asset information based on the given path.
+        """
+        Retrieve asset information based on the given path.
         
         Args:
             path (str): The path to the asset.
@@ -652,7 +678,8 @@ class WebsocketHandler(Receiver):
         }
 
     def add_scene_asset(self, data: dict):
-        """def add_scene_asset(self, data: dict):
+        """
+        def add_scene_asset(self, data: dict):
         Add an asset to the scene and update cover images if necessary.  This function
         creates a SceneAssetUpload instance from the provided  data and adds the asset
         to the scene. If a scene cover image or  character cover image is specified, it
@@ -661,7 +688,8 @@ class WebsocketHandler(Receiver):
         processing if applicable.
         
         Args:
-            data (dict): A dictionary containing the asset upload data."""
+            data (dict): A dictionary containing the asset upload data.
+        """
         asset_upload = SceneAssetUpload(**data)
         asset = self.scene.assets.add_asset_from_image_data(asset_upload.content)
 

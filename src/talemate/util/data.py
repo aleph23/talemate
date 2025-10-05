@@ -75,7 +75,8 @@ def fix_faulty_json(data: str) -> str:
 
 
 def extract_json(s):
-    """Extract a JSON string from the beginning of the input string `s`.
+    """
+    Extract a JSON string from the beginning of the input string `s`.
     
     This function scans the input string for the first complete JSON object or
     array, counting the opening and closing brackets to ensure they match. It
@@ -362,7 +363,15 @@ def fix_yaml_colon_in_strings(yaml_text):
 
 def fix_faulty_yaml(yaml_text):
     # Apply specific fixers in sequence
-    """Fix common YAML syntax issues."""
+    """
+    Fixes common YAML syntax issues by applying a series of fixers.
+
+    Parameters:
+        yaml_text (str): The input YAML text to fix
+
+    Returns:
+        str: Fixed YAML text
+    """
     fixed_text = fix_yaml_colon_in_strings(yaml_text)
 
     # Add more fixers here as needed

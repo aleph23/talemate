@@ -102,7 +102,16 @@ async def wait_for_input(
     sleep_time: float = 0.1,
 ) -> str | dict:
 
-    """Wait for user input asynchronously."""
+    """Wait for user input asynchronously.
+    Arguments:
+
+    - message: The message to display to the user.
+    - character: The character related to the input.
+    - scene: The scene related to the input.
+    - data: Additional data to pass to the frontend.
+    - return_struct: If True, return the entire input structure.
+    """
+
     input_received = {"message": None}
 
     def input_receiver(emission: Emission):
