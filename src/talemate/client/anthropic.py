@@ -74,7 +74,6 @@ class AnthropicClient(EndpointOverrideMixin, ClientBase):
     @property
     def anthropic_api_key(self):
         """Get the Anthropic API key from the configuration."""
-        """Get the Anthropic API key from the configuration."""
         return self.config.anthropic.api_key
 
     @property
@@ -89,7 +88,6 @@ class AnthropicClient(EndpointOverrideMixin, ClientBase):
 
     @property
     def min_reason_tokens(self) -> int:
-        """Return the minimum number of reason tokens."""
         """Return the minimum number of reason tokens."""
         return MIN_THINKING_TOKENS
 
@@ -156,16 +154,13 @@ class AnthropicClient(EndpointOverrideMixin, ClientBase):
 
     def response_tokens(self, response: str):
         """Return the output tokens from the response."""
-        """Return the output tokens from the response."""
         return response.usage.output_tokens
 
     def prompt_tokens(self, response: str):
         """Returns the input tokens from the response."""
-        """Returns the input tokens from the response."""
         return response.usage.input_tokens
 
     async def status(self):
-        """Emit the current status."""
         """Emit the current status."""
         self.emit_status()
 
