@@ -375,7 +375,6 @@ class AutoDirectMixin:
     ) -> ScenePhase | None:
         """Sets the scene intent based on the provided requirements."""
         async def set_scene_intention(type: str, intention: str) -> ScenePhase:
-            """Sets the scene intention and emits the status."""
             await set_scene_phase(self.scene, type, intention)
             self.scene.emit_status()
             return self.scene.intent_state.phase
