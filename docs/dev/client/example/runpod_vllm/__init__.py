@@ -68,7 +68,7 @@ class RunPodVLLMClient(ClientBase):
         self.runpod_id = kwargs.get("runpod_id", self.runpod_id)
 
     def tune_prompt_parameters(self, parameters: dict, kind: str):
-        """Filter parameters to keep only valid prompt tuning keys."""
+        """Filter parameters to retain only valid prompt tuning keys."""
         super().tune_prompt_parameters(parameters, kind)
 
         keys = list(parameters.keys())
