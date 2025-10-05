@@ -139,8 +139,13 @@ class SceneAssets:
         return asset
 
     def add_asset_from_image_data(self, image_data: str) -> Asset:
+        """
+        Will add an asset from an image data, extracting media type from the
+        data url and then decoding the base64 encoded data.
 
-        """Add an asset from base64 encoded image data."""
+        Will call add_asset
+        """
+
         media_type = image_data.split(";")[0].split(":")[1]
         image_bytes = base64.b64decode(image_data.split(",")[1])
         file_extension = media_type.split("/")[1]
@@ -148,8 +153,11 @@ class SceneAssets:
         return self.add_asset(image_bytes, file_extension, media_type)
 
     def add_asset_from_file_path(self, file_path: str) -> Asset:
+        """
+        Will add an asset from a file path, first loading the file into memory.
+        and then calling add_asset
+        """
 
-        """Add an asset from a specified file path."""
         file_bytes = None
         with open(file_path, "rb") as f:
             file_bytes = f.read()

@@ -111,7 +111,10 @@ class Scene(Emitter):
 
     @classmethod
     def scenes_dir(cls):
-        """Return the absolute path to the scenes directory."""
+        """
+        Returns the absolute path to the directory where scenes are stored.
+        This method calculates the path relative to the current file location.
+        """
         relative_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "..",
@@ -205,12 +208,18 @@ class Scene(Emitter):
 
     @property
     def config(self) -> Config:
-        """Returns the current configuration for the scene."""
+        """
+        Returns the current configuration for the scene.
+        This property provides access to the global configuration object used by the scene.
+        """
         return get_config()
 
     @property
     def main_character(self) -> Actor | None:
-        """Returns the main character's actor or None if not available."""
+        """
+        Returns the main character's actor for the scene if available.
+        This property provides access to the actor associated with the player character, or None if not present.
+        """
         try:
             return self.get_player_character().actor
         except AttributeError:
@@ -843,8 +852,12 @@ class Scene(Emitter):
         return "\n".join([message.as_format(as_format) for message in collected])
 
     async def push_archive(self, entry: ArchiveEntry):
+        """
+        Adds an entry to the archive history.
 
-        """Adds an entry to the archive history."""
+        The archive history is a list of summarized history entries.
+        """
+
         self.archived_history.append(entry.model_dump(exclude_none=True))
         await emit_archive_add(self, entry)
         emit(
@@ -1500,7 +1513,16 @@ class Scene(Emitter):
         # anyway.
 
     def fix_time(self):
-        """Fix time across the board using the base history as the source of truth."""
+        """
+        New implementation of sync_time that will fix time across the board
+        using the base history as the sole source of truth.
+
+        This means first identifying the time jumps in the base history by
+        looking for TimePassageMessages and then applying those time jumps
+
+        to the archived history and the layered history based on their start and end
+        indexes.
+        """
         try:
             ts = self.ts
             self._fix_time()
@@ -1568,8 +1590,13 @@ class Scene(Emitter):
         self.ts = ending_time
 
     def calc_time(self, start_idx: int = 0, end_idx: int = None):
+        """
+        Loops through self.history looking for TimePassageMessage and will
+        return the sum iso8601 duration string
 
-        """Calculates the total ISO 8601 duration from TimePassageMessage instances."""
+        Defines start and end indexes
+        """
+
         ts = "PT0S"
         found = False
 
@@ -1849,8 +1876,13 @@ class Scene(Emitter):
         await self.add_to_recent_scenes()
 
     async def save_restore(self, filename: str):
+        """
+        Serializes the scene to a file.
 
-        """Serializes the scene to a specified file."""
+        immutable_save will be set to True
+        memory_sesion_id will be randomized
+        """
+
         serialized = self.serialize
         serialized["immutable_save"] = True
         serialized["memory_session_id"] = str(uuid.uuid4())[:10]
