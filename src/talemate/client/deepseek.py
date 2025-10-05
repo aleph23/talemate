@@ -51,13 +51,11 @@ class DeepSeekClient(ClientBase):
 
     @property
     def deepseek_api_key(self):
-        """Returns the Deepseek API key from the configuration."""
         """Returns the deepseek API key from the configuration."""
         return self.config.deepseek.api_key
 
     @property
     def supported_parameters(self):
-        """Return a list of supported parameters."""
         """Return a list of supported parameters."""
         return [
             "temperature",
@@ -134,7 +132,6 @@ class DeepSeekClient(ClientBase):
 
     def response_tokens(self, response: str):
         # Count tokens in a response string using the util.count_tokens helper
-        """Count tokens in a response string."""
         """Count tokens in a response string."""
         return self.count_tokens(response)
 
