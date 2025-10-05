@@ -271,7 +271,6 @@ class EvaluateQuery(AgentNode):
 
     async def run(self, state: GraphState):
         """Processes a query and sets the output values."""
-        """Processes a query and sets the output values."""
         query = self.require_input("query")
         context = self.require_input("context")
 
