@@ -97,7 +97,6 @@ class OllamaClient(ClientBase):
     @property
     def api_handles_prompt_template(self) -> bool:
         """Returns whether the API handles the prompt template."""
-        """Returns whether the API handles the prompt template."""
         return self.client_config.api_handles_prompt_template
 
     async def status(self):
