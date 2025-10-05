@@ -74,7 +74,6 @@ class GroqClient(EndpointOverrideMixin, ClientBase):
     @property
     def supported_parameters(self):
         """Return a list of supported parameters."""
-        """Return a list of supported parameters."""
         return [
             "temperature",
             "top_p",
@@ -159,7 +158,6 @@ class GroqClient(EndpointOverrideMixin, ClientBase):
         return response.usage.completion_tokens
 
     def prompt_tokens(self, response: str):
-        """Returns the prompt tokens from the response."""
         """Returns the prompt tokens from the response."""
         return response.usage.prompt_tokens
 
