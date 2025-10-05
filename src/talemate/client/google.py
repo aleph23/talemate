@@ -315,7 +315,6 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     def set_client_base_url(self, base_url: str | None):
         """Set the base URL for the client."""
-        """Set the base URL for the client."""
         if getattr(self, "client", None):
             try:
                 self.client.http_options.base_url = base_url
@@ -353,11 +352,9 @@ class GoogleClient(EndpointOverrideMixin, RemoteServiceMixin, ClientBase):
 
     def prompt_tokens(self, prompt: str):
         """Returns the token count for the given prompt."""
-        """Returns the token count for the given prompt."""
         return count_tokens(prompt)
 
     def clean_prompt_parameters(self, parameters: dict):
-        """Cleans the prompt parameters by removing 'top_k' if it is 0."""
         """Cleans the prompt parameters by removing 'top_k' if it is 0."""
         super().clean_prompt_parameters(parameters)
 
