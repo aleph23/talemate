@@ -51,7 +51,7 @@ class DeepSeekClient(ClientBase):
 
     @property
     def deepseek_api_key(self):
-        """Returns the deepseek API key from the configuration."""
+        """Return the deepseek API key from the configuration."""
         return self.config.deepseek.api_key
 
     @property
