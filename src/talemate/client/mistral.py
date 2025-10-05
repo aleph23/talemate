@@ -74,12 +74,10 @@ class MistralAIClient(EndpointOverrideMixin, ClientBase):
     @property
     def mistral_api_key(self):
         """Get the Mistral API key from the configuration."""
-        """Get the Mistral API key from the configuration."""
         return self.config.mistralai.api_key
 
     @property
     def supported_parameters(self):
-        """Return a list of supported parameters."""
         """Return a list of supported parameters."""
         return [
             "temperature",
@@ -165,7 +163,6 @@ class MistralAIClient(EndpointOverrideMixin, ClientBase):
         self.emit_status()
 
     def clean_prompt_parameters(self, parameters: dict):
-        """Cleans and clamps the temperature parameter in the given dictionary."""
         """Cleans and clamps the temperature parameter in the given dictionary."""
         super().clean_prompt_parameters(parameters)
         # clamp temperature to 0.1 and 1.0
