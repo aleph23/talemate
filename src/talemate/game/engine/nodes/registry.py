@@ -41,17 +41,10 @@ class NodeNotFoundError(ValueError):
 
 
 def normalize_registry_name(name: str) -> str:
-    """
-    Normalize a registry name to camel case with no spaces or special characters.
+    """Normalize a registry name to camel case with no spaces or special characters.
     
     Args:
         name (str): Name to normalize.
-
-    Examples:
-
-    - "My Node" -> "myNode"
-    - "My-Node" -> "myNode"
-    - "My Other Node" -> "myOtherNode"
     """
     name = name.title()
 
